@@ -145,7 +145,7 @@ def few_shot_prompt(examples, query_x):
 !!! abstract "TL;DR"
     T5 casts **every NLP task** as **text-to-text**: inputs and targets are strings; the same encoder–decoder Transformer is trained with a denoising **span corruption** objective (randomly drop spans, predict missing pieces). This unification simplifies multi-task mixing and transfer: downstream tasks reuse the **same forward pass** with task prefixes like `"translate English to German:"`.
 
-**Why It Matters:** The **text-to-text frame** influenced instruction formatting, multitask fine-tuning (FLAN-style), and how people think about **prompt templates** as *serializing* tasks into strings. Encoder–decoder designs remain relevant for **seq2seq** (summarization, translation) and some **distillation** setups. Understanding span corruption contrasts T5’s denoising with BERT’s MLM and GPT’s standard LM.
+**Why It Matters:** **Text-to-text** shaped instruction templates and FLAN-style multitask SFT. Encoder–decoders remain relevant for **seq2seq**; **span corruption** differs from MLM and from GPT **causal LM**.
 
 !!! math-intuition "In Plain English"
     Span corruption samples spans \(\mathbf{s}\) to delete from input \(\mathbf{x}\), producing \(\tilde{\mathbf{x}}\); the model predicts each missing token in order:
@@ -175,7 +175,7 @@ def span_corrupt(tokens, span_len=3, mask_token="<extra_id_0>"):
 !!! abstract "TL;DR"
     XLNet combines ideas from **autoregressive modeling** and **bidirectional context** using **permutation language modeling (PLM)**: tokens are predicted in a random order, so each position can attend to **arbitrary subsets** of other positions according to the permutation. **Two-stream attention** separates **content** and **query** representations so the model cannot cheat by seeing the token being predicted. XLNet aimed to overcome BERT’s pretrain–finetune gap and MLM’s independence assumption.
 
-**Why It Matters:** XLNet illustrates the **tension** between **causal** generation and **full context** encoding—still relevant when discussing **diffusion LMs**, **bidirectional attention in encoders**, and **hybrid** architectures. While not the dominant pretraining recipe today, PLM sharpened intuitions about **what “bidirectional” really means** mathematically versus masking tricks.
+**Why It Matters:** PLM clarifies **causal vs full-context** factorizations—useful context for **hybrid** and **diffusion** sequence models even though XLNet is not today’s default pretraining recipe.
 
 !!! math-intuition "In Plain English"
     For permutation \(\pi\), the objective is an **ordered** product of conditionals consistent with \(\pi\):
@@ -208,7 +208,7 @@ def plm_logprob_order(tokens, logp_fn, perm):
 !!! abstract "TL;DR"
     RoBERTa shows that **training recipe** matters as much as architecture: train BERT longer with **larger batches**, **more data**, **dynamic MLM masking** (re-sample masks each epoch), drop **NSP**, and use **byte-level BPE**. These changes yield substantial gains without adding parameters—emphasizing **optimization hygiene** (learning rate schedules, sequence length) in large-scale pre-training.
 
-**Why It Matters:** The field learned to separate **“BERT the idea”** from **“BERT the original hyperparameters.”** Dynamic masking and data scale are now standard. In interviews, RoBERTa is shorthand for **reproducibility** and **fair comparisons**: before claiming a new architecture wins, match **compute**, **data**, and **training steps**.
+**Why It Matters:** RoBERTa showed **recipe** (dynamic MLM, longer training, more data, no NSP) beats architecture tweaks—fair comparisons must match **compute**, **data**, and **steps**.
 
 !!! math-intuition "In Plain English"
     Dynamic MLM re-draws the mask set \(\mathcal{M}^{(t)}\) each epoch \(t\) over the same corpus:
@@ -241,7 +241,7 @@ def dynamic_mlm_mask(ids, mask_prob=0.15, vocab_mask_token=103):
 !!! abstract "TL;DR"
     ELECTRA trains a **small generator** to corrupt tokens and a **discriminator** to predict **which tokens were replaced**—binary classification per position. This is far more **sample-efficient** than predicting a full softmax over the vocabulary at every masked position (as in BERT). The discriminator encoder becomes a strong text representation model with lower compute per training step on large vocabularies.
 
-**Why It Matters:** ELECTRA highlights **alternative training signals** beyond MLM softmax: **efficiency** matters at industrial scale. The **replaced-token detection** framing connects to **contrastive** and **discriminative** pretraining ideas used elsewhere. For retrieval and reranking encoders, sample-efficient pretraining can mean **faster iteration** on domain corpora.
+**Why It Matters:** **Replaced-token detection** avoids full-vocab softmax at every position—cheaper encoder pretraining; connects to **discriminative** and contrastive pretraining. Useful when **domain-adapting** encoders for retrieval.
 
 !!! math-intuition "In Plain English"
     Let \(G\) propose replacement \(\hat{x}_i\) for subset of positions; discriminator \(D\) outputs \(\sigma(s_i)\) for “real vs fake”:
@@ -274,7 +274,7 @@ def bce_discriminator_loss(scores, y):
 !!! abstract "TL;DR"
     The paper aligns GPT-3 with **human intent** using **supervised fine-tuning (SFT)** on demonstrations, then **reward modeling (RM)** from human rankings, then **PPO** to optimize policy against the reward while penalizing deviation from the reference model (**KL penalty**). The result is **InstructGPT**: better **helpfulness** and **truthfulness** on prompts humans care about, with smaller models sometimes beating larger base models on preference metrics.
 
-**Why It Matters:** This is the **RLHF template** behind ChatGPT-class products: **SFT → RM → PPO**. Interviews probe **reward hacking**, **KL control**, **labeler disagreement**, and **why** base LMs are not “misaligned”—they optimize **next-token prediction**, not user utility. Production alignment stacks still extend this recipe (DPO, ORPO, constitutional RLAIF).
+**Why It Matters:** Canonical **SFT → RM → PPO** stack; interviews expect **KL penalty** rationale, **reward hacking**, and why base LMs optimize **LM loss**, not **user utility**. Extended today by **DPO** / **RLAIF**.
 
 !!! math-intuition "In Plain English"
     RL objective with KL to reference \(\pi_{\text{ref}}\):
@@ -308,7 +308,7 @@ def ppo_style_objective(r, adv, ratio, clip=0.2):
 !!! abstract "TL;DR"
     PaLM trains a **540B** dense Transformer on a large multilingual corpus using **Pathways** infrastructure for **efficient data- and model-parallel** training across TPU pods. The paper documents **emergent** capabilities (reasoning chains, code, translation) that appear abruptly at scale, alongside systematic evaluations (**BIG-Bench**). It reinforces **scaling** as the primary lever for capability jumps when recipes are held stable.
 
-**Why It Matters:** PaLM illustrates **industrial-scale pre-training**: **data cleaning**, **multilingual mixtures**, **hardware orchestration**, and **evaluation harnesses** matter as much as architecture. For candidates targeting **ML systems**, Pathways symbolizes **single-controller SPMD** style execution and **fault tolerance** at pod scale. Capability **emergence** debates in interviews often cite PaLM/GPT-3-era observations.
+**Why It Matters:** Highlights **data**, **multilingual**, **Pathways-scale** infra, and **BIG-Bench**-style evals—systems interviews pair with **tensor/pipeline parallelism** and **emergence** debates.
 
 !!! math-intuition "In Plain English"
     Training minimizes **cross-entropy** over tokens with model parameters \(\theta\) at large batch \(B\) and sequence length \(L\):
@@ -337,7 +337,7 @@ def shard_batch(batch_x, num_shards):
 !!! abstract "TL;DR"
     Chinchilla revisits scaling laws and argues many models were **undertrained**: for a fixed **FLOPs** budget, **smaller models trained on more data** often outperform larger models trained on less data. The work fits **empirical laws** relating loss to parameters \(N\) and tokens \(D\), and derives **compute-optimal** trade-offs—guiding how to spend a training budget.
 
-**Why It Matters:** The **Chinchilla scaling law** story reshaped procurement: **dataset size** and **token throughput** became first-class alongside parameter count. Open models (LLaMA, etc.) explicitly target **more tokens per parameter**. Interviews test whether you reason about **FLOPs**, **data quality**, and **overfitting** versus **undertraining**—not just “bigger is better.”
+**Why It Matters:** Fixed compute favors **smaller models + more tokens**—shaped open-model training (e.g. LLaMA). Interviewers ask **Chinchilla-optimal** tradeoffs vs **data-limited** regimes.
 
 !!! math-intuition "In Plain English"
     A simplified scaling hypothesis:
@@ -367,7 +367,7 @@ def flops_budget(N, D, F_per_token=6e18 / 1e24):  # toy coefficient
 !!! abstract "TL;DR"
     LLaMA trains **openly released** foundation models using **Chinchilla-style** token budgets: more training tokens relative to size (7B–65B). Architecture tweaks include **pre-normalization (RMSNorm)**, **SwiGLU** activations, **rotary positional embeddings (RoPE)**, and efficient attention implementations. The goal is **strong performance per parameter** to enable research and local deployment.
 
-**Why It Matters:** LLaMA catalyzed the **open-weights ecosystem** (Alpaca, Vicuna, later Llama 2/3). Engineers compare **7B vs 13B vs 70B** not only by parameters but by **VRAM**, **tokens seen**, and **license**. Understanding RMSNorm/SwiGLU/RoPE is now baseline for reading model cards and reproducing inference stacks.
+**Why It Matters:** Open-weights baseline (Alpaca, Vicuna, Llama 2/3); **7B/13B/70B** choices trade **VRAM**, **tokens seen**, and **license**. RMSNorm, SwiGLU, RoPE appear on model cards everywhere.
 
 !!! math-intuition "In Plain English"
     **RMSNorm** scales activations \(\mathbf{x}\) without mean-centering:
@@ -397,7 +397,7 @@ def rmsnorm(x, gamma, eps=1e-6):
 !!! abstract "TL;DR"
     LoRA freezes pretrained weights \(W_0\) and injects trainable **low-rank** updates \(\Delta W = B A\) for linear layers, where \(B \in \mathbb{R}^{d\times r}\), \(A \in \mathbb{R}^{r\times k}\), \(r \ll \min(d,k)\). During inference, \(\Delta W\) can be **merged** into \(W\) so there is no latency penalty. This enables **cheap specialization** (domains, tasks, users) without full fine-tunes.
 
-**Why It Matters:** LoRA underpins **PEFT** workflows in Hugging Face adapters, **QLoRA**, and many production fine-tunes where full weights are too expensive to store per customer. Interviews often ask how LoRA interacts with **optimizer states**, **rank selection**, and **which modules** to adapt (attention vs MLP).
+**Why It Matters:** Default **PEFT** path (adapters, **QLoRA**, per-tenant heads). Interviews probe **rank \(r\)**, **target modules**, and **merging** for deployment.
 
 !!! math-intuition "In Plain English"
     Forward pass for a frozen linear map with LoRA:
@@ -427,7 +427,7 @@ def lora_linear(x, W0, A, B):
 !!! abstract "TL;DR"
     FlashAttention computes **exact** attention while **avoiding materializing** the full \(N\times N\) attention matrix in GPU HBM by **tiling** and **fusing** softmax with matrix multiplies in SRAM. IO-aware scheduling reduces memory reads/writes, yielding **faster** training and **longer** sequences for the same memory budget—without approximating attention scores.
 
-**Why It Matters:** FlashAttention (v1/v2) is standard in **PyTorch 2**, **vLLM**, and large-model training. Interviewers probing **KV cache**, **memory bandwidth**, and **why attention is slow** expect you to distinguish **FLOPs** from **memory bottlenecks**. This paper is the canonical “**systems meets theory**” reference.
+**Why It Matters:** Default in **PyTorch 2** / **vLLM**; interviewers separate **HBM bandwidth** from **FLOPs** when explaining long-context costs.
 
 !!! math-intuition "In Plain English"
     Attention still computes:
@@ -457,7 +457,7 @@ def softmax_stable(x):
 !!! abstract "TL;DR"
     Mistral 7B demonstrates that a **carefully trained** 7B model with **Sliding Window Attention (SWA)** and **grouped-query attention (GQA)** can match or beat much larger models on many benchmarks—emphasizing **efficient architecture** and **data/curriculum** over raw parameter count. The release strengthened the **small-but-mighty** open-weights narrative for local deployment.
 
-**Why It Matters:** Mistral’s line (Mixtral follows) influenced **API pricing**, **edge deployment**, and **router** designs that choose between 7B/8x7B MoE/70B. GQA reduces **KV cache** heads; SWA limits attention context to a window for speed—trade-offs interviewers love. Understanding this paper is understanding **modern open model cards**.
+**Why It Matters:** **GQA** + **SWA** = strong **7B** open weights; informs **routers** (7B vs MoE vs 70B) and **KV** footprint.
 
 !!! math-intuition "In Plain English"
     **Sliding window** restricts attention so token \(i\) only attends to \(i-W,\ldots,i\):
@@ -488,7 +488,7 @@ def sliding_window_mask(seq_len, W):
 !!! abstract "TL;DR"
     Mixtral is a **sparse Mixture-of-Experts (MoE)** Transformer: each layer has multiple **feed-forward experts**, and a **router** selects **top-\(k\)** experts per token. Only selected experts run, so **active** parameters per token stay manageable while **total** capacity grows. The open-weight Mixtral models compete with larger dense models on efficiency-adjusted metrics.
 
-**Why It Matters:** MoE is how frontier stacks scale **capacity** without linearly scaling **FLOPs per token**—critical for datacenter economics. Interviews cover **load balancing**, **expert collapse**, **routing noise**, and **all-to-all** communication costs in distributed serving. Mixtral is the **accessible reference** for MoE in open weights.
+**Why It Matters:** **Sparse MoE** adds expert **capacity** without linear **active FLOPs**; interviews hit **routing**, **load balance**, **expert collapse**, and **all-to-all** in serving.
 
 !!! math-intuition "In Plain English"
     MoE output combines expert functions \(E_i\) with gating weights \(g_i(x)\):
@@ -526,7 +526,7 @@ def softmax(z):
 !!! abstract "TL;DR"
     FLAN **instruction fine-tunes** a pretrained LM on a large mixture of **tasks phrased as instructions**, improving **zero-shot** generalization to unseen tasks described at inference time. Scaling **tasks**, **model size**, and **chain-of-thought** data together yields **FLAN-T5/PaLM** variants that perform strongly on held-out task clusters—supporting **multitask prompting** transfer.
 
-**Why It Matters:** FLAN codified **instruction tuning as data engineering**: task diversity and phrasing matter. It connects directly to **chat models**, **task routers**, and **evaluation** on instruction-following benchmarks (IFEval-style). Interviewers ask how FLAN relates to **RLHF** (supervised alignment vs preference optimization).
+**Why It Matters:** **Instruction mix** + phrasing as **data engineering**—precursor to chat models and **IFEval**-style tests; contrast with **RLHF** (SFT vs preferences).
 
 !!! math-intuition "In Plain English"
     Instruction tuning minimizes **supervised** loss over instruction–response pairs \((u, y)\):
@@ -553,7 +553,7 @@ def instruction_prompt(task_name, x):
 !!! abstract "TL;DR"
     **Chain-of-thought (CoT)** prompting appends **intermediate reasoning steps** before the final answer—either via **few-shot exemplars** with rationales or **zero-shot** triggers (“Let’s think step by step”). Large models show large gains on **math**, **commonsense**, and **symbolic** tasks where single-step answers fail. The effect is **emergent** with scale for some models/tasks.
 
-**Why It Matters:** CoT is the default pattern in **agents**, **tool-using** assistants, and **evaluation** harnesses. It interacts with **sampling** (self-consistency decodes multiple CoTs), **verifiers**, and **RL** on reasoning traces. Interviews test whether you know CoT **increases token cost** and can **amplify hallucinations** if steps are unchecked.
+**Why It Matters:** Default for **reasoning** prompts and **self-consistency**; costs **tokens** and can **hallucinate steps**—interviews pair with **verifiers** and **RL** on traces.
 
 !!! math-intuition "In Plain English"
     CoT models a **latent rationale** \(z\) before answer \(a\):
@@ -580,7 +580,7 @@ def cot_prompt(question):
 !!! abstract "TL;DR"
     ReAct interleaves **natural language reasoning** traces with **structured actions** (e.g., search, lookup) in a loop: **Thought → Action → Observation**. This pattern beats **reasoning-only** or **acting-only** baselines on tasks requiring **grounding** in external information. It frames LLM agents as **policies** over tool APIs with **observable feedback**.
 
-**Why It Matters:** ReAct is the **conceptual backbone** of many agent frameworks (LangChain, AutoGPT-style loops, retrieval tools). Interviews ask about **tool schemas**, **error handling**, **max steps**, and **when to stop**. It links **prompting** to **control theory**-lite: observations close the loop.
+**Why It Matters:** **Thought / Action / Observation** loop underpins agent frameworks; interviews cover **tool schemas**, **max steps**, and **stop** conditions.
 
 !!! math-intuition "In Plain English"
     A trajectory \(\tau = (t_1,a_1,o_1,\ldots)\) is generated by alternating:
@@ -614,7 +614,7 @@ def react_loop(model_step, env, query, max_steps=5):
 !!! abstract "TL;DR"
     Toolformer **supervises** a LM to **call APIs** (calculator, retrieval, translation) by predicting special **API tokens**; training data is **augmented** with sampled calls and **filtered** by whether the API output **reduces** LM loss on future tokens. The result is **selective** tool use without RL—**self-supervised** curriculum from the model’s own generations.
 
-**Why It Matters:** Toolformer prefigured **tool-tuned** models and **function-calling** chat APIs. It frames tool use as **learning when** to delegate versus **generate from parametric memory**. Interviews connect it to **latency budgets**, **API safety**, and **deterministic tools** versus **neural** retrieval.
+**Why It Matters:** Early **learned tool use** without RL; aligns with **function-calling** APIs—**latency**, **safety**, and **when to call** vs **retrieve**.
 
 !!! math-intuition "In Plain English"
     Filtering compares **counterfactual** losses with and without tool output \(o\):
@@ -641,7 +641,7 @@ def accept_call(loss_without, loss_with):
 !!! abstract "TL;DR"
     Constitutional AI (**CAI**) trains models using **principles** (“constitution”) to critique and revise responses, enabling **scalable supervision** without as much human labeling. The pipeline combines **supervised learning** from revised outputs and **RL from AI feedback (RLAIF)**—preference models trained on model-generated comparisons guided by principles. Harmlessness improves with **reduced human oversight** cost versus pure RLHF.
 
-**Why It Matters:** CAI is a blueprint for **scalable alignment** and **policy** layers in assistants: **rules**, **critiques**, **revision**, then **preference optimization**. It connects to **RLAIF vs RLHF**, **over-refusal** failures, and **value pluralism** (whose constitution?). Production safety stacks blend **classifiers**, **moderation**, and **alignment training**.
+**Why It Matters:** **Principles → critique → revision → RLAIF** scales alignment without all-human prefs; debates: **over-refusal**, **whose rules**, vs **RLHF**.
 
 !!! math-intuition "In Plain English"
     Preference learning maximizes likelihood of **chosen** \(y_w\) over **rejected** \(y_l\) under implicit reward \(r\):
@@ -670,7 +670,7 @@ def bradley_terry_logit(rw, rl):
 !!! abstract "TL;DR"
     CLIP trains **dual encoders**—image and text Transformers—on **400M (image, text)** pairs from the web using **contrastive learning** to match paired embeddings and repel non-pairs. The resulting **image encoder** zero-shot classifies via **natural-language prompts** (“a photo of a …”) without task-specific heads—strong **robustness** and **representation transfer**.
 
-**Why It Matters:** CLIP underpins **multimodal** stacks (vision-language models, diffusion conditioning, retrieval). It’s the standard reference for **contrastive pretraining** at scale. Interviews link CLIP to **embedding APIs**, **RAG over images**, and **alignment** between modalities.
+**Why It Matters:** **Dual encoders + InfoNCE** power VLM **retrieval**, **diffusion** conditioning, and **image RAG**—baseline multimodal **alignment** story.
 
 !!! math-intuition "In Plain English"
     With normalized embeddings \(g_i = f_I(x_i)/\|f_I(x_i)\|\), \(t_i = f_T(y_i)/\|f_T(y_i)\|\), **InfoNCE** for batch size \(B\):
@@ -704,7 +704,7 @@ def clip_infonce(g, t, tau=0.07):
 !!! abstract "TL;DR"
     Codex fine-tunes GPT models on **GitHub code**, producing systems that **complete code** from docstrings and comments (Copilot lineage). The paper introduces **HumanEval**: **164 hand-written** Python tasks with **functional unit tests**—now a standard for **pass@\(k\)** evaluation. It documents **limitations** (imports, long context) and **safety** considerations for code LM deployment.
 
-**Why It Matters:** Codex established **code as a language modeling domain** with **execution-based** metrics. **HumanEval** became the de facto interview benchmark name-check. Production “AI coding” tools inherit **fill-in-the-middle**, **repo-level** context, and **static analysis** hooks around Codex-style models.
+**Why It Matters:** **HumanEval** / **pass@\(k\)** defined code LM evals; Copilot-style tools add **FIM**, **repo context**, **static checks**.
 
 !!! math-intuition "In Plain English"
     **pass@\(k\)**: probability that **at least one** of \(k\) independent samples passes **all** tests:
@@ -735,7 +735,7 @@ def pass_at_k(n, c, k):
 !!! abstract "TL;DR"
     Mamba advances **structured state-space models (SSMs)** for sequences with **input-dependent** (selective) parameters, letting the model **filter information** along the sequence like **gated RNNs** but with **parallel training** via **associative scan**. It achieves **linear time** in sequence length for the recurrent core and competes with Transformers on **throughput** and **long-sequence** modeling in benchmarks.
 
-**Why It Matters:** Mamba represents a **credible alternative** to \(O(n^2)\) attention for long contexts—relevant to **edge**, **streaming**, and **very long** documents. Interviews discuss **SSM vs attention**, **hardware efficiency**, and **hybrid** architectures (SSM layers + attention). The field is still converging on **when** Mamba-style layers beat Transformers per dollar.
+**Why It Matters:** **Selective SSMs** offer **linear-time** sequence cores vs \(O(n^2)\) attention—**edge**, **streaming**, **hybrid** (SSM + attention) tradeoffs.
 
 !!! math-intuition "In Plain English"
     A discrete SSM maps input \(x_t\) to state \(h_t\):
@@ -764,7 +764,7 @@ def ssm_step(h, x, Abar, Bbar, C):
 !!! abstract "TL;DR"
     Gemini trains **multimodal** models **natively** over **text, images, audio, and video** interleaved in context—**from the ground up**, not only via frozen vision encoders bolted to text decoders. The report emphasizes **benchmark-leading** results across reasoning, code, and multimodal understanding, **tool use**, and **long context** (later variants push windows further). It reflects **Google DeepMind**-scale **data**, **infrastructure**, and **eval harnesses**.
 
-**Why It Matters:** Gemini-style reports set expectations for **productized** multimodal assistants (workspace integration, devices) and **safety** layers tuned per modality. For interviews, Gemini anchors discussion of **native multimodality** versus **stitched pipelines**, **evaluation** across modalities, and **responsible deployment** (watermarking, provenance). It pairs conceptually with **CLIP**, **PaLM**, and **instruction/RLHF** lineages.
+**Why It Matters:** **Native multimodal** (interleaved tokens) vs **stitched** vision encoder + LM; product + **safety** per modality; ties **CLIP**, **PaLM**, **alignment** threads.
 
 !!! math-intuition "In Plain English"
     A generic **multimodal** LM models token sequence \(z\) (text tokens, image/audio patches as tokens):
