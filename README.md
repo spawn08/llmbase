@@ -290,7 +290,7 @@ Once the site is live, these sections are most valuable for interview preparatio
 
 - [x] Phase 1 — Scaffold: MkDocs setup, CI/CD, site structure, landing page, section indexes
 - [x] Phase 2 — Foundations (Part 1): All 6 topics with math, code, and interview takeaways
-- [ ] Phase 3 — Architectures (Part 2): Transformer deep-dive, GPT, BERT, T5
+- [x] Phase 3 — Architectures (Part 2): All 8 topics — Transformer, MHA/GQA, positional encoding, GPT, BERT, T5, MoE, Mamba
 - [ ] Phase 4 — Training & Alignment (Part 3): Pre-training, SFT, RLHF, LoRA
 - [ ] Phase 5 — Inference (Part 4): KV cache, decoding, vLLM
 - [ ] Phase 6 — Advanced (Part 5): RAG, agents, multimodal, eval

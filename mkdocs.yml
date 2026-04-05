@@ -68,6 +68,14 @@ nav:
     - 1.6 Mathematics of Attention: 01_foundations/attention_math.md
   - Part 2 - Core Architectures:
     - 02_core_architectures/index.md
+    - 2.1 The Transformer: 02_core_architectures/transformer.md
+    - 2.2 Self-Attention & MHA: 02_core_architectures/self_attention_mha.md
+    - 2.3 Positional Encoding: 02_core_architectures/positional_encoding.md
+    - 2.4 GPT (Decoder-Only): 02_core_architectures/gpt_decoder_only.md
+    - 2.5 BERT (Encoder-Only): 02_core_architectures/bert_encoder_only.md
+    - 2.6 T5 (Encoder-Decoder): 02_core_architectures/t5_encoder_decoder.md
+    - 2.7 Mixture of Experts: 02_core_architectures/mixture_of_experts.md
+    - 2.8 State Space Models: 02_core_architectures/state_space_models.md
   - Part 3 - Training & Alignment:
     - 03_training/index.md
   - Part 4 - Inference & Serving:
