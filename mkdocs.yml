@@ -60,6 +60,12 @@ nav:
   - Home: index.md
   - Part 1 - Foundations:
     - 01_foundations/index.md
+    - 1.1 Language Modeling Basics: 01_foundations/language_modeling_basics.md
+    - 1.2 Word Embeddings: 01_foundations/word_embeddings.md
+    - 1.3 Neural Language Models: 01_foundations/neural_language_models.md
+    - 1.4 Sequence-to-Sequence: 01_foundations/sequence_to_sequence.md
+    - 1.5 Information Theory: 01_foundations/information_theory.md
+    - 1.6 Mathematics of Attention: 01_foundations/attention_math.md
   - Part 2 - Core Architectures:
     - 02_core_architectures/index.md
   - Part 3 - Training & Alignment:

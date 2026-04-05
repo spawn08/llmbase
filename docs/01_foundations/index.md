@@ -8,21 +8,21 @@ Before transformers and billion-parameter models, language modeling rests on pro
 - Understand **embeddings** and why geometry matters for similarity and analogy.
 - Derive **scaled dot-product attention** and softmax weights from first principles.
 
-## Planned topics
+## Topics
 
-| Topic | What you will get |
-| --- | --- |
-| Language modeling basics | N-grams, perplexity, probability trees |
-| Word embeddings | Word2Vec, GloVe, FastText + visualization hooks |
-| Neural language models | FFNN / RNN / LSTM language models |
-| Sequence-to-sequence | Encoder–decoder and attention precursors |
-| Information theory | Entropy, cross-entropy, KL divergence |
-| Mathematics of attention | Dot-product, scaling, softmax, attention maps |
+| # | Topic | Key ideas |
+| --- | --- | --- |
+| 1.1 | [Language Modeling Basics](language_modeling_basics.md) | N-grams, chain rule, perplexity, smoothing |
+| 1.2 | [Word Embeddings](word_embeddings.md) | Word2Vec, GloVe, FastText, t-SNE visualization |
+| 1.3 | [Neural Language Models](neural_language_models.md) | FFNN LM, RNNs, LSTMs, vanishing gradients |
+| 1.4 | [Sequence-to-Sequence](sequence_to_sequence.md) | Encoder–decoder, Bahdanau & Luong attention, teacher forcing |
+| 1.5 | [Information Theory](information_theory.md) | Entropy, cross-entropy, KL divergence, perplexity link |
+| 1.6 | [Mathematics of Attention](attention_math.md) | Scaled dot-product, softmax, causal masking, multi-head preview |
 
-## Artifacts (per topic)
+## How to read
 
-Each future page will follow: **Intuition → diagram (SVG) → math → code (full imports) → interview takeaways → references.**
+Each page follows: **Intuition → math → code (with full imports) → interview takeaways → references.** Start at 1.1 and work forward — each topic builds on the previous one, culminating in the attention equation that powers Part 2.
 
 ## Status
 
-Phase 1 defines this section shell; **Phase 2** adds full pages, `diagrams/*.drawio`, `docs/assets/diagrams/*.svg`, and notebooks under `notebooks/foundations/`.
+All six foundation topics are complete with math, runnable code, and interview takeaways. Diagrams (draw.io SVGs) and Jupyter notebooks will be added in a future polish pass.

@@ -289,7 +289,7 @@ Once the site is live, these sections are most valuable for interview preparatio
 ## Roadmap
 
 - [x] Phase 1 — Scaffold: MkDocs setup, CI/CD, site structure, landing page, section indexes
-- [ ] Phase 2 — Foundations (Part 1): All 6 topics with diagrams and code
+- [x] Phase 2 — Foundations (Part 1): All 6 topics with math, code, and interview takeaways
 - [ ] Phase 3 — Architectures (Part 2): Transformer deep-dive, GPT, BERT, T5
 - [ ] Phase 4 — Training & Alignment (Part 3): Pre-training, SFT, RLHF, LoRA
 - [ ] Phase 5 — Inference (Part 4): KV cache, decoding, vLLM
