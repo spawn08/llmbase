@@ -114,11 +114,17 @@ Let \(p\) be the **true** label distribution (often one-hot for supervised class
 \mathrm{KL}(p\,\|\,q) = \sum_i p_i \log\frac{p_i}{q_i} = \underbrace{\sum_i p_i \log p_i}_{=-H(p)} - \sum_i p_i \log q_i.
 \]
 
+!!! math-intuition "In Plain English"
+    KL is an **asymmetric** measure of how far \(q\) is from \(p\): it weighs log-ratios \(\log(p_i/q_i)\) by how often \(p_i\) fires. Writing it as \(-H(p) - \sum_i p_i \log q_i\) exposes the **entropy of \(p\)** plus the cross-entropy term you already recognize.
+
 Rearranging,
 
 \[
 \underbrace{-\sum_i p_i \log q_i}_{\text{cross-entropy } H(p,q)} = \mathrm{KL}(p\,\|\,q) + H(p).
 \]
+
+!!! math-intuition "In Plain English"
+    This identity is the whole trick: **cross-entropy splits cleanly** into “how far \(q\) is from \(p\)” (KL) plus “how compressible \(p\) is by itself” (entropy). Optimize the model through \(q\), and the \(H(p)\) term is just background noise when \(p\) is fixed.
 
 !!! math-intuition "In Plain English"
     When \(p\) is fixed (as with a one-hot label), \(H(p)\) is a **constant** independent of the model. So **minimizing cross-entropy** is equivalent to **minimizing KL divergence** from the data distribution to the model distribution—up to that constant. This is the bridge to information theory from Part 1: KL measures “extra bits” needed to encode samples from \(p\) using a code optimized for \(q\).
@@ -136,6 +142,9 @@ The gradient gains an extra term:
 \[
 \nabla_{\mathbf{w}} L_{\mathrm{total}} = \nabla_{\mathbf{w}} L + 2\lambda \mathbf{w}.
 \]
+
+!!! math-intuition "In Plain English"
+    The penalty contributes **\(2\lambda w_i\)** to each coordinate’s derivative: the larger the weight, the stronger the push back toward zero. In gradient descent, that becomes an extra **\(-2\eta\lambda w_i\)** term in the weight update—pure shrinkage toward the origin on top of the data-driven gradient.
 
 In a vanilla gradient descent step \(\mathbf{w} \leftarrow \mathbf{w} - \eta \nabla L_{\mathrm{total}}\), this behaves like **shrinking** weights toward zero by an amount proportional to \(\mathbf{w}\).
 
@@ -199,6 +208,9 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
     \mathrm{RMS}(\mathbf{x}) = \sqrt{\frac{1}{d}\sum_{j=1}^{d} x_j^2 + \varepsilon}, \qquad \tilde{x}_j = \frac{x_j}{\mathrm{RMS}(\mathbf{x})},
     \]
 
+    !!! math-intuition "In Plain English"
+        RMSNorm keeps a **scale-stabilizing** normalization (divide by a scalar RMS) without subtracting the mean across features. In practice this can be slightly cheaper and still controls activation scale in deep residual stacks.
+
     followed by a learned gain (and sometimes bias). RMSNorm slightly reduces compute and can perform comparably in large LMs—LLaMA-style models popularized it.
 
     ### Pre-norm vs post-norm Transformer (and why pre-norm won)
@@ -220,6 +232,9 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
     \[
     \mathbf{w} \leftarrow \mathbf{w} - \eta\left(\frac{\hat{\mathbf{m}}}{\sqrt{\hat{\mathbf{v}}}+\varepsilon} + \lambda \mathbf{w}\right),
     \]
+
+    !!! math-intuition "In Plain English"
+        Weight decay is applied **additively in the update**, not as if it were another gradient term that also gets divided by \(\sqrt{\hat{\mathbf{v}}}\). That matters because Adam’s adaptive scaling would otherwise **weaken or distort** L2-style penalties in a way that does not match classical weight decay.
 
     rather than treating L2 as part of the gradient inside the adaptive denominator in a way that unintentionally changes regularization strength. For Transformers, **AdamW + weight decay** is the common baseline.
 
