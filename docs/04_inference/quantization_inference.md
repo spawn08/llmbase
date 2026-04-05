@@ -1,350 +1,360 @@
 # Quantization for Inference
 
-Low-bit inference is the **default** path to run **open** models on **single** GPUs and **edge** CPUs—this page focuses on **post-training** weight quantization, **formats**, and **error** **analysis**.
-
 ## Why This Matters for LLMs
 
-Frontier models have **billions** of parameters; **FP16** weights alone need **2 bytes** each—**7B** \(\approx 14\) **GiB** before **activations**, **optimizer** states (training), and **KV** caches. **Post-training quantization (PTQ)** compresses **already-trained** weights to **INT8** or **INT4** with **minimal** **accuracy** loss so consumer GPUs and edge devices can run **open-weight** models. **GPTQ** and **AWQ** are the **poster children** for **one-shot** weight-only PTQ; **GGUF** + **llama.cpp** ship **CPU** and **Apple Silicon** deployments with **block**-quantized tensors.
+Inference quantization is the primary lever that lets you run multi-billion-parameter language models on a single consumer GPU, fit larger batches into the same HBM for higher throughput, or even execute compact models on CPUs and phones. Without post-training quantization (PTQ), weights in FP16 or BF16 dominate memory: a 7B parameter model needs on the order of fourteen gigabytes for weights alone, before KV cache, activations, and framework overhead. INT8 and INT4 schemes shrink that footprint by four to eight times, which directly translates into dollars saved on cloud accelerators and into feasibility on edge devices.
 
-Interviewers want **quantitative** literacy: **affine** maps \(q = \mathrm{round}(x/s) + z\), **per-channel** vs **per-tensor** scales, **activation-aware** clipping, and why **perplexity** is the **first** **sanity** metric but not the **only** one.
+The tooling landscape is fragmented but converging on a few families: **GPTQ** and **AWQ** for GPU-friendly weight-only PTQ with calibration data; **GGUF** with **llama.cpp** for portable CPU and Apple Silicon deployments; **SmoothQuant** and related methods when activations must also be quantized for W8A8; and **FP8** on Hopper-and-newer hardware where tensor cores natively support narrow formats. Interviewers expect you to reason about **quality** (perplexity, downstream accuracy), **latency** (fused kernels vs dequantization overhead), and **compatibility** (which runtime consumes which layout).
 
-A second axis is **kernels**: INT4/INT8 **GEMM** on NVIDIA **Tensor Cores** requires **specific** layouts (**Marlin**, **CUTLASS**)—compression without **fast** **dequant** **fused** into matmul **does not** **accelerate** **wall-clock**.
+Third, quantization interacts with **outliers** in weights and activations: a tiny fraction of channels can dominate L2 error if you use naive min–max scaling. Methods that use Hessian-aware updates (GPTQ) or activation-aware salience (AWQ) exist precisely because uniform rounding is blind to layer dynamics. The mathematics below ties affine maps, error bounds, and compression ratios to what you will actually see in deployment reports and ablation tables.
 
 ---
 
 ## Core Concepts
 
-### Affine Quantization
+### Post-Training Quantization Landscape
 
-For floating vector \(x\), **integer** code \(q\) with **scale** \(s>0\) and **zero-point** \(z\):
+| Method | Bits | Calibration | Speed | Quality | Format |
+|--------|------|-------------|-------|---------|--------|
+| GPTQ | 4 / 3 / 2 | Yes (e.g. 128 samples) | Fast on GPU with fused kernels | Good at 4-bit | Safetensors |
+| AWQ | 4 | Yes (calibration activations) | Fast on GPU | Often best among 4-bit PTQ | Safetensors |
+| GGUF | 2–8 | Often RTN / block scales | Fast on CPU; GPU backends vary | Varies by quant | GGUF binary |
+| SmoothQuant | 8 | Yes | Fast when fused | Good W8A8 | Framework-specific |
+| FP8 | 8 | Optional | Fastest on H100+ | Near FP16 with scaling | Native |
+
+!!! math-intuition "In Plain English"
+    - **Calibration** means you show the network real inputs to set scales—better than blind min–max on weights alone.
+    - **Format** matters: a compressed tensor nobody can matmul is useless for latency.
+
+### SmoothQuant (Pointer for W8A8)
+
+SmoothQuant migrates quantization difficulty from **activations** to **weights** using per-tensor scaling so both can sit in INT8 without clipping salient activation outliers. A simplified relation (conceptual) ties activation scale \(s_X\) and weight scale \(s_W\):
 
 \[
-q = \mathrm{clip}\Bigl(\Bigl\lfloor \frac{x}{s} \Bigr\rceil + z,\, q_{\min},\, q_{\max}\Bigr).
+Y = X W \approx \left( \frac{X}{s_X} \right) \left( s_X s_W \cdot W_{\mathrm{int}} \right),
 \]
 
-**Dequantize**:
+where integer matrices approximate the scaled terms. Implementations fuse the scales into kernels.
+
+!!! math-intuition "In Plain English"
+    - **Outlier activations** are hard to quantize; **rescaling** \(X\) and **absorbing** factors into **weights** keeps matmuls in low-bit **without** exploding dynamic range.
+    - Interview answer: “SmoothQuant makes activations easier to quantize by mathematically shifting the problem.”
+
+### Affine Quantization Maps
+
+The standard affine mapping from floating-point vector \(x\) to integers \(q\) uses scale \(s>0\) and zero-point \(z\):
+
+\[
+q = \mathrm{clip}\left( \mathrm{round}\left(\frac{x}{s}\right) + z,\ q_{\min},\ q_{\max} \right).
+\]
+
+Reconstruction (dequantization) is:
 
 \[
 \hat{x} = s \cdot (q - z).
 \]
 
-For **symmetric** **INT8** often \(z=0\), \(q_{\min}=-128\), \(q_{\max}=127\).
-
 !!! math-intuition "In Plain English"
-    - **Scale** maps **one** **integer** **tick** to **real** **magnitude**.
-    - **Zero-point** aligns **integer** **zero** with **real** **zero** when **asymmetric**—helps **biased** activations.
+    - **Scale** sets the size of one quant step in float space; **zero-point** aligns integer zero with a real value when distributions are asymmetric (common for activations).
+    - For symmetric INT8 weight quant you often set \(z=0\) and use signed range \([-127,127]\) or similar.
 
-### Quantization Error (Worst-Case Bound)
-
-For **round-to-nearest** with step \(s\), **per-element** error \(|\hat{x}_i - x_i| \le s/2\) (ignoring **clip** saturation). **Saturation** when \(|x_i/s|\) exceeds **representable** range causes **large** errors—**outliers** in activations or weights dominate **quality**.
+Symmetric per-channel quantization for row \(i\) of weight matrix \(W\) can be written as:
 
 \[
-\|\hat{x} - x\|_\infty \le \frac{s}{2} \quad \text{(no saturation).}
+\hat{W}_{i,:} = s_i \cdot \mathrm{clip}(\mathrm{round}(W_{i,:}/s_i),\ q_{\min},\ q_{\max}).
 \]
 
 !!! math-intuition "In Plain English"
-    - **Smaller** \(s\) → **finer** **grid** but **smaller** dynamic range—**tradeoff** set by **calibration**.
+    - **Per-channel** scales track large magnitude differences across output channels—critical for linear layers where row norms vary widely.
 
-### GPTQ: One-Shot Weight Quantization
+### GPTQ (GPT Quantization)
 
-**GPTQ** (Frantar et al., 2023) quantizes weights **layer-wise** using **second-order** information (approximate **Hessian**) to **minimize** **layer output** **error** under **quantized** weights. Objective sketch for weight matrix \(W\) and layer input \(X\):
-
-\[
-\min_{\hat{W} \in \mathcal{Q}} \| X W - X \hat{W} \|_2^2
-\]
-
-over **quantized** **search** space \(\mathcal{Q}\) with **greedy** **column**-wise updates and **Hessian** **approximation** \(H \approx 2 X^\top X\) for linear layers.
-
-!!! math-intuition "In Plain English"
-    - **GPTQ** tries to keep **layer outputs** **close** to **FP16**—**not** just **minimize weight MSE**.
-    - **One-shot**: **no** **fine-tuning** **dataset** **loop**—uses **calibration** **activations** from a **small** **sample**.
-
-### AWQ: Activation-Aware Weight Quantization
-
-**AWQ** (Lin et al., 2023) observes **salient** weights are those multiplied by **large-magnitude** **activations**. It learns **per-channel** **scaling** to **protect** **important** weights before **rounding**, improving **perplexity** vs naive **min-max** PTQ.
+GPTQ builds on **Optimal Brain Quantization** ideas: quantize weights column-wise (or block-wise) while using second-order information to update unquantized weights to compensate for error. Conceptually, for weight matrix \(W\) and calibration inputs \(X\) (activations feeding the layer), GPTQ seeks quantized \(\hat{W}\) in a discrete set \(\mathcal{Q}\):
 
 \[
-W' = W \odot s,\quad \text{then quantize } W' \text{ with adjusted scales.}
+\min_{\hat{W} \in \mathcal{Q}} \| X W - X \hat{W} \|_2^2.
 \]
 
 !!! math-intuition "In Plain English"
-    - **Where activations are tiny**, **quant noise** matters less—**AWQ** reallocates **precision** **budget** using **activation** statistics.
+    - The objective cares about **layer outputs** \(XW\), not raw weight MSE—matching the functional behavior transformers need.
+    - The **Hessian** (or its approximation) tells you which directions in weight space hurt the loss most when perturbed.
+
+A local quadratic picture: for small perturbation \(\Delta w\) at a single weight, change in output energy is related to \(X^\top X\) structure—practitioners approximate:
+
+\[
+H \approx 2 X^\top X
+\]
+
+for linear layers (sketch used in implementations).
+
+!!! math-intuition "In Plain English"
+    - **\(X^\top X\)** captures which weight directions align with high-variance input directions—errors there hurt more.
+    - GPTQ’s greedy procedures exploit this to **order** quant updates and **apply** **error feedback** to remaining weights.
+
+### AWQ (Activation-Aware Weight Quantization)
+
+AWQ starts from the observation that a small subset of weights is **salient** because they interact with **large-magnitude activations**. Protecting those weights (via per-channel scaling before rounding) preserves accuracy better than treating all weights uniformly at the same bit width.
+
+Let \(s\) denote learned scales; a simplified view:
+
+\[
+W' = W \odot s, \qquad \hat{W} = \mathrm{Quant}(W'),
+\]
+
+with calibration to choose \(s\) so that \(\| X W - X \hat{W} \|\) is minimized.
+
+!!! math-intuition "In Plain English"
+    - **Large activations** amplify any quantization noise on the weights they multiply—AWQ moves precision budget toward those interactions.
+    - At **4-bit**, AWQ often beats generic RTN GPTQ on perplexity for the same memory.
 
 ### GGUF and llama.cpp
 
-**GGUF** is a **file container** for **single-file** models with **metadata** and **multiple** **quantization** **variants** (**Q4_K_M**, **Q5_K_S**, …). **llama.cpp** implements **CPU**/**GPU** **kernels** with **K-quant** **block** formats—**block** size typically **32** or **64** elements sharing **scale**/**min**.
-
-!!! math-intuition "In Plain English"
-    - **GGUF** is **not** a **quant algorithm**—it is a **packaging** + **tensor layout** standard enabling **interoperable** **inference** **runtimes**.
-
-### Perplexity vs Compression Tradeoff
-
-**Perplexity** on a **held-out** corpus:
+GGUF is a **file container** for single-file models with metadata and multiple tensor quantizations. **llama.cpp** implements efficient kernels for block-wise formats (including **K-quants**) on CPU and GPU backends. Block size \(B\) with per-block scale \(s_k\) and integer codes \(q_i\) gives:
 
 \[
-\mathrm{PPL} = \exp\Bigl(-\frac{1}{N}\sum_{i=1}^{N} \log p_\theta(w_i \mid w_{<i})\Bigr).
-\]
-
-Quantization usually **increases** PPL monotonically as **bitwidth** drops—**compare** at **fixed** tokenizer and **context**.
-
-!!! math-intuition "In Plain English"
-    - **PPL** misses **downstream** **task** **accuracy**—always **spot-check** **benchmarks** relevant to **your** **product**.
-
-### INT4 / INT8 Kernels
-
-**INT8** **Tensor Core** **GEMM** requires **operand** **layouts** (**row-major**/**col** **major** constraints) and **accumulation** in **INT32**. **INT4** packs **two** **weights** per **byte**—**decode** **inside** **kernel** or **prepacked** **Marlin** **tiles**.
-
-\[
-\text{GEMM: } C = \mathrm{dequant}(W_q) \cdot X \approx W X.
+\hat{w}_i = s_k \cdot q_i, \quad i \in \text{block } k.
 \]
 
 !!! math-intuition "In Plain English"
-    - **Weight-only** **quant** often **keeps** **activations** **FP16**—**speedup** depends on **memory** **bandwidth** reduction and **fused** **ops**.
+    - **GGUF** is not one algorithm—it is **packing** + **layout** so many runtimes can consume the same file.
+    - **K-quants** mix bit allocations within super-blocks to preserve outliers better than uniform 4-bit.
+
+### Perplexity as a Quality Proxy
+
+For token sequence \(w_1,\ldots,w_N\), perplexity is:
+
+\[
+\mathrm{PPL} = \exp\left( -\frac{1}{N} \sum_{i=1}^{N} \log p_\theta(w_i \mid w_{<i}) \right).
+\]
+
+!!! math-intuition "In Plain English"
+    - **Lower PPL** means the model is less surprised by held-out text—useful for **fast** regression after quant.
+    - PPL does not replace task benchmarks (math, coding, safety).
+
+!!! example "Worked Example: Quality vs Bit-Width"
+    The table below is **illustrative** of typical trends (exact numbers vary by model and calibration).
+
+    | Setting | WikiText-2 PPL (example) | Relative vs FP16 |
+    |---------|---------------------------|------------------|
+    | FP16 | 5.47 | baseline |
+    | INT8 | 5.48 | +0.2% |
+    | GPTQ 4-bit | 5.63 | +2.9% |
+    | GPTQ 3-bit | 6.12 | +11.9% |
+    | GPTQ 2-bit | 8.34 | +52.5% |
+
+    **Step-by-step reading:** Moving FP16 \(\to\) INT8 often adds negligible PPL if scales are calibrated—dynamic range is sufficient. At **4-bit**, a few percent PPL increase is common and often acceptable for chat. **3-bit** begins to show double-digit **relative** degradation unless methods like AWQ or additional tricks are used. **2-bit** is usually research-only for generative models at scale.
+
+    **Conclusion:** INT8 is nearly lossless for many models; **4-bit** is the production sweet spot for size; **3-bit** is situational; **2-bit** is rarely production for general assistants.
+
+### Quantization Error (Operator View)
+
+For \(\mathbf{y} = W \mathbf{x}\) and quantized \(\hat{W} = W + \Delta W\):
+
+\[
+\|\hat{\mathbf{y}} - \mathbf{y}\|_2 = \|(\Delta W)\mathbf{x}\|_2 \le \|\Delta W\|_2 \|\mathbf{x}\|_2.
+\]
+
+!!! math-intuition "In Plain English"
+    - **Outlier activations** \(\mathbf{x}\) blow up output error even when \(\Delta W\) is small in norm—motivates activation-aware clipping and smoothing methods.
+
+### Bits per Parameter
+
+Average **bytes per parameter** for weights only:
+
+\[
+\text{BPP}_{\text{weight}} = \frac{\text{total weight bytes}}{\text{number of parameters}}.
+\]
+
+!!! math-intuition "In Plain English"
+    - FP16 \(\approx 2\) bytes/param; INT4 \(\approx 0.5\); **KV cache** and **activations** are separate budget lines at inference.
+
+??? deep-dive "Deep Dive: Marlin, ExLlama, and Tensor Core Layouts"
+    INT4 weights must be packed into layouts that **Tensor Cores** can consume—**Marlin** and similar kernels fuse dequant with GEMM. If your PTQ export format does not match the kernel, you may get **smaller** disk but **no** speedup. Always validate **wall-clock** tokens/sec, not just **model size**.
+
+Storing \(K,V\) in INT8 or FP8 reduces memory bandwidth during long-context decode:
+
+\[
+\hat{K} = s_K \cdot \mathrm{round}(K / s_K).
+\]
+
+!!! math-intuition "In Plain English"
+    - **Attention** quality depends on \(Q K^\top\); **error** in \(K\) propagates through softmax—validate long-context **needle** tests after aggressive KV quant.
+
+??? deep-dive "Deep Dive: KV Cache Quantization (Separate from Weight PTQ)"
+    KV quant is **orthogonal** to weight PTQ: you can run **W4A16** weights with FP16 KV, or compress both. Production stacks expose flags for **KV dtype** once kernels exist; always regression-test **long** **needle** **retrieval** when shrinking KV.
 
 ---
 
-## Calibration Snippet (PyTorch, INT8 Fake Quant)
+## Code
 
-Educational **fake-quant** (simulation) for a **linear** layer—**not** production **CUTLASS** kernels.
+The following script runs **without downloading checkpoints**: it demonstrates **fake quantization** in PyTorch, **perplexity-style loss** on random logits (sanity only), and optional imports for **Hugging Face** / **llama.cpp** if installed.
 
 ```python
 """
-Fake-quantization of a Linear layer for perplexity experiments (CPU/GPU).
-Uses per-channel symmetric quantization of weights.
+Quantization for inference — educational runnable examples.
+
+- fake_quant_linear(): symmetric per-channel fake quant (always runs).
+- loss_on_random_lm(): toy scalar loss (always runs).
+- gptq_style_stub(): shows API shape without real GPTQ (always runs).
+- try_transformers_gptq(): optional — needs transformers + bitsandbytes/GPU.
+- try_llama_cpp(): optional — needs llama-cpp-python + a GGUF path.
+
+Run: python thisfile.py
 """
 from __future__ import annotations
 
 import math
-from typing import Tuple
+import os
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-def fake_quantize_symmetric_per_channel(
-    w: torch.Tensor,
-    n_bits: int = 8,
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    w: (out_features, in_features) — quantize each output channel independently.
-    Returns quantized int tensor (float container) and scales (out_features,).
-    """
+def fake_quant_symmetric_per_channel(w: torch.Tensor, n_bits: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    """w: (out, in); returns fake-quantized w_hat and scales (out, 1)."""
     assert w.dim() == 2
-    qmax = 2 ** (n_bits - 1) - 1
-    qmin = -(2 ** (n_bits - 1))
-    # per-output-channel max
-    scales = w.abs().amax(dim=1, keepdim=True).clamp(min=1e-8) / float(qmax)
+    qmax = float(2 ** (n_bits - 1) - 1)
+    qmin = float(-(2 ** (n_bits - 1)))
+    scales = w.abs().amax(dim=1, keepdim=True).clamp(min=1e-8) / qmax
     w_q = (w / scales).round().clamp(qmin, qmax)
     w_hat = w_q * scales
-    return w_hat, scales.squeeze()
+    return w_hat, scales
 
 
 class FakeQuantLinear(nn.Module):
-    def __init__(self, linear: nn.Linear, bits: int = 8) -> None:
+    def __init__(self, linear: nn.Linear, bits: int) -> None:
         super().__init__()
-        self.in_features = linear.in_features
-        self.out_features = linear.out_features
-        w_hat, _ = fake_quantize_symmetric_per_channel(linear.weight.data, n_bits=bits)
+        w_hat, _ = fake_quant_symmetric_per_channel(linear.weight.data, bits)
         self.register_buffer("weight_hat", w_hat)
         if linear.bias is not None:
-            self.register_buffer("bias", linear.bias.data.clone())
+            self.register_buffer("lin_bias", linear.bias.data.clone())
         else:
-            self.bias = None
+            self.lin_bias = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return F.linear(x, self.weight_hat, self.bias)
+        return F.linear(x, self.weight_hat, self.lin_bias)
 
 
-def kl_divergence_discrete(p: torch.Tensor, q: torch.Tensor, eps: float = 1e-12) -> float:
-    """KL(p || q) for 1D distributions."""
-    p = p.clamp_min(eps)
-    q = q.clamp_min(eps)
-    return float((p * (p.log() - q.log())).sum().item())
+def relative_l2(a: torch.Tensor, b: torch.Tensor) -> float:
+    return float((a - b).norm() / (b.detach().norm() + 1e-12))
+
+
+def loss_on_random_lm(vocab: int = 32000, batch: int = 4, seq: int = 32, dim: int = 256) -> float:
+    """Cross-entropy on random logits vs random targets — numerical smoke test only."""
+    torch.manual_seed(0)
+    logits = torch.randn(batch, seq, vocab)
+    targets = torch.randint(0, vocab, (batch, seq))
+    return float(F.cross_entropy(logits.view(-1, vocab), targets.view(-1)))
+
+
+def gptq_style_stub() -> None:
+    """
+    Sketch of GPTQ objective: minimize ||XW - X W_hat|| on calibration batch.
+    Uses fake quant instead of discrete search.
+    """
+    torch.manual_seed(1)
+    out_f, in_f = 256, 256
+    x = torch.randn(64, in_f)
+    w = torch.randn(out_f, in_f)
+    y_ref = x @ w.t()
+    w_hat, _ = fake_quant_symmetric_per_channel(w, n_bits=4)
+    y_q = x @ w_hat.t()
+    print("GPTQ-style stub relative error:", relative_l2(y_q, y_ref))
+
+
+def try_transformers_tiny_forward() -> None:
+    """Float forward on HF tiny test model (no extra deps). Production GPTQ: load pre-quantized safetensors + compatible kernels."""
+    try:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+    except ImportError:
+        print("transformers not installed; skip HF example.")
+        return
+    model_id = os.environ.get("HF_QUANT_DEMO_MODEL", "hf-internal-testing/tiny-random-LlamaForCausalLM")
+    try:
+        tok = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(model_id)
+    except Exception as exc:
+        print("HF optional demo skipped:", exc)
+        return
+    inputs = tok("Hello", return_tensors="pt")
+    with torch.no_grad():
+        out = model(**inputs)
+    print("HF tiny model logits shape:", out.logits.shape)
+
+
+def try_llama_cpp(gguf_path: Optional[str] = None) -> None:
+    try:
+        from llama_cpp import Llama
+    except ImportError:
+        print("llama-cpp-python not installed; skip GGUF example.")
+        return
+    path = gguf_path or os.environ.get("GGUF_PATH")
+    if not path or not os.path.isfile(path):
+        print("Set GGUF_PATH to a local .gguf file to run llama_cpp demo.")
+        return
+    llm = Llama(model_path=path, n_ctx=512, verbose=False)
+    out = llm("Quantization saves memory.", max_tokens=16, temperature=0.0)
+    print("llama.cpp output:", out["choices"][0]["text"])
 
 
 if __name__ == "__main__":
     torch.manual_seed(0)
     lin = nn.Linear(128, 64)
-    x = torch.randn(4, 128)
+    x = torch.randn(8, 128)
     y_fp = lin(x)
     fq = FakeQuantLinear(lin, bits=4)
     y_q = fq(x)
-    print("relative error:", (y_fp - y_q).abs().mean().item())
+    print("FakeQuant 4-bit relative output error:", relative_l2(y_q, y_fp))
+    print("Toy CE loss:", loss_on_random_lm())
+    gptq_style_stub()
+    try_transformers_tiny_forward()
+    try_llama_cpp()
 ```
 
 !!! math-intuition "In Plain English"
-    - **Fake-quant** **round-trips** weights through **integer** **grid**—measures **signal** loss without **custom** **CUDA**.
-    - **Real** **GPTQ/AWQ** optimize **non-uniform** **bit allocations** and **Hessian**-aware **ordering**.
-
-### Error Propagation Across Layers
-
-Let **layer** maps \(f_\ell\) and **quant** maps \(Q_\ell\). **End-to-end** error composes **nonlinearly**:
-
-\[
-y_L = f_L \circ \cdots \circ f_1(x),\quad
-\hat{y}_L = Q_L \circ f_L \circ \cdots \circ Q_1 \circ f_1(x).
-\]
-
-**Amplification** happens when later layers are **ill-conditioned** w.r.t. **earlier** **noise**—why **layer-wise** objectives (GPTQ) help.
+    - **Fake quant** measures how much a layer’s **outputs** move under rounding—faster than end-to-end kernel bring-up.
+    - **BitsAndBytes** `load_in_4bit` is **not** identical to GPTQ export, but interviewers group them under “4-bit inference paths on GPU.”
 
 ---
 
-## Quantization Error Bounds (Simplified)
+## Interview Guide
 
-For **linear** \(\mathbf{y} = W \mathbf{x}\), **quantized** \(\hat{W} = W + \Delta W\) with \(\|\Delta W\|_2 \le \epsilon_W\):
+!!! interview "FAANG-Level Questions"
+    1. Write the affine quant map and explain the role of scale vs zero-point for activations vs weights.
+    2. Why does GPTQ optimize \(\|XW - X\hat{W}\|\) rather than \(\|W-\hat{W}\|\)?
+    3. What activation behavior makes AWQ’s salience heuristic effective?
+    4. Compare **GPTQ** vs **GGUF** deployment: when is CPU-first inference preferable?
+    5. Why might INT4 weights not speed up inference if kernels are unfused?
+    6. How does **perplexity** track quantization quality, and where does it fail?
+    7. Explain **outlier** channels in activations and how SmoothQuant mitigates them at a high level.
+    8. What is **W4A16** vs **W8A8**, and which is more common for open LLMs on consumer GPUs?
+    9. How would you validate a quantized model for **safety** regressions, not just PPL?
+    10. Why does **KV cache quantization** help long-context decode independently of weight PTQ?
 
-\[
-\|\hat{\mathbf{y}} - \mathbf{y}\|_2 = \|\Delta W \mathbf{x}\|_2 \le \|\Delta W\|_2 \|\mathbf{x}\|_2.
-\]
+!!! interview "Follow-up Probes"
+    - “We quantized to INT4 and latency improved 0%—what diagnostics would you run?” (kernel packing, batch size, memory bound vs compute bound, dequant overhead.)
+    - “PPL barely moved but GSM8K collapsed—what happened?” (reasoning-sensitive metrics, calibration mismatch, outliers.)
+    - “When would you choose QAT over PTQ?” (budget, accuracy SLO, domain shift.)
 
-**Operator norm** bounds link **weight** **perturbation** to **output** **change**.
-
-!!! math-intuition "In Plain English"
-    - **Outlier** **activations** \(\mathbf{x}\) **blow up** **output** **error** even when \(\Delta W\) is **small**—motivates **SmoothQuant**-style **activation** **scaling** (related family).
-
-### Mixed Precision Strategies
-
-- **FP16** weights + **INT8** **activations** (W8A8) needs **calibration** for **activation** scales.
-- **INT4** weights + **FP16** activations (W4A16) common in **consumer** **inference**.
-
-### Normal Float (NF4) and QLoRA (Pointer)
-
-**QLoRA** trains **adapters** in **NF4** **normal** **float** **quant** for **weights** while keeping **optimizer** states **small**—**inference** **quant** borrows **similar** **non-uniform** **codebooks** for **4-bit** **weights** (**bitsandbytes**). **NF4** assigns **more** **levels** near **zero** where **probability** **mass** concentrates for **Gaussian-like** weights.
-
-!!! math-intuition "In Plain English"
-    - **Uniform** **INT4** wastes **levels** in **tails**; **NF4** is **variance**-aware—**better** **PPL** at **same** **bit budget**.
-
-### Signal-to-Noise Ratio Heuristic
-
-Treat **quantization** as **additive** noise \(\Delta\) on weights. **SNR** (power):
-
-\[
-\mathrm{SNR} = \frac{\mathbb{E}[\|W\|_F^2]}{\mathbb{E}[\|\Delta W\|_F^2]}.
-\]
-
-Higher **SNR** correlates with **lower** **PPL** **degradation**—useful **sanity** **check** when **comparing** **two** **PTQ** **recipes**.
-
-### Kernel Backends: Marlin, ExLlama, TensorRT-LLM
-
-| Backend | Role |
-|---------|------|
-| **Marlin** | INT4 **weight** **GEMM** **kernels** for **NVIDIA** |
-| **ExLlama** | CUDA **kernels** for **GPTQ**-style **4-bit** |
-| **TensorRT-LLM** | End-to-end **fused** **graph** with **KV** **cache** **quant** options |
-| **llama.cpp** | **CPU**/**Metal**/**CUDA** **block** **dot** products |
-
-!!! math-intuition "In Plain English"
-    - **Pick** **backend** **first**, then **quantize** into **supported** **layouts**—**incompatible** **packing** **wastes** **weeks**.
-
-### Per-Channel vs Per-Tensor Scales
-
-**Per-tensor** scale uses **one** \(s\) for **entire** **matrix**—**cheap** but **poor** if **row** **magnitudes** **vary** **wildly**.
-
-**Per-channel** (per **output** row or column) uses **vector** \(\mathbf{s}\):
-
-\[
-\hat{W}_{i,:} = s_i \cdot Q_{i,:}.
-\]
-
-**GPTQ** often **operates** **per-column** **within** **Hessian** **blocks**.
-
-### Dynamic Quantization of Activations (Runtime)
-
-At inference, **activation** scales can be **computed** **per** **tensor** **per** **forward** from **running** **max**—**no** **calibration** **set** needed but **higher** **kernel** **overhead**:
-
-\[
-s_t = \frac{\max(|X_t|)}{127},\quad X_{q,t} = \mathrm{round}(X_t / s_t).
-\]
-
-!!! math-intuition "In Plain English"
-    - **Dynamic** **acts** **adapt** to **input** **outliers**—helps **W8A8** **accuracy** at **cost** of **latency** **variance**.
-
-### Compression Ratio Table (Illustrative)
-
-| Format | Bytes/param (order-of-magnitude) |
-|--------|----------------------------------|
-| FP32 | 4 |
-| FP16/BF16 | 2 |
-| INT8 | 1 |
-| INT4 | 0.5 |
-
-**KV cache** **quant** **saves** **memory** **bandwidth**—orthogonal to **weight** **quant**.
-
-### Safety Note on Quantized Models
-
-**Quantization** can **shift** **model** **behavior** on **safety** **refusals** or **bias** benchmarks—**re-run** **evaluation** **suites** after **aggressive** **INT4** **PTQ**.
-
-### Quantization-Aware Training (Contrast)
-
-**QAT** inserts **fake-quant** **ops** during **fine-tuning** so **weights** **adapt** to **low-bit** **noise**—**higher** **quality** than **PTQ** at same **bits**, **costly** for **already** **massive** **models**. **PTQ** is **default** for **inference** **compression** of **frozen** **weights**.
-
-### Blockwise Quantization (GGUF K-Quants)
-
-For **block** size \(B\), partition **weights** into **blocks** \(\{b_1,\ldots,b_K\}\). Each block has **own** **scale** / **min**:
-
-\[
-\hat{w}_{i} = s_k \cdot q_i,\quad i \in b_k.
-\]
-
-**K-quants** mix **different** **bit** **widths** per **super-block**—**improves** **PPL** vs **uniform** **INT4** at **same** **average** **bpp**.
-
-### Quantizing KV Cache (Inference)
-
-**Attention** **inputs** remain **FP16**, but **stored** **\(K,V\)** can be **INT8** with **per-tensor** **scales**:
-
-\[
-K_{\text{int8}} = \mathrm{round}(K / s_K),\quad \hat{K} = s_K K_{\text{int8}}.
-\]
-
-**Error** in **attention** **output** scales with **\(\|Q\|\|\Delta K\|\)** terms—**long** **contexts** **amplify** **misfit**—**validate** **perplexity** **and** **needle** **tests**.
-
-### Evaluation Protocol (Practical)
-
-1. **WikiText** / **C4** **slice** **PPL** at **fixed** **seqlen**.
-2. **MMLU** / **GSM8K** **task** **accuracy** for **reasoning** **regression**.
-3. **Latency** **p50/p95** on **target** **hardware** with **chosen** **backend**.
-
-### Rounding Modes
-
-**Stochastic** **rounding** can **improve** **accuracy** by **unbiased** **error**—**harder** to **reproduce** **bit**-exact outputs—**production** **usually** **RN** (round-nearest).
-
-### Bits-per-Parameter Budgeting
-
-For **total** model bytes \(M\) and parameters \(N\), **average** **bpp** \(= 8M/N\). Moving **FP16** \(\to\) **INT4** saves **\(\approx 4\times\)** **weight** **storage**—**KV** **cache** **still** **FP16** unless **separately** **compressed**.
-
-### Connection to FlashAttention
-
-**FlashAttention** reduces **HBM** **traffic** for **attention**; **quantized** **weights** reduce **HBM** **traffic** for **GEMMs**—**orthogonal** **levers** on **different** **bottlenecks**.
-
----
-
-## Interview Takeaways
-
-- **Affine** **quant** maps floats to **low-bit** integers with **scale/zero-point**; **saturation** **dominates** **worst-case** **error**.
-- **GPTQ** uses **Hessian**-aware **layer-wise** **fitting**; **AWQ** uses **activation-aware** **salience**—both target **output fidelity**, not **weight MSE**.
-- **GGUF** is a **container** + **layout**; **llama.cpp** provides **CPU**/**Metal**/**CUDA** **kernels** for **block** formats.
-- **Perplexity** is a **fast** **regression** test; **task** **benchmarks** still **required** for **deployment** **sign-off**.
-- **INT4/INT8** **speedups** require **fused** **kernels**—**compressed** weights alone are **not** enough if **dequant** is **slow**.
-- **Operator-norm** **bounds** explain why **outliers** **hurt** **quantized** **matmuls**.
-- **NF4** / **K-quants** **non-uniformly** **allocate** **levels**—**better** **PPL** than **uniform** **INT4** at **same** **storage**.
-- **W8A8** needs **activation** **calibration**; **W4A16** is **common** **GPU** **default** for **open** **weights**.
-
-!!! math-intuition "In Plain English"
-    - If you **only** remember **one** **formula**: \(\hat{x} = s(q-z)\) **links** **integer** **codes** to **float** **reconstruction**—every **engine** is a **variant** of this.
-    - **PTQ** vs **QAT**: **PTQ** is **cheap** **deployment**; **QAT** is **expensive** **training-time** **adaptation**—pick based on **budget** and **accuracy** **SLO**.
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “Affine mapping with per-channel scales preserves dynamic range across output channels.”
+    - “GPTQ uses Hessian-aware greedy fitting to preserve layer outputs on calibration data.”
+    - “AWQ protects salient weights that align with large activations.”
+    - “GGUF is a container format; llama.cpp provides block-quant kernels for CPU/GPU.”
+    - “Validate latency with fused Tensor Core kernels—compression alone is not speedup.”
 
 ---
 
 ## References
 
 - Frantar et al. (2023), *GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers* — [arXiv:2210.17323](https://arxiv.org/abs/2210.17323)
-
 - Lin et al. (2023), *AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration* — [arXiv:2306.00978](https://arxiv.org/abs/2306.00978)
-- ggerganov et al., *llama.cpp* — [https://github.com/ggerganov/llama.cpp](https://github.com/ggerganov/llama.cpp)
-- Dettmers et al. (2022), *LLM.int8()* — [arXiv:2208.07339](https://arxiv.org/abs/2208.07339) — outlier handling
-- Xiao et al. (2023), *SmoothQuant* — [arXiv:2211.10438](https://arxiv.org/abs/2211.10438)
-- NVIDIA *TensorRT-LLM* quantization docs — [https://nvidia.github.io/TensorRT-LLM/](https://nvidia.github.io/TensorRT-LLM/)
-- Dettmers & Zettlemoyer (2023), *QLoRA* — [arXiv:2305.14314](https://arxiv.org/abs/2305.14314) — NF4 training context
-- *GGUF specification* — [https://github.com/ggerganov/ggml/blob/master/docs/gguf.md](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)
-- Hubara et al. (2016), *Binarized Neural Networks* — historical fixed-point neural nets (context)
+- Dettmers et al. (2022), *LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale* — [arXiv:2208.07339](https://arxiv.org/abs/2208.07339)
+- Xiao et al. (2023), *SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models* — [arXiv:2211.10438](https://arxiv.org/abs/2211.10438)
+- ggml / GGUF documentation — [https://github.com/ggerganov/ggml/blob/master/docs/gguf.md](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)
+- ggerganov, *llama.cpp* — [https://github.com/ggerganov/llama.cpp](https://github.com/ggerganov/llama.cpp)
+- NVIDIA, *TensorRT-LLM Quantization* — [https://nvidia.github.io/TensorRT-LLM/](https://nvidia.github.io/TensorRT-LLM/)
+- Micikevicius et al. (2017), *Mixed Precision Training* — context for FP16/BF16 baselines — [arXiv:1710.03740](https://arxiv.org/abs/1710.03740)
+- Hubara et al. (2016), *Binarized Neural Networks* — historical fixed-point NN context

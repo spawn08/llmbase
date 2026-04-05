@@ -28,7 +28,7 @@ After completing Part 5 you will be able to:
 | 4 | [Multimodal LLMs](multimodal.md) | CLIP, ViT/SigLIP, LLaVA, cross-modal alignment |
 | 5 | [Emergent Capabilities & Scaling Laws](emergent_capabilities.md) | Kaplan/Chinchilla, compute-optimal training, emergent skills, test-time scaling |
 | 6 | [Evaluation & Benchmarking](evaluation.md) | Perplexity, knowledge/code/chat benchmarks, harness usage, gaming |
-| 7 | [Hallucination & Safety](safety.md) | Hallucination types, grounding, red-teaming, guardrails, TruthfulQA/BBQ |
+| 7 | [Hallucination & Safety](hallucination_safety.md) | Hallucination types, grounding, red-teaming, guardrails, TruthfulQA/BBQ |
 
 ---
 

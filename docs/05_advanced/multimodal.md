@@ -2,108 +2,245 @@
 
 ## Why This Matters for LLMs
 
-Language is not the only modality in production: assistants must read **screenshots**, **charts**, **PDFs**, and **camera frames**. **Multimodal LLMs** connect **vision encoders** (or audio encoders) to **decoder-only LMs** via projection layers, cross-attention, or interleaved tokenization. Understanding CLIP-style alignment, ViT backbones, and LLaVA-class architectures is essential for interview discussions about GPT-4V-class systems and open models like LLaVA, Qwen-VL, and Gemini.
+**Multimodal LLMs** process **images, audio, video, and structured signals** alongside text—frontier assistants are judged on **screenshots, charts, UI mockups, and camera input**, not prose alone. Architecturally, this means **vision encoders** (ViT, CLIP, SigLIP, DINOv2), **audio encoders** (Whisper-style), and **connector layers** that map continuous inputs into the **token embedding space** of a decoder-only LM. Interviews increasingly ask how **CLIP-style alignment** differs from **generative** VLMs, how **visual token budgets** affect latency, and how **hallucinated objects** differ from text-only hallucinations.
 
-Second, **cross-modal alignment** is a representation-learning problem: image patches and text tokens must live in a **shared space** where cosine similarity reflects semantic correspondence. Contrastive objectives (CLIP) and generative objectives (captioning) produce different inductive biases—engineers need vocabulary for **zero-shot transfer**, **instruction tuning**, and **hallucinated objects** in vision answers.
+Second, **cross-modal alignment** is a **representation-learning** problem: image patches and text spans must occupy a **shared geometry** where cosine similarity reflects **semantic** correspondence. **Contrastive** training (CLIP) optimizes **global** image–text matching; **generative** training optimizes \(P(\text{text} \mid \text{image})\) directly. Engineers need vocabulary for **zero-shot transfer**, **instruction tuning** on multimodal chat data, and **evaluation** pitfalls (language shortcuts in VQA).
 
-Third, **throughput and memory** multiply: vision transformers produce hundreds of patch tokens per image; feeding them into a 70B LM dominates latency. **Resolution trade-offs**, **adaptive cropping**, and **connector** design (MLP projector vs Q-Former) are systems questions as much as modeling questions.
+Third, **systems constraints** bite harder: a single image may yield **hundreds of patch tokens**; projecting them into a 70B LM dominates **prefill FLOPs** and **context** usage. **Resolution**, **dynamic cropping**, **Q-Former bottlenecks**, and **interleaved** image–text sequences are as important as backbone parameter counts.
 
 ---
 
 ## Core Concepts
 
+### Architecture Patterns
+
+1. **Early fusion**: interleave **image tokens** and **text tokens** in one sequence (LLaVA-class with projector).
+2. **Late fusion**: separate encoders; combine at **pooled** representations (some retrieval stacks).
+3. **Cross-attention fusion**: **Flamingo**-style gated cross-attention layers inject vision into LM hidden states at multiple depths.
+
 ### CLIP: Contrastive Language–Image Pre-training
 
-**CLIP** trains dual encoders \(f_I\) (image) and \(f_T\) (text) on **image–text pairs** \((x_i, t_i)\) from the web. For a batch of \(N\) pairs, similarity is measured with normalized embeddings:
+Dual encoders \(f_I\) (image) and \(f_T\) (text) produce embeddings. With L2 normalization \(\hat{f} = f/\|f\|_2\), **cosine similarity** equals dot product:
 
 \[
-\hat{f}_I = \frac{f_I(x)}{\|f_I(x)\|},\quad \hat{f}_T = \frac{f_T(t)}{\|f_T(t)\|}
+s_{ij} = \langle \hat{f}_I(x_i), \hat{f}_T(t_j) \rangle
 \]
 
-The **symmetric InfoNCE** loss for image-to-text and text-to-image uses temperature \(\tau\):
+For batch size \(N\), the **symmetric** contrastive loss uses temperature \(\tau\):
 
 \[
-\mathcal{L} = - \frac{1}{2N} \sum_{i=1}^{N} \left[
-\log \frac{e^{\langle \hat{f}_I(x_i), \hat{f}_T(t_i)\rangle / \tau}}{\sum_{j=1}^{N} e^{\langle \hat{f}_I(x_i), \hat{f}_T(t_j)\rangle / \tau}}
+\mathcal{L} = -\frac{1}{2N} \sum_{i=1}^{N} \left[
+\log \frac{e^{s_{ii}/\tau}}{\sum_{j=1}^{N} e^{s_{ij}/\tau}}
 +
-\log \frac{e^{\langle \hat{f}_T(t_i), \hat{f}_I(x_i)\rangle / \tau}}{\sum_{j=1}^{N} e^{\langle \hat{f}_T(t_i), \hat{f}_I(x_j)\rangle / \tau}}
+\log \frac{e^{s_{ii}/\tau}}{\sum_{j=1}^{N} e^{s_{ji}/\tau}}
 \right]
 \]
 
-Negatives are **in-batch**; large batch sizes improve contrastive learning but demand multi-GPU coordination.
-
 !!! math-intuition "In Plain English"
-    CLIP **does not** generate captions at pre-training—it only learns that matching image/text pairs sit nearby in embedding space. Generation comes later when you attach a decoder or prompt a LM with visual features.
+    Each image \(i\) should be **closest** to its own caption among the \(N\) captions in the batch (softmax row), and each caption symmetrically **matches** its image column. **In-batch negatives** mean **large batches** matter.
 
-### Vision Encoders: ViT
+!!! example "Worked Example: 4×4 Similarity and Row Softmax"
+    Suppose \(N=4\), \(\tau=1\), and **unnormalized** logits (cosines after L2 norm) are:
 
-**Vision Transformer (ViT)** splits an image into fixed-size patches, linearly embeds each patch, adds position embeddings, and runs Transformer blocks. For \(H \times W\) pixels and patch size \(P\), there are \(N = HW/P^2\) patch tokens—often 196–576 for standard inputs.
+    \[
+    S = \begin{bmatrix}
+    0.9 & 0.1 & 0.2 & 0.0 \\
+    0.0 & 0.85 & 0.3 & 0.1 \\
+    0.1 & 0.0 & 0.95 & 0.05 \\
+    0.2 & 0.1 & 0.0 & 0.88
+    \end{bmatrix}
+    \]
 
-Let patch embeddings be \(z_0 \in \mathbb{R}^{N \times d}\). After \(L\) blocks, pooled or token features feed downstream heads.
+    **Diagonal** entries are highest in each row—good. For **row 1** (image 1), softmax weights are proportional to \(\exp(0.9), \exp(0.1), \exp(0.2), \exp(0.0)\). Numerically: \(\exp(0.9)\approx 2.46\), \(\exp(0.1)\approx 1.11\), \(\exp(0.2)\approx 1.22\), \(\exp(0)=1\). Sum \(\approx 5.79\). **Probability** for the correct caption \(j=1\) is \(\approx 2.46/5.79 \approx 0.42\). **Cross-entropy** \(-\log 0.42 \approx 0.87\) for that row—training **pushes** the diagonal logits **up** and off-diagonals **down**. **Symmetric** loss repeats for **columns** (text-to-image).
 
-### SigLIP and Improved Contrastive Training
+### Vision Transformer (ViT)
 
-**SigLIP** (sigmoid loss for language–image pre-training) replaces softmax with **pairwise sigmoid** losses, improving stability and data efficiency in some regimes—useful when batch sizes cannot scale to CLIP levels.
-
-### BLIP-2 and Q-Former Bottlenecks
-
-**BLIP-2** freezes pretrained **image encoder** and **LLM**, and learns a lightweight **Q-Former** (Transformer with learnable query tokens) that **extracts** a fixed number of visual tokens via cross-attention to image features. The output is linearly projected into the LM embedding space. This **bottleneck** reduces visual tokens from hundreds of patches to 32–256 **latent queries**, cutting LM compute.
+Split an \(H \times W\) image into \(P \times P\) patches. The number of patch tokens is:
 
 \[
-Z = \text{QFormer}(Q, F_{\text{img}}),\quad H_{\text{in}} = W Z + b
+N_{\text{patches}} = \frac{H}{P} \cdot \frac{W}{P}
 \]
 
-where \(Q\) are learnable queries and \(F_{\text{img}}\) are frozen image features.
+Each patch is linearly embedded; add position embeddings; run Transformer blocks.
 
 !!! math-intuition "In Plain English"
-    Q-Former is **interview summarization for pixels**: a small network picks the few visual facts the LM should see, instead of dumping every patch token into context.
+    **ViT** is “BERT for pixels”: a **sequence** model on patches—**quadratic** patch self-attention cost drives **high-resolution** bottlenecks.
 
-### LLaVA Architecture: Vision Encoder + Projector + LLM
+### SigLIP (Sigmoid Loss)
 
-**LLaVA** freezes a pretrained **ViT** (often CLIP ViT-L/14), maps patch tokens through a **projection MLP** into the **word embedding space** of a frozen or LoRA-tuned LLM, and trains on **instruction-following** multimodal dialog data. The model sees a sequence:
+**SigLIP** uses **pairwise sigmoid** losses instead of softmax over the batch dimension—often more stable when **batch size** is small:
 
 \[
-[\text{system}],\, [\text{USER}: \text{image tokens} + \text{text}],\, [\text{ASSISTANT}: \text{answer}]
+\mathcal{L}_{\text{sig}} \approx - \sum_{i,j} \Bigl[ y_{ij} \log \sigma(s_{ij}/\tau) + (1-y_{ij})\log(1-\sigma(s_{ij}/\tau)) \Bigr]
 \]
 
-**Image tokens** are long—compression via **perceiver resampler** or **Q-Former** (BLIP-2) reduces tokens before the LM.
+with \(y_{ij}=1\) iff \(i=j\) for matched pairs (formulations vary).
 
 !!! math-intuition "In Plain English"
-    The projector is a **Rosetta stone**: it turns CNN/ViT patch vectors into fake “words” the LM already knows how to reason about. The LM supplies **reasoning**; the encoder supplies **pixels**.
+    Softmax **competes** every image against every caption in one normalization; sigmoid treats **pairs** more independently—better when you **cannot** afford giant batches.
 
-### Flamingo: Gated Cross-Attention and Perceiver Resamplers
+### LLaVA: Projector + LLM
 
-**Flamingo** interleaves **gated cross-attention** layers in the LM stack so visual tokens attend into hidden states at selected layers. **Perceiver resampler** compresses variable-size image/video feature maps to a fixed token count. The design supports **few-shot** in-context examples with images by concatenating multimodal demonstrations.
+Let \(F_{\text{img}} \in \mathbb{R}^{N \times d_v}\) be vision tokens from a frozen ViT. A **projection** \(W \in \mathbb{R}^{d_v \times d_{\text{LLM}}}\) maps into LM embedding space:
 
-### GPT-4V / Gemini-Style Systems
+\[
+H_{\text{vis}} = F_{\text{img}} W
+\]
 
-Closed multimodal systems typically combine:
+The LM sees an interleaved sequence: **system / user** text + **visual tokens** + **assistant** tokens.
 
-- A **high-capacity vision encoder** (sometimes with **dynamic resolution** tiling).
-- A **connector** (perceiver, MLP, or cross-attention bottleneck).
-- A **large decoder-only LM** with interleaved tool use and safety filters.
+!!! math-intuition "In Plain English"
+    The projector is a **dictionary** from **patch semantics** to **fake word embeddings** the LM already understands—**language** reasoning stays in the **decoder**; **vision** is encoded **upstream**.
 
-**Interleaved** image/text sequences support multiple images and follow-up questions; **system prompts** constrain harmful vision outputs.
+### Flamingo: Cross-Attention and Perceiver
 
-### Cross-Modal Alignment
+**Flamingo** inserts **gated cross-attention** layers that let LM hidden states attend to **visual** features. **Perceiver resampler** compresses variable-size feature maps to a **fixed** token count.
 
-Alignment objectives include:
+### Gemini / Native Multimodal (Conceptual)
 
-- **Contrastive** (CLIP): global image–text matching.
-- **Masked modeling** (some Flamingo-style setups): predict masked patches or tokens.
-- **Captioning**: maximize \(P(\text{caption} \mid \text{image})\) with autoregressive decoding.
+**Natively multimodal** models tokenize **audio, image, video** in a **unified** vocabulary from early training—not only a **vision tower bolted** onto a text-only checkpoint—enabling **interleaved** multimodal pretraining at scale (public details vary by vendor).
 
-Evaluation uses **VQA** accuracy, **text-image retrieval** (Recall@k), **human preference** on helpfulness, and **red-team** probes for OCR misuse.
+### Video and Audio (Sketch)
 
-### Code: CLIP-Style Similarity (Synthetic)
+**Video**: sample frames at rate \(f_s\), encode each frame → **temporal pooling** or **transformer** over frames. **Audio**: log-mel spectrogram → ConvNet/Transformer → projector to LM space.
 
-The following uses **random** encoders for shape demonstration only—replace with `open_clip` or `transformers` in real work.
+\[
+T_{\text{video tokens}} \approx N_{\text{frame}} \cdot N_{\text{patches per frame}}
+\]
+
+!!! math-intuition "In Plain English"
+    Long videos **explode** token counts—**frame selection** and **compression** (perceiver, pooling) are **mandatory** for real-time assistants.
+
+### CLIP Zero-Shot Classification
+
+Given class names \(\{c_k\}_{k=1}^{K}\), embed prompts \(t_k = f_T(\text{“a photo of a } c_k \text{”})\) and image \(x\):
+
+\[
+k^\star = \arg\max_k \langle \hat{f}_I(x), \hat{t}_k \rangle
+\]
+
+!!! math-intuition "In Plain English"
+    You never train a **classifier head**—**cosine** against **text** prototypes is the **decision rule**. Prompt wording (“photo”, “sketch”) shifts accuracy—**prompt engineering** is real.
+
+!!! example "Worked Example: Patch Count vs Resolution"
+    ViT-B/16 on \(224 \times 224\) uses \(P=16\): \(N = (224/16)^2 = 14 \times 14 = 196\) patches. At \(448 \times 448\) with the same \(P\): \((448/16)^2 = 28^2 = 784\) patches—**4×** patches for **2×** resolution per side—**quadratic** in resolution for fixed patch size.
+
+### Evaluation Map (Practical)
+
+| Benchmark family | What it measures | Caveat |
+|------------------|------------------|--------|
+| Image–text retrieval (MSCOCO/Flickr) | Recall@\(k\) | Domain bias to web photos |
+| VQA v2 / GQA | Visual question answering | **Shortcuts** from language priors |
+| DocVQA / Chart QA | Reading + reasoning | OCR errors propagate |
+| MMMU / MathVista | Multimodal knowledge + math | Harder proxy for assistants |
+
+### Failure Modes (Multimodal)
+
+- **Object hallucination**: model names objects not present—mitigate with **grounding** boxes or tool-assisted detection.
+- **OCR errors**: small text—**increase** resolution or **crop** regions.
+- **Prompt injection via pixels**: adversarial images—**policy** layers + **no** execution of instructions in images.
+
+### Licensing and Data
+
+Web-scale image–text pairs carry **copyright** and **consent** issues—production systems apply **filtering**, **deduplication**, and **safety** classifiers.
+
+### Adapter Tuning (PEFT)
+
+Common pattern: **LoRA** on LM layers + **full** or **LoRA** fine-tune on **projector**; freeze vision encoder early, **unfreeze** later layers when data is ample.
+
+### Contrastive vs Generative Objectives
+
+| Objective | Optimizes | Strength |
+|------------|-----------|----------|
+| Contrastive (CLIP) | Match image–text pairs in embedding space | Retrieval, zero-shot |
+| Generative captioning | \(P(\text{caption}\mid\text{image})\) | Fluent descriptions |
+
+**VLMs** for chat often **compose** both: contrastive **encoder** + **autoregressive** LM.
+
+### Visual Misinformation
+
+Screenshots can **fabricate** evidence—**policy** should constrain **high-stakes** decisions from unverified visuals; **metadata** and **provenance** APIs help.
+
+### Spatial Reasoning Limits
+
+Precise relations (“slightly left of center”, “smaller than”) can be **hard**—explicit **measurement** tools or **structured** outputs (bounding boxes) reduce error.
+
+### Data Mixing During Instruction Tuning
+
+Let \(\alpha\) be the fraction of **multimodal** instruction pairs vs **text-only** SFT:
+
+\[
+\mathcal{L} = \alpha \mathcal{L}_{\text{mm}} + (1-\alpha) \mathcal{L}_{\text{text}}
+\]
+
+!!! math-intuition "In Plain English"
+    Too much multimodal data can **erode** pure language skills—track **per-modality** metrics during training.
+
+### Temperature and Logit Scale at Inference
+
+CLIP training uses **learned logit scale** \(s\) (or fixed \(\tau^{-1}\)):
+
+\[
+\text{logits}_{ij} = s \cdot \langle \hat{f}_I(x_i), \hat{f}_T(t_j) \rangle
+\]
+
+!!! math-intuition "In Plain English"
+    Larger \(s\) **sharpens** the softmax—more **confident** similarities; calibration for downstream **zero-shot** depends on this scale—**OpenCLIP** and **HF** checkpoints bake in different scales.
+
+### Accessibility Note
+
+**Alt text** and **screen readers** remain essential—multimodal generation must **not** replace accessible pipelines; generated captions can be **wrong** or **unsafe**.
+
+??? deep-dive "Deep Dive: Q-Former (BLIP-2)"
+    **Q-Former** learns **query tokens** that **cross-attend** to frozen image features and output a **fixed** small set of visual tokens—**bottleneck** that cuts LM FLOPs vs feeding every patch.
+
+??? deep-dive "Deep Dive: OCR and Small Text"
+    VLMs can **misread** tiny fonts; **pipeline** systems often add **detection + OCR** before VLM reasoning for **documents** and **screenshots** with dense text.
+
+## Code
+
+### CLIP similarity with `transformers` (downloads weights on first run)
 
 ```python
+"""Compute CLIP image-text similarity — requires: pip install torch transformers pillow requests"""
+from __future__ import annotations
+
+import torch
+from PIL import Image
+
+def main() -> None:
+    from transformers import CLIPModel, CLIPProcessor
+
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    # Tiny inline image: 64x64 red square (no external file needed)
+    img = Image.new("RGB", (64, 64), color=(200, 40, 40))
+    texts = [
+        "a red square",
+        "a blue ocean",
+        "a photo of a dog",
+    ]
+    inputs = processor(text=texts, images=img, return_tensors="pt", padding=True)
+    with torch.no_grad():
+        out = model(**inputs)
+        logits_per_image = out.logits_per_image  # shape (1, num_texts)
+        probs = logits_per_image.softmax(dim=1)
+    print("softmax over texts:", probs.tolist())
+    best = int(probs.argmax(dim=1).item())
+    print("best caption index:", best, "->", texts[best])
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Toy CLIP loss (no external deps beyond torch)
+
+```python
+"""Symmetric CLIP loss on random features — pedagogical."""
 from __future__ import annotations
 
 import math
-from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -111,204 +248,96 @@ import torch.nn.functional as F
 
 
 class ToyCLIP(nn.Module):
-    def __init__(self, image_dim: int = 512, text_dim: int = 512, embed_dim: int = 256):
+    def __init__(self, dim_in: int = 128, dim: int = 64):
         super().__init__()
-        self.img_enc = nn.Sequential(
-            nn.Linear(image_dim, embed_dim),
-            nn.GELU(),
-            nn.Linear(embed_dim, embed_dim),
-        )
-        self.txt_enc = nn.Sequential(
-            nn.Linear(text_dim, embed_dim),
-            nn.GELU(),
-            nn.Linear(embed_dim, embed_dim),
-        )
+        self.img_enc = nn.Linear(dim_in, dim)
+        self.txt_enc = nn.Linear(dim_in, dim)
         self.logit_scale = nn.Parameter(torch.ones([]) * math.log(1 / 0.07))
 
-    def encode_image(self, x: torch.Tensor) -> torch.Tensor:
-        z = self.img_enc(x)
-        return F.normalize(z, dim=-1)
+    def encode(self, x: torch.Tensor, enc: nn.Linear) -> torch.Tensor:
+        return F.normalize(enc(x), dim=-1)
 
-    def encode_text(self, t: torch.Tensor) -> torch.Tensor:
-        z = self.txt_enc(t)
-        return F.normalize(z, dim=-1)
-
-    def clip_loss(self, image_emb: torch.Tensor, text_emb: torch.Tensor) -> torch.Tensor:
-        logits = image_emb @ text_emb.transpose(0, 1) * self.logit_scale.exp()
-        labels = torch.arange(logits.size(0), device=logits.device)
-        loss_i = F.cross_entropy(logits, labels)
-        loss_t = F.cross_entropy(logits.transpose(0, 1), labels)
+    def forward(self, image: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
+        ie = self.encode(image, self.img_enc)
+        te = self.encode(text, self.txt_enc)
+        logits = ie @ te.transpose(0, 1) * self.logit_scale.exp()
+        targets = torch.arange(logits.size(0), device=logits.device)
+        loss_i = F.cross_entropy(logits, targets)
+        loss_t = F.cross_entropy(logits.transpose(0, 1), targets)
         return (loss_i + loss_t) / 2
-
-
-def similarity_rank(
-    model: ToyCLIP, image: torch.Tensor, texts: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    with torch.no_grad():
-        ie = model.encode_image(image)
-        te = model.encode_text(texts)
-        scores = (ie @ te.transpose(0, 1)).squeeze(0)
-        return scores, scores.argsort(descending=True)
 
 
 if __name__ == "__main__":
     torch.manual_seed(0)
-    model = ToyCLIP()
-    img = torch.randn(1, 512)
-    captions = torch.randn(4, 512)  # fake text features
-    loss = model.clip_loss(model.encode_image(img.expand(4, 512)), model.encode_text(captions))
+    n, d_in = 8, 128
+    model = ToyCLIP(d_in=d_in)
+    img = torch.randn(n, d_in)
+    txt = torch.randn(n, d_in)
+    loss = model(img, txt)
     print("symmetric clip loss:", float(loss))
-    scores, order = similarity_rank(model, img, captions)
-    print("scores:", scores.tolist())
-    print("best caption index:", int(order[0]))
 ```
 
-### Modalities Beyond Vision
+### LLaVA-style inference (optional, large weights)
 
-**Audio** (Whisper-style encoders), **video** (frame sampling + temporal pooling), and **structured sensors** follow the same template: encode → align → fuse in LM context. **Token budget** management across modalities is a recurring design constraint.
+```python
+"""
+Optional LLaVA inference — downloads multi-GB weights if run.
+pip install torch transformers accelerate protobuf
+"""
+from __future__ import annotations
 
-### Failure Modes
 
-- **Object hallucination**: LM invents objects not present—mitigate with **grounding** boxes or segmentation-assisted tools.
-- **OCR errors**: small text misread—higher resolution or **cropped zoom** tools.
-- **Prompt injection via images**: adversarial pixels—**policy layers** and **tool sandboxing**.
+def llava_demo() -> None:
+    try:
+        import torch
+        from transformers import AutoProcessor, LlavaForConditionalGeneration
+    except ImportError:
+        print("Install transformers + torch to run llava_demo.")
+        return
+    model_id = "llava-hf/llava-1.5-7b-hf"
+    print("Loading (large) model:", model_id)
+    model = LlavaForConditionalGeneration.from_pretrained(
+        model_id,
+        torch_dtype=torch.float16,
+        device_map="auto",
+    )
+    processor = AutoProcessor.from_pretrained(model_id)
+    from PIL import Image
 
-### Vision-Language Tasks (Evaluation Map)
+    image = Image.new("RGB", (336, 336), color=(30, 120, 80))
+    prompt = "USER: <image>\nWhat color dominates this image?\nASSISTANT:"
+    inputs = processor(text=prompt, images=image, return_tensors="pt").to(model.device)
+    out = model.generate(**inputs, max_new_tokens=32)
+    text = processor.decode(out[0], skip_special_tokens=True)
+    print(text)
 
-| Task | Measures | Caveats |
-|------|------------|---------|
-| **Image–text retrieval** | Recall@k on Flickr30K/MSCOCO | Domain bias toward web imagery |
-| **VQA** | Accuracy on open-ended or multiple-choice | **Shortcut** answers from language priors |
-| **Text-rich VQA** (DocVQA) | Reading comprehension on documents | OCR errors propagate |
-| **Chart QA** | Reasoning over plots | Requires **visual** + **numeric** reasoning |
 
-Report **fine-grained** metrics (per category) rather than a single **accuracy** headline.
+if __name__ == "__main__" and __import__("os").environ.get("RUN_LAVA"):
+    llava_demo()
+```
 
-### Token Budgeting for Images
+!!! interview "FAANG-Level Questions"
+    1. How does CLIP training differ from image captioning (generative) training?
+    2. Why are L2-normalized embeddings paired with cosine similarity in CLIP?
+    3. Describe LLaVA-style fusion: what is frozen, what is trained?
+    4. How does ViT patch count scale when you double image resolution?
+    5. What is the difference between early fusion and cross-attention fusion (Flamingo)?
+    6. Why might SigLIP help when batch size is small?
+    7. How do multimodal LLMs hallucinate objects that are not in the image?
+    8. What is the Q-Former bottleneck solving in BLIP-2?
+    9. How would you budget latency for vision encoder + LLM prefill?
+    10. What are shortcut behaviors in VQA benchmarks?
 
-If \(N\) patch tokens are projected into the LM, each image consumes roughly \(N \cdot L_{\text{forward}}\) FLOPs in early layers—**reducing** \(N\) via pooling, Q-Former, or **dynamic resolution** (tile + select) is standard for low-latency chat.
+!!! interview "Follow-up Probes"
+    - “How do you evaluate chart understanding separately from OCR?”
+    - “When would you add a dedicated OCR stage instead of end-to-end pixels?”
+    - “How does interleaved image-text pretraining differ from vision-tower-only fine-tune?”
 
-### Contrastive vs Generative Pre-training
-
-**CLIP** (contrastive) excels at **retrieval** and zero-shot classification; **generative** image-to-text (captioning) optimizes \(P(\text{text} \mid \text{image})\) directly. Multimodal LMs often **compose** both: contrastive encoder for alignment, autoregressive LM for **reasoning** and dialog.
-
-### Licensing and Data Provenance
-
-Web-scale image–text pairs carry **copyright** and **PII** risks. Production pipelines apply **filters**, **deduplication**, and **consent** policies—aligning with **Responsible AI** commitments.
-
-### Patchification and Positional Structure
-
-ViT treats an \(H \times W\) image as a sequence of \(P \times P\) patches. The number of tokens is:
-
-\[
-N_{\text{patches}} = \frac{H}{P} \cdot \frac{W}{P}
-\]
-
-**CLS** token or **global average pooling** yields an image embedding for CLIP-style losses. **2D** positional encodings (absolute or **relative**) help the encoder preserve **spatial** locality.
-
-### Image Resolution vs Latency
-
-Doubling **resolution** roughly **quadruples** patch count (for fixed \(P\)), increasing **Transformer** cost **superlinearly** in patches for standard attention across patches—**hierarchical** encoders and **adaptive** cropping mitigate this.
-
-### Adapter Tuning and LoRA on Multimodal Stacks
-
-Common **PEFT** patterns:
-
-- **LoRA** on **LLM** layers only, projector **full** fine-tune (small).
-- **Freeze** vision encoder initially; unfreeze **later** stages when data is ample.
-
-This reduces **catastrophic forgetting** of **language** abilities while adapting **vision** grounding.
-
-### GPT-4V-Style Tool Use
-
-Multimodal assistants often chain **vision** with **tools** (code execution, web browsing). **Safety** policies must consider **screenshots** containing **secrets**—**redact** before logging and **warn** users.
-
-### Interview Pitfall: “CLIP = VLM”
-
-**CLIP** alone does **not** perform **free-form** multimodal chat—it produces **embeddings**. **VLMs** add **generative** decoding with an **autoregressive** LM head or **fusion** layers.
-
-### SigLIP Sigmoid Loss (Sketch)
-
-Instead of a **softmax** over the batch for each image, **SigLIP** uses **sigmoid** losses on **pairs** \((i,j)\), improving stability when **batch** sizes are **small**—relevant for **edge** devices and **fine-tuning** runs.
-
-### OCR-Heavy Pipelines
-
-For **screenshots** and **PDFs**, add a dedicated **text detection** stage (e.g., **detector** + **recognizer**) before **VLM** reasoning—**end-to-end** pixel-only models may **miss** small fonts.
-
-### Video as Many Images
-
-A simple **video** baseline **samples** frames at **fps** \(f\) for **duration** \(D\): **frame count** \(\approx f \cdot D\). **Long** videos exceed **context** budgets—use **event detection**, **keyframes**, or **learned** frame selectors.
-
-### Evaluation Pitfalls: Shortcut Learning
-
-VLMs sometimes answer **VQA** using **language priors** alone (“What color are bananas?”). **Balanced** datasets and **adversarial** image edits reduce **shortcut** exploitation.
-
-### Future-Proofing Connectors
-
-When upgrading **vision** backbones, **retrain** **projectors**; **frozen** LLMs with **new** encoders may need **alignment** stages to restore **quality**.
-
-### CLIP Zero-Shot Classifier
-
-Given **class** names \(c_k\) embedded as text \(t_k\) and image \(x\), CLIP predicts:
-
-\[
-k^\star = \arg\max_k \langle f_I(x), f_T(t_k)\rangle
-\]
-
-**Prompt engineering** (“a photo of a {label}”) materially affects **zero-shot** accuracy.
-
-### Normalization and Temperature
-
-CLIP uses **L2** normalization so **cosine** similarity equals **dot** product. **Temperature** \(\tau\) in contrastive loss sharpens or softens the **softmax**—analogous to **logit scaling** at inference for **calibration**.
-
-### Data Mixing for Multimodal Fine-Tunes
-
-**Instruction** data often mixes **pure text** and **image-text** samples—ratios affect **forgetting** of **language** skills. Track **per-modality** perplexity during training.
-
-### Accessibility and Alt Text
-
-**Screen reader** users rely on **alt text**—multimodal systems should not **replace** accessibility pipelines; **generate** descriptions only when **appropriate** and **safe**.
-
-### Gemini / GPT-4V: System-Level Observations
-
-Closed multimodal APIs often combine **vision** with **tool use** and **safety** classifiers in **one** stack—**latency** budgets include **multiple** model calls. **Engineering** discussions should separate **model** capability from **system** orchestration.
-
-### Open-Weight VLMs
-
-Open releases (LLaVA, Qwen-VL, InternVL) differ in **connector** design, **resolution**, and **instruction** data—**compare** on **your** domain with **private** evals, not only **public** leaderboards.
-
-### Multimodal Prompting Patterns
-
-- **Single image + question**: baseline **chat** template.
-- **Multi-image** reasoning: watch **token** budget—**compress** with **per-image** summaries first.
-- **Charts**: ask for **extracted** numbers before **interpretation** to reduce **hallucination**.
-
-### Risk: Visual Misinformation
-
-Images can **fabricate** evidence (fake screenshots). **Policies** should discourage **high-stakes** decisions from **unverified** visuals—**metadata** and **provenance** APIs help.
-
-### Spatial Reasoning Limits
-
-VLMs can **struggle** with **precise** spatial relations (“left of”, “smaller than”)—**explicit** measurement tools or **structured** outputs help.
-
-### Audio and Speech (Pointer)
-
-**Speech** models often use **Conformer**/**Whisper** encoders feeding **text** LMs—modalities compose similarly: **encode** → **project** → **decode**.
-
-### Benchmarks: MMMU, MathVista
-
-**Multimodal** reasoning benchmarks combine **images** with **knowledge** and **math**—better proxies for **assistant** quality than ImageNet-style metrics.
-
----
-
-## Interview Takeaways
-
-- **CLIP** trains **dual encoders** with symmetric contrastive loss; it enables zero-shot retrieval and seeds multimodal LMs.
-- **ViT** turns images into **token sequences**; **patch count** drives LM context cost.
-- **LLaVA-class** models **project** visual tokens into LM embedding space and fine-tune with **multimodal instruction** data.
-- Closed systems emphasize **interleaved** multimodal chat, **safety**, and **dynamic resolution**—open models vary in connector design.
-- **Cross-modal alignment** quality limits downstream reasoning—bad embeddings cannot be fixed by prompting alone.
-- Production stacks must budget **latency** for vision encoding + **long visual token** sequences.
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “CLIP aligns image and text in a shared embedding space with contrastive InfoNCE.”
+    - “LLaVA projects ViT tokens into the LM embedding space with a trained projector.”
+    - “Patch-count drives prefill cost—compress with Q-Former or pooling before the LLM.”
+    - “VQA shortcuts: models may answer from language priors without looking at pixels.”
 
 ## References
 
@@ -317,3 +346,5 @@ VLMs can **struggle** with **precise** spatial relations (“left of”, “smal
 - Liu et al., *Visual Instruction Tuning* (LLaVA): [arXiv:2304.08485](https://arxiv.org/abs/2304.08485)
 - Alayrac et al., *Flamingo: a Visual Language Model for Few-Shot Learning* (2022): [arXiv:2204.14198](https://arxiv.org/abs/2204.14198)
 - Zhai et al., *Sigmoid Loss for Language Image Pre-Training* (SigLIP): [arXiv:2303.15343](https://arxiv.org/abs/2303.15343)
+- Li et al., *BLIP-2: Bootstrapping Language-Image Pre-training* (2023): [arXiv:2301.12597](https://arxiv.org/abs/2301.12597)
+- Oquab et al., *DINOv2: Learning Robust Visual Features without Supervision* (2023): [arXiv:2304.07193](https://arxiv.org/abs/2304.07193)

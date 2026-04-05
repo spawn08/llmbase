@@ -1,271 +1,309 @@
-# Agents & Tool Use
+# Agents and Tool Use
 
 ## Why This Matters for LLMs
 
-A standalone language model maps tokens to tokens. Real assistants must **act**: call APIs, query databases, execute code, and chain steps toward a goal. **Agents** wrap the LM in a control loop that interleaves reasoning traces with **tool invocations**. This is the architecture behind OpenAI plugins, function-calling APIs, coding agents, and enterprise orchestration layers. Interviewers expect you to separate **policy** (what to do next) from **tools** (how the world responds).
+A standalone language model is a **next-token predictor**. **Agents** wrap that predictor in a **control loop** that can **query tools, call APIs, execute code, and mutate state** in external systems. This is the architectural shift behind coding assistants, enterprise copilots with CRM connectors, and “GPT with plugins.” Interviews consistently test whether you can separate **policy** (what to do next) from **tools** (how the environment responds) and whether you understand **failure modes**: wrong tool selection, malformed JSON arguments, infinite loops, and **prompt injection** via untrusted tool outputs.
 
-Second, tool use mitigates **parametric knowledge limits**: instead of memorizing flight schedules, the model emits structured calls to a flight API. The failure modes shift toward **wrong tool choice**, **bad arguments**, and **infinite loops**—topics that pure perplexity metrics barely capture.
+Second, tool use **relocates knowledge** from model weights into **ground-truth channels**: flight status from an airline API, account balance from a ledger, file contents from disk. The failure signature changes from “fluent hallucination” to **structured errors**—missing parameters, 404s, permission denied—that you must surface to users and log for observability. Reasoning traces (**ReAct**: thought → action → observation) give debugging hooks that pure chain-of-thought lacks when there is no external feedback.
 
-Third, **multi-agent** systems decompose roles (planner, critic, executor) and enable parallel exploration, but they introduce coordination overhead and new safety surfaces (agents granting each other permissions). Understanding ReAct-style loops, memory scopes, and orchestration patterns is table stakes for senior LLM systems design.
+Third, **multi-agent** and **hierarchical** patterns (router, planner–worker, critic–actor) decompose complex tasks but add **coordination cost** and **safety surface area**—agents granting permissions to one another, duplicate tool calls, or contradictory observations. Memory tiers (context window vs vector store vs structured DB), **max-step** cutoffs, and **human-in-the-loop** approvals for irreversible actions are production requirements, not optional polish.
 
 ---
 
 ## Core Concepts
 
+### What Is an LLM Agent?
+
+An agent augments an LM with:
+
+1. A **tool registry** (name, description, JSON Schema parameters).
+2. A **runtime** that validates calls, executes tools, and appends **observations** to the transcript.
+3. A **termination rule** (explicit “finish” action, answer delimiter, or step budget).
+
+Abstractly, at step \(t\) the policy produces an action \(a_t\) given history \(h_t\); the environment returns \(o_t\):
+
+\[
+a_t \sim \pi_\theta(a_t \mid h_t),\quad o_t = \mathrm{Env}(a_t)
+\]
+
+and \(h_{t+1} = h_t \oplus (a_t, o_t)\).
+
+!!! math-intuition "In Plain English"
+    The LM is only choosing **discrete or JSON-structured** actions from an **allowlist** you exposed. “Environment” can be HTTP, SQL, Python, or a mock—what matters is **grounding**: the next thought is conditioned on **real** \(o_t\), not imagined facts.
+
 ### ReAct: Reasoning + Acting
 
-The **ReAct** pattern interleaves **thought**, **action**, and **observation** traces. At step \(t\), the model may output natural language reasoning, then select an action \(a_t\) from a discrete tool set; the environment returns observation \(o_t\); the history \(h_{t+1} = h_t \oplus (a_t, o_t)\) conditions the next step.
+**ReAct** interleaves natural-language **thought**, **action**, and **observation**. A trace might look like: *Thought: I need the population.* → *Action: search("France population 2024")* → *Observation: 68.4 million (estimate).* → *Thought: I can answer.*
+
+Compared to chain-of-thought **without** tools, ReAct reduces **ungrounded** reasoning when tools are faithful.
+
+!!! example "Worked Example: ReAct Trace (Abbreviated)"
+    **User:** “What is the capital of Germany?”  
+    **Thought:** “I should verify with the geography tool rather than guessing.”  
+    **Action:** `lookup_capital(country="Germany")`  
+    **Observation:** `{"capital": "Berlin", "source": "static_kv"}`  
+    **Thought:** “Observation is authoritative; respond.”  
+    **Action:** `finish("Berlin")`  
+    **System:** Return **Berlin** to the user.  
+    If the observation had been an error JSON, the next thought should **repair** arguments or try a fallback tool—not hallucinate **Munich**.
+
+### Tool Calling and JSON Schema
+
+Tools are declared with **JSON Schema**-compatible metadata. The model emits a structured call:
 
 \[
-\pi_\theta(a_t \mid h_t),\quad o_t = \text{Env}(a_t)
+\text{call} = (\text{name}, \text{args}),\quad \text{args} \in \mathbb{R}^{d_{\text{json}}}
 \]
 
-Compared with **chain-of-thought** alone, ReAct grounds decisions in **external feedback**, reducing ungrounded speculation when tools exist.
+Validation uses the schema **before** execution: required fields, types, enums.
 
 !!! math-intuition "In Plain English"
-    ReAct is **stop, look, go**: think a little, poke the world, read the result, repeat. The LM is not required to carry all facts in weights—only to **choose** tools and **interpret** observations.
+    Structured args are **not** free-form prose—they must parse with `json.loads` and pass **pydantic** (or equivalent) checks. This is your **firewall** against creative but unusable “tool names.”
 
-### Tool Calling: Schemas and APIs
+### Softmax over Tool Choices (Conceptual)
 
-Tools are declared with **JSON Schema**-like signatures: name, description, parameter types, and required fields. The model emits a structured call:
-
-```json
-{"name": "weather.get", "arguments": {"city": "Berlin", "units": "metric"}}
-```
-
-The runtime validates arguments, executes, and appends the tool output to the chat. **Function calling** APIs (OpenAI, Anthropic, Gemini) fine-tune models to emit such blocks reliably.
-
-### Planning: Chain-of-Thought and Tree-of-Thought
-
-- **Chain-of-thought (CoT)** expands a single reasoning trace before an answer.
-- **Tree-of-thought (ToT)** maintains **multiple partial plans**, scores them (by a value model or self-critique), and prunes—useful for puzzles and combinatorial tasks.
-
-A simplified scoring step might choose branch \(b^\star\) by:
+Some implementations score each tool \(t \in \{1,\ldots,T\}\) with logits \(z_t\) and sample or take argmax:
 
 \[
-b^\star = \arg\max_{b \in \mathcal{B}} V_\psi(h \parallel b)
+P(\text{tool}=t) = \frac{\exp(z_t / \tau)}{\sum_{j=1}^{T} \exp(z_j / \tau)}
 \]
 
-where \(V_\psi\) is a learned or prompted value head.
+Temperature \(\tau\) controls exploration in **policy** heads or distilled routers.
 
 !!! math-intuition "In Plain English"
-    CoT is one draft outline; ToT is **try a few outlines**, peek ahead, and commit to the most promising. Compute cost grows with branching factor—use sparingly in production unless tasks justify it.
+    Lower \(\tau\): almost **deterministic** tool choice—good for **compliance** workflows. Higher \(\tau\): more randomness—risky for production unless you want exploratory agents.
 
-### Memory: Short-Term and Long-Term
+### Planning: Chain-of-Thought vs Tree-of-Thought
 
-| Scope | Mechanism | Role |
-|-------|-----------|------|
-| **Short-term** | Conversation context window | Immediate coreference, last tool outputs |
-| **Long-term** | Vector store + summarization | User prefs, prior sessions, org knowledge |
-| **Working set** | Scratchpad variables in code agents | Intermediate computations |
+**Chain-of-thought** expands a **single** reasoning trace. **Tree-of-thought** maintains **multiple** partial plans \(\mathcal{B}\) and selects:
 
-Long-term memory often uses **retrieve-then-merge**: on each turn, embed the query, fetch top-k memories, prepend summaries to the system prompt.
+\[
+b^\star = \arg\max_{b \in \mathcal{B}} V(h \parallel b)
+\]
 
-### Multi-Agent Orchestration
+where \(V\) is a value estimate (learned model, heuristic, or LLM self-critique).
 
-Patterns include:
+!!! math-intuition "In Plain English"
+    CoT is one draft; ToT is **try several drafts**, score them, commit. Cost scales with **branching factor**—use when puzzles justify it, not for every API call.
 
-- **Router**: classify intent → dispatch to specialist agents.
-- **Critic–actor**: generator proposes; critic flags risks; loop.
-- **Hierarchical planner**: high-level planner expands subtasks delegated to workers.
+### Memory Types
 
-Message-passing can be synchronous (shared transcript) or asynchronous (event bus). Conflicts arise when agents **contradict** tool results—consensus protocols or a **single source of truth** layer help.
+| Memory | Mechanism | Role |
+|--------|-----------|------|
+| Short-term | Conversation in context | Coreference, recent tool I/O |
+| Long-term | Vector DB / KV / SQL | User prefs, org facts across sessions |
+| Episodic | Summaries of past runs | “Last time you asked for CSV export” |
+| Working | Scratchpad / variables | Intermediate numbers in code agents |
 
-### OpenAI-Style Function Calling (Illustrative)
+Long-term retrieval often follows **embed query → top-k → merge** into the system message.
 
-The following uses the public API shape conceptually—always consult current vendor docs for exact fields.
+### Multi-Agent Patterns
 
-```python
-import json
-from typing import Any, Callable, Dict, List
+- **Orchestrator**: delegates subtasks to specialists.
+- **Debate**: agents propose conflicting plans; aggregator picks or synthesizes.
+- **Critic–actor**: critic blocks unsafe tool args.
 
+Message passing may be **shared transcript** (synchronous) or **event bus** (async).
 
-TOOLS: List[Dict[str, Any]] = [
-    {
-        "type": "function",
-        "function": {
-            "name": "add",
-            "description": "Add two numbers.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number"},
-                    "b": {"type": "number"},
-                },
-                "required": ["a", "b"],
-            },
-        },
-    }
-]
+### Bellman Optimality (Pointer)
 
+For MDPs with reward \(r_t\), the **value** obeys:
 
-def add(a: float, b: float) -> float:
-    return a + b
+\[
+V^\pi(s) = \mathbb{E}_\pi \Bigl[ \sum_{t=0}^{\infty} \gamma^t r_t \mid s_0 = s \Bigr]
+\]
 
+RL fine-tuning of tool policies can shape intermediate rewards (correct tool) and terminal rewards (task success).
 
-TOOL_DISPATCH: Dict[str, Callable[..., Any]] = {
-    "add": add,
-}
+!!! math-intuition "In Plain English"
+    Most shipped agents use **supervised** tool traces or **rejection sampling** before full RL—but the Bellman view explains **why** dense rewards on tool correctness help credit assignment.
 
+### Contrast with RAG
 
-def handle_tool_call(name: str, arguments_json: str) -> str:
-    fn = TOOL_DISPATCH[name]
-    args = json.loads(arguments_json)
-    result = fn(**args)
-    return json.dumps({"result": result})
+| Pattern | Strength | Weakness |
+|---------|----------|----------|
+| RAG | Grounded facts from corpus | Limited **actions** |
+| Agent | Side effects & multi-step | Loops, bad args, injection |
+| Hybrid | Retrieve then act | Orchestration complexity |
 
+??? deep-dive "Deep Dive: Partially Observable MDPs"
+    Tool outputs are **observations**, not full world state—the LM’s belief is **implicit** in the truncated transcript. **Summarization** compresses history but can drop **constraints**; for long tasks, persist **structured state** (JSON) outside the model.
 
-# Pseudocode for a single assistant turn:
-def fake_assistant_turn(user_text: str) -> None:
-    # In production: messages = chat.completions.create(..., tools=TOOLS)
-    # Model returns assistant_message with tool_calls[...]
-    simulated_call = {
-        "name": "add",
-        "arguments": json.dumps({"a": 2, "b": 3}),
-    }
-    obs = handle_tool_call(simulated_call["name"], simulated_call["arguments"])
-    print("Tool observation:", obs)
+??? deep-dive "Deep Dive: Prompt Injection via Tools"
+    A malicious webpage fetched by `browse()` can contain “ignore previous instructions.” Mitigations: **tool output sandboxing**, **privilege separation**, **static system prompt priority**, and **downstream content filters** on combined text.
 
+## Code
 
-if __name__ == "__main__":
-    fake_assistant_turn("What is 2+3?")
-```
-
-### ReAct Agent Loop (Minimal Python)
-
-This loop does not call a remote LM; it shows how **history**, **tool routing**, and **termination** fit together. Plug `call_llm` into your provider.
+### ReAct-style loop with tool registry (no network required)
 
 ```python
+"""
+Self-contained ReAct-style agent: regex-parse actions, deterministic mock LLM.
+Extend call_llm with your provider; keep tool execution server-side validated.
+"""
 from __future__ import annotations
 
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+
+ToolFn = Callable[..., str]
+
+
+@dataclass
+class ToolSpec:
+    name: str
+    description: str
+    json_schema: Dict[str, Any]
+    fn: ToolFn
+
+
+def _extract_json_object(text: str) -> Optional[Dict[str, Any]]:
+    """Best-effort JSON object parse from model output."""
+    m = re.search(r"\{[^{}]*\}", text, re.DOTALL)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except json.JSONDecodeError:
+        return None
 
 
 @dataclass
 class ReactAgent:
-    tools: Dict[str, Callable[..., str]]
-    max_steps: int = 6
+    tools: Dict[str, ToolSpec]
+    max_steps: int = 8
     history: List[str] = field(default_factory=list)
 
-    def act(self, user_goal: str, call_llm: Callable[[str], str]) -> str:
-        self.history.append(f"User: {user_goal}")
+    def run(self, user_goal: str, call_llm: Callable[[str], str]) -> str:
+        self.history = [f"User: {user_goal}"]
         for _ in range(self.max_steps):
-            prompt = "\n".join(self.history) + "\nAssistant:"
-            text = call_llm(prompt)
-            self.history.append(f"Assistant: {text}")
-            action = self._parse_action(text)
-            if action is None:
-                return text
-            name, argstr = action
-            if name.lower() in {"answer", "finish"}:
-                return argstr
-            if name not in self.tools:
-                obs = f"ERROR: unknown tool {name}"
-            else:
-                try:
-                    obs = self.tools[name](argstr)
-                except Exception as exc:  # noqa: BLE001
-                    obs = f"ERROR: {exc}"
-            self.history.append(f"Observation: {obs}")
+            prompt = self._format_prompt()
+            reply = call_llm(prompt)
+            self.history.append(f"Assistant raw:\n{reply}")
+
+            jcall = _extract_json_object(reply)
+            if jcall and "tool" in jcall:
+                name = str(jcall["tool"])
+                args = jcall.get("arguments", {})
+                if name == "finish":
+                    return str(args.get("answer", ""))
+                if name not in self.tools:
+                    obs = json.dumps({"error": f"unknown tool {name}"})
+                else:
+                    spec = self.tools[name]
+                    try:
+                        out = spec.fn(**args)
+                        obs = out if isinstance(out, str) else json.dumps(out)
+                    except TypeError as e:
+                        obs = json.dumps({"error": f"bad args: {e}"})
+                self.history.append(f"Observation: {obs}")
+                continue
+
+            # Fallback: plain text answer if model stops calling tools
+            if "FINAL:" in reply:
+                return reply.split("FINAL:", 1)[1].strip()
+            return reply.strip()
         return "Stopped: max steps reached."
 
-    @staticmethod
-    def _parse_action(text: str) -> Tuple[str, str] | None:
-        m = re.search(r"Action:\s*(\w+)\s*\(([^)]*)\)", text, re.IGNORECASE)
-        if not m:
-            return None
-        return m.group(1), m.group(2).strip().strip("'\"")
+    def _format_prompt(self) -> str:
+        tools_desc = "\n".join(
+            f"- {t.name}: {t.description} schema={json.dumps(t.json_schema)}"
+            for t in self.tools.values()
+        )
+        header = (
+            "You are a tool-using assistant. Reply with a JSON object ONLY:\n"
+            '{"tool": "<name>", "arguments": {...}} or {"tool":"finish", "arguments":{"answer":"..."}}\n'
+            f"Tools:\n{tools_desc}\n"
+        )
+        return header + "\n".join(self.history)
 
 
-def tool_search_stub(query: str) -> str:
-    knowledge = {"capital of france": "Paris", "capital of germany": "Berlin"}
-    return knowledge.get(query.lower(), "No hit.")
+def tool_get_capital(country: str) -> str:
+    data = {"france": "Paris", "germany": "Berlin", "japan": "Tokyo"}
+    return json.dumps({"capital": data.get(country.lower().strip(), "unknown")})
+
+
+TOOLS: Dict[str, ToolSpec] = {
+    "get_capital": ToolSpec(
+        name="get_capital",
+        description="Return capital city for a country name.",
+        json_schema={
+            "type": "object",
+            "properties": {"country": {"type": "string"}},
+            "required": ["country"],
+        },
+        fn=tool_get_capital,
+    ),
+}
+
+
+def scripted_llm(prompt: str) -> str:
+    """Deterministic mock: first turn calls tool; second turn finishes."""
+    if "Observation:" not in prompt:
+        return '{"tool": "get_capital", "arguments": {"country": "Germany"}}'
+    if '"capital": "Berlin"' in prompt:
+        return '{"tool": "finish", "arguments": {"answer": "Berlin"}}'
+    return '{"tool": "finish", "arguments": {"answer": "Could not resolve."}}'
 
 
 if __name__ == "__main__":
-    agent = ReactAgent(tools={"search": tool_search_stub})
-
-    def dummy_llm(prompt: str) -> str:
-        if "capital of Germany" in prompt and "Observation" not in prompt:
-            return 'Thought: I should look it up.\nAction: search("capital of germany")'
-        if "Observation:" in prompt:
-            return "Thought: I can answer now.\nAction: answer(Berlin)"
-        return "Thought: unclear."
-
-    print(agent.act("What is the capital of Germany?", dummy_llm))
+    agent = ReactAgent(tools=TOOLS)
+    print(agent.run("What is the capital of Germany?", scripted_llm))
 ```
 
-### Failure Modes and Guardrails
-
-- **Tool hallucination**: model invents nonexistent functions—mitigate with strict schema validation and **allowlists**.
-- **Argument errors**: types and ranges—use pydantic validation server-side.
-- **Loops**: same action repeated—detect with deduplication hashes and **step caps**.
-- **Prompt injection** via tool outputs—sanitize and **privilege** system instructions.
-
-### Agents as Sequential Decision Processes
-
-Abstractly, a tool-using agent is a **partially observed Markov decision process** (POMDP): states are hidden (full world), observations are tool outputs, actions are tool calls or final answers. Policies \(\pi_\theta(a \mid o_{\le t})\) implemented by LMs are **history-dependent**; the context window truncates history, so **summarization** becomes part of state compression.
-
-The **Bellman** structure motivates **reward shaping** when you fine-tune with RL: intermediate rewards for correct tool use, terminal reward for task success. In practice many systems rely on **behavior cloning** from human traces or **rejection sampling** rather than full RL.
-
-### Delegation and Permissions
-
-Production agents need **capability-based** access: tools declare OAuth scopes, rate limits, and **human-in-the-loop** gates for irreversible actions (payments, deletions). Log **tool transcripts** for audit but **redact** secrets—never log raw API keys from model-emitted JSON.
-
-### Contrast with RAG-Only Systems
-
-| Pattern | Strength | Weakness |
-|---------|----------|----------|
-| **RAG** | Grounded factual lookup | Limited “actions” beyond retrieval |
-| **Tool agent** | Writes, transacts, multi-step | Higher failure surface, loop risk |
-| **Hybrid** | Retrieve then act | Orchestration complexity |
-
-### OpenAI Chat Completions with Tools (Pattern)
-
-Below is a **minimal** illustration of the **messages** + **tool_calls** loop using the public Python SDK shape. Replace `client` creation with your API key from environment variables—**never** hardcode secrets.
+### OpenAI-compatible tool loop (requires `OPENAI_API_KEY`)
 
 ```python
+"""Optional: real API tool loop. pip install openai"""
 import json
 import os
 from typing import Any, Dict, List
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None  # type: ignore[misc, assignment]
 
 
-def run_tool_loop(
-    user_message: str,
-    model: str = "gpt-4o-mini",
-) -> str:
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+def run_openai_tool_example() -> None:
+    if OpenAI is None:
+        print("pip install openai to run run_openai_tool_example()")
+        return
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        print("Set OPENAI_API_KEY to run live example.")
+        return
+    client = OpenAI(api_key=api_key)
     tools: List[Dict[str, Any]] = [
         {
             "type": "function",
             "function": {
-                "name": "get_capital",
-                "description": "Return capital city for a country.",
+                "name": "add",
+                "description": "Add two numbers.",
                 "parameters": {
                     "type": "object",
-                    "properties": {"country": {"type": "string"}},
-                    "required": ["country"],
+                    "properties": {
+                        "a": {"type": "number"},
+                        "b": {"type": "number"},
+                    },
+                    "required": ["a", "b"],
                 },
             },
         }
     ]
-
     messages: List[Dict[str, Any]] = [
-        {"role": "system", "content": "Use tools when factual lookup is needed."},
-        {"role": "user", "content": user_message},
+        {"role": "user", "content": "What is 19 + 23? Use the tool."},
     ]
 
-    def get_capital(country: str) -> str:
-        return {"france": "Paris", "germany": "Berlin"}.get(country.lower(), "unknown")
+    def add(a: float, b: float) -> str:
+        return json.dumps({"result": a + b})
 
     for _ in range(4):
         resp = client.chat.completions.create(
-            model=model,
+            model="gpt-4o-mini",
             messages=messages,
             tools=tools,
             tool_choice="auto",
@@ -276,69 +314,55 @@ def run_tool_loop(
             for call in msg.tool_calls:
                 name = call.function.name
                 args = json.loads(call.function.arguments)
-                if name == "get_capital":
-                    out = get_capital(args["country"])
+                if name == "add":
+                    out = add(args["a"], args["b"])
                 else:
-                    out = "unsupported tool"
+                    out = json.dumps({"error": "unknown"})
                 messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": call.id,
-                        "content": json.dumps({"result": out}),
+                        "content": out,
                     }
                 )
         else:
-            return msg.content or ""
-    return "max turns exceeded"
+            print(msg.content)
+            return
+    print("max turns")
+
+
+if __name__ == "__main__" and os.environ.get("RUN_OPENAI_EXAMPLE"):
+    run_openai_tool_example()
 ```
 
-### Planning as Search in Latent Space
+!!! interview "FAANG-Level Questions"
+    1. Describe the ReAct loop and how observations change the next policy input.
+    2. How do you prevent tool argument injection and unsafe tool outputs from reaching the user?
+    3. Compare chain-of-thought-only vs tool-augmented reasoning for factual queries.
+    4. What is the difference between JSON Schema validation and prompt instructions for tools?
+    5. How would you implement max-steps, deduplication, and circuit breakers in an agent service?
+    6. Explain short-term vs long-term memory and consistency trade-offs.
+    7. How does tree-of-thought scale in cost, and when would you avoid it?
+    8. Describe a multi-agent routing architecture for customer support.
+    9. How do you log and trace tool calls for compliance without logging secrets?
+    10. What is idempotency and why does it matter for retried tool calls?
 
-Tree-of-Thought can be viewed as **beam search** over partial reasoning strings with a **pruning** heuristic. If each node expands \(b\) children and depth is \(d\), worst-case evaluations grow as \(O(b^d)\)—**branching limits** and **value model** pruning are mandatory online.
+!!! interview "Follow-up Probes"
+    - “Show how you’d unit-test a tool router without calling live APIs.”
+    - “What happens to your MDP view when context window truncates?”
+    - “How do you prioritize latency vs parallel subagent exploration?”
 
-### Observability for Agents
-
-Structured logs should capture: **tool name**, **latency**, **argument hash** (not raw PII), **outcome status**, and **retry count**. **Traces** (OpenTelemetry) correlate user sessions with backend tool failures.
-
-### Cost Controls for Agent Loops
-
-Each **tool** call may hit **paid** APIs—enforce **per-session** budgets, **exponential backoff** on errors, and **circuit breakers** when downstream **latency** spikes.
-
-### Determinism vs Exploration
-
-**Temperature** \(>0\) increases **exploration** in **ReAct** traces—useful for **brainstorming**, harmful for **auditable** workflows. For **compliance**, prefer **low** temperature and **structured** logs.
-
-### Human-in-the-Loop Approvals
-
-Irreversible actions (payments, **deletes**) should require **explicit** human **approval** steps—not **model** discretion alone.
-
-### Testing Agents
-
-**Unit-test** tool **routers** with **mock** environments; **integration-test** with **staging** APIs. **Record/replay** traces for **regression** when **prompts** change.
-
-### Session Isolation
-
-**Multi-tenant** agents must **scope** **memory** and **tools** per **tenant**—**cross-tenant** **leaks** are **severity-1** **incidents**.
-
-### Idempotency for Tools
-
-**POST-like** tools should support **idempotency** **keys** so **retries** do not **double-charge** **users**.
-
----
-
-## Interview Takeaways
-
-- **ReAct** interleaves reasoning, actions, and observations; it reduces ungrounded chains when tools are faithful.
-- **Bi-encoder retrieval** scales; **ReAct** is sequential—profile latency when combining both.
-- **Function calling** requires **schema discipline** and **server-side validation**, not blind `eval`.
-- **Memory** tiers (context vs vector vs structured DB) map to different consistency and privacy requirements.
-- **Multi-agent** gains come from specialization; costs include orchestration complexity and failure propagation.
-- Always specify **termination conditions**, **max steps**, and **fallback** behaviors for production agents.
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “Separate policy from tools: schema validation on the server, not trust-the-model.”
+    - “ReAct grounds reasoning in observations; CoT alone has no environmental feedback.”
+    - “Cross-encoder precision doesn’t apply here—agents are sequential decision problems with tool latency.”
+    - “Treat tool outputs as untrusted input—prompt-injection is a first-class threat.”
 
 ## References
 
 - Yao et al., *ReAct: Synergizing Reasoning and Acting in Language Models* (ICLR 2023): [arXiv:2210.03629](https://arxiv.org/abs/2210.03629)
 - Schick et al., *Toolformer: Language Models Can Teach Themselves to Use Tools* (2023): [arXiv:2302.04761](https://arxiv.org/abs/2302.04761)
 - Yao et al., *Tree of Thoughts: Deliberate Problem Solving with Large Language Models* (2023): [arXiv:2305.10601](https://arxiv.org/abs/2305.10601)
-- OpenAI Function Calling documentation: [https://platform.openai.com/docs/guides/function-calling](https://platform.openai.com/docs/guides/function-calling)
+- OpenAI Function Calling: [https://platform.openai.com/docs/guides/function-calling](https://platform.openai.com/docs/guides/function-calling)
 - Park et al., *Generative Agents: Interactive Simulacra of Human Behavior* (2023): [arXiv:2304.03442](https://arxiv.org/abs/2304.03442)
+- Shinn et al., *Reflexion: Language Agents with Verbal Reinforcement Learning* (2023): [arXiv:2303.11366](https://arxiv.org/abs/2303.11366)

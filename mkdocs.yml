@@ -102,9 +102,6 @@ nav:
     - 03_training/index.md
     - Pre-training at Scale: 03_training/pretraining.md
     - Distributed Training: 03_training/distributed_training.md
-    - Mixed Precision and Quantization: 03_training/quantization.md
-    - Pre-training at Scale: 03_training/pretraining.md
-    - Distributed Training: 03_training/distributed_training.md
     - Mixed Precision & Quantization: 03_training/mixed_precision.md
     - Instruction Tuning (SFT): 03_training/instruction_tuning.md
     - RLHF & DPO: 03_training/rlhf.md
@@ -112,6 +109,12 @@ nav:
     - Parameter-Efficient Fine-Tuning: 03_training/peft.md
   - Inference and Serving:
     - 04_inference/index.md
+    - Decoding Strategies: 04_inference/decoding_strategies.md
+    - KV Cache: 04_inference/kv_cache.md
+    - Speculative Decoding: 04_inference/speculative_decoding.md
+    - Continuous Batching & PagedAttention: 04_inference/continuous_batching.md
+    - Quantization for Inference: 04_inference/quantization_inference.md
+    - LLM Serving Systems: 04_inference/serving_systems.md
   - Advanced Topics:
     - 05_advanced/index.md
     - Retrieval-Augmented Generation: 05_advanced/rag.md
@@ -120,7 +123,7 @@ nav:
     - Multimodal LLMs: 05_advanced/multimodal.md
     - Emergent Capabilities & Scaling: 05_advanced/emergent_capabilities.md
     - Evaluation & Benchmarking: 05_advanced/evaluation.md
-    - Hallucination & Safety: 05_advanced/safety.md
+    - Hallucination & Safety: 05_advanced/hallucination_safety.md
   - Top 25 Papers:
     - 06_research_papers/index.md
   - Recent Advances:

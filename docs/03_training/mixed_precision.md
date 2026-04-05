@@ -323,6 +323,10 @@ Activations in certain **feature** dimensions can be **orders of magnitude** lar
 
 Choose **diverse** calibration batches (domains, lengths) to estimate **\(w_{\min}, w_{\max}\)** or **percentile** ranges for clipping outliers before quant. **Too small** calibration \(\Rightarrow\) **mis-scaled** tensors; **too narrow** domain \(\Rightarrow\) **OOD** deployment drift.
 
+### Rounding Modes (Implementation)
+
+Frameworks may implement **round-to-nearest-even**, **stochastic rounding**, or **floor** for quantization. **NVIDIA** and **PyTorch** APIs differ—numerical regressions when **porting** quantized checkpoints between runtimes often trace to **rounding** differences, not tensor values.
+
 ---
 
 ## Interview Takeaways

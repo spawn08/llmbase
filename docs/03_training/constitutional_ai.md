@@ -280,6 +280,14 @@ When **critics** generate labels, sample **stratified** subsets for **human** au
 
 Principles written in **English** may not **transfer** culturally or legally across locales. Production teams maintain **locale-specific** addenda (e.g., EU privacy emphasis) and test **translated** prompts for **consistent** refusals. Interview angle: “**Constitutional AI is not one-size-fits-all** across languages and jurisdictions.”
 
+### Connection to Interpretability
+
+Because principles are **textual**, failures can sometimes be **localized** (“model violates **HARM-03** on this prompt class”). This enables **targeted** data collection—unlike opaque scalar rewards where debugging may require **probing** latent spaces.
+
+### Supply Chain: Who Writes the Constitution?
+
+Product, policy, legal, and research teams may **co-author** principles. **Disagreements** are resolved before scaling AI labeling—otherwise **inconsistent** critiques leak into training data. Document **owners** and **review cadence** like any compliance artifact.
+
 ---
 
 ## Clarifying Questions (Interview Style)

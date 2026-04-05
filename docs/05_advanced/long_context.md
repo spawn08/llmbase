@@ -2,131 +2,203 @@
 
 ## Why This Matters for LLMs
 
-Attention-based Transformers have **quadratic** cost in sequence length \(T\): the attention matrix materializes scores between all pairs of positions. For long documents, code repositories, or multi-turn chats, that complexity and memory footprint dominate training and inference budgets. **Long-context modeling** is the umbrella for exact and approximate methods—FlashAttention kernels, sliding windows, sparse patterns, positional extrapolation, and distributed sequence parallelism—that make \(T\) in the hundreds of thousands feasible.
+Transformer **self-attention** is **quadratic** in sequence length \(T\): every position can attend to every other position, so FLOPs and memory traffic scale as \(O(T^2)\) per layer (before IO-aware kernels). **Long-context modeling** is the engineering and algorithm stack—FlashAttention, sliding windows, sparse patterns, RoPE scaling, distributed sequence parallelism—that makes **128K–1M+** token contexts feasible on modern hardware. Interviewers expect you to connect **math** (what grows with \(T\)) to **symptoms** (OOM during prefill, KV cache exhaustion during decode) and **mitigations** (GQA, paged attention, YaRN).
 
-Second, **product requirements** increasingly ask for “whole book” or “whole repo” reasoning. Retrieval helps, but some tasks need **cross-paragraph coreference** that only a single forward pass over a long context can provide cheaply. Interviewers probe whether you understand **KV cache** growth \(O(L \cdot T \cdot d_{\text{head}})\) per layer and why **context length** is not free even when FLOPs are optimized.
+Second, **product requirements** increasingly assume “read the whole PDF” or “reason across an entire repo” in one forward pass. **RAG** mitigates many knowledge tasks, but some **coreference** and **cross-paragraph** reasoning is awkward to chunk—long contexts reduce **retrieval orchestration** at the cost of **compute and memory**. You must articulate **effective context**: models may **accept** 128K tokens yet **under-use** the middle (“lost in the middle”)—**needle-in-a-haystack** tests exist precisely to measure this.
 
-Third, **positional encoding** assumptions break when you train at length \(L_{\text{train}}\) and deploy at \(L_{\text{test}} \gg L_{\text{train}}\). **RoPE scaling** methods (NTK-aware, YaRN) are now standard talking points. You should connect math (rotation frequencies) to engineering (which hyperparameters are tuned on validation perplexity).
+Third, **positional encodings** trained at \(L_{\text{train}}\) often **fail** at \(L_{\text{test}} \gg L_{\text{train}}\) unless you apply **RoPE scaling** (linear, NTK-aware, YaRN). Understanding **why** phases drift and **how** scaling preserves local structure separates senior systems answers from “we used a bigger window.”
 
 ---
 
 ## Core Concepts
 
-### Standard Attention Complexity
+### Quadratic Attention Cost
 
-For hidden size \(d\), heads \(h\), head dimension \(d_h = d/h\), batch \(B\), and length \(T\), self-attention costs:
+For batch size \(B\), heads \(H\), sequence \(T\), head dimension \(d_h\), self-attention is dominated by \(QK^\top\) and \(\mathrm{softmax}(QK^\top)V\). **FLOPs** scale approximately as:
 
-- **FLOPs** (matmul-dominant, ignoring softmax): roughly \(O(B \cdot h \cdot T^2 \cdot d_h)\) for \(QK^\top\) and softmax\(\cdot V\).
-- **Memory**: storing \(S \in \mathbb{R}^{T \times T}\) per head for backprop is prohibitive at large \(T\).
+\[
+O(B \cdot H \cdot T^2 \cdot d_h)
+\]
 
-Thus both **compute** and **HBM bandwidth** become bottlenecks.
+**Memory** for materialized score matrices (without fusion) scales as \(O(B \cdot H \cdot T^2)\) for storage of logits per head.
 
 !!! math-intuition "In Plain English"
-    Long-context pain is not “more tokens to embed”—it is the **all-pairs dating game** between positions. Shrink that pairwise work (sparsity, locality) or make it **IO-efficient** (kernel fusion) or **distribute** it across devices.
+    Doubling context from 32K to 64K roughly **quadruples** attention work **per layer**. Long context is expensive even if **embedding** layers are linear in \(T\).
 
 ### FlashAttention: IO-Aware Exact Attention
 
-**FlashAttention** (Dao et al.) computes exact softmax attention **without materializing** the full \(T \times T\) matrix in slow GPU high-bandwidth memory (HBM). The algorithm:
+**FlashAttention** computes **mathematically exact** softmax attention (up to floating-point non-associativity) **without** writing the full \(T \times T\) matrix to HBM. It tiles \(Q\), \(K\), \(V\) into SRAM-sized blocks and fuses softmax with the \(V\) multiply.
 
-1. **Tiles** \(Q\), \(K\), \(V\) blocks in on-chip SRAM (fast).
-2. Computes softmax **incrementally** using the **log-sum-exp** trick for numerical stability across blocks.
-3. Fuses softmax with the \(V\) multiply to reduce HBM round trips.
-
-For query block \(Q_i \in \mathbb{R}^{B_q \times d_h}\) and key blocks \(K_j\), the attention weights satisfy:
+For a query block \(Q_i\) and key blocks \(K_j\), attention output is accumulated across blocks:
 
 \[
-\text{softmax}(Q_i K^\top) V = \sum_j \text{softmax}(Q_i K_j^\top) V_j
+O_i = \sum_j \mathrm{softmax}(Q_i K_j^\top) V_j
 \]
 
-FlashAttention streams over \(j\) while maintaining running statistics for the softmax denominator on SRAM-resident tiles.
+!!! math-intuition "In Plain English"
+    Conceptually this is the **same** attention as the fused matmul—just written as a **sum over key/value tiles** \(j\) so the implementation can stream blocks through SRAM instead of materializing the full \(T \times T\) matrix.
 
-Let \(m \in \mathbb{R}^{B_q}\) be per-row maxima and \(\ell \in \mathbb{R}^{B_q}\) be cumulative exponentials for partial blocks. When merging block \(j+1\), update:
+**Online softmax** maintains running per-row maxima \(m\) and cumulative exponentials \(\ell\) so partial blocks merge **exactly**:
 
 \[
 m' = \max(m, m_{j+1}),\quad
 \ell' = e^{m - m'}\ell + e^{m_{j+1} - m'}\ell_{j+1}
 \]
 
-and adjust outputs accordingly—this is the **online softmax** algebra that makes blockwise computation exact.
-
 !!! math-intuition "In Plain English"
-    Standard attention writes a huge \(T \times T\) score matrix to GPU RAM repeatedly. FlashAttention keeps partial summaries in **fast scratchpad** memory and only spills smaller tiles—same math answer, fewer memory joules.
+    You still do \(O(T^2)\) **arithmetic** for full attention—but you **stop spilling** giant \(T \times T\) tensors to slow memory. When attention is **memory-bound**, wall-clock drops sharply.
 
-### Complexity Analysis: Arithmetic vs Memory
+### Sliding Window Attention
 
-Define:
-
-- \(F\) = total FLOPs for attention (still \(O(T^2)\) for full attention).
-- \(M\) = HBM accesses.
-
-FlashAttention reduces **\(M\)** dramatically; wall-clock improves when **memory-bound**. For very long \(T\) on modern accelerators, attention may become **compute-bound** again—profile before assuming kernels fix everything.
-
-### Sliding Window Attention (e.g., Mistral)
-
-**Sliding window** restricts each token to attend only to the previous \(w\) tokens (per layer or per head). Complexity drops to \(O(T \cdot w \cdot d)\) per head vs \(O(T^2 d)\).
+Restrict attention to a local neighborhood \(\mathcal{W}(i)\) of width \(w\):
 
 \[
-S_{ij} = \begin{cases}
-\frac{\exp(q_i^\top k_j / \sqrt{d_h})}{\sum_{k \in \mathcal{W}(i)} \exp(q_i^\top k_j / \sqrt{d_h})} & j \in \mathcal{W}(i) \\
-0 & \text{otherwise}
-\end{cases}
+\alpha_{ij} = 0 \quad \text{if } j \notin \mathcal{W}(i)
 \]
-
-where \(\mathcal{W}(i) = \{i-w,\ldots,i\}\) (causal). **Stacking** layers yields **effective receptive field** roughly \(L \cdot w\) for \(L\) layers—global information propagates via depth.
 
 !!! math-intuition "In Plain English"
-    Sliding window is **local gossip**: each position only talks to neighbors, but gossip spreads through layers like telephone chains—cheap and surprisingly effective when combined with full attention on **some** layers.
+    **Masking** enforces sparsity: most pairs \((i,j)\) are **forbidden**, so you skip computing or adding those logits—this is where **subquadratic** behavior comes from in sliding-window kernels.
 
-### RoPE and Extrapolation: NTK-Aware, YaRN
+For causal models, \(\mathcal{W}(i) = \{i-w+1,\ldots,i\}\). Complexity drops to \(O(T \cdot w \cdot d_h)\) per head vs \(O(T^2 d_h)\).
 
-**Rotary Position Embedding (RoPE)** encodes relative position by rotating query/key pairs in 2D subspaces:
+!!! math-intuition "In Plain English"
+    Each layer only **mixes locally**, but **stacking** \(L\) layers propagates information roughly **\(O(L \cdot w)\)** steps along the sequence—**telephone chain** effect.
+
+!!! example "Worked Example: Effective Receptive Field Sketch"
+    If \(w=4096\) and \(L=32\), a **rough** propagation bound is **131072** tokens **along the chain**—not a formal theorem, but intuition for why **deep** local attention can still **reach** far. In practice, **global tokens** or **full** layers are often mixed in so one path does not carry all responsibility.
+
+### RoPE and Long Context Extrapolation
+
+**Rotary Position Embedding (RoPE)** applies rotations to \(q,k\) in 2D subspaces so attention depends on **relative** offset \(m-n\). For linear scaling to extend from trained length \(L\) to target \(L'\), a simple heuristic **divides** positions by factor \(\rho = L'/L\):
 
 \[
-q_m' = R_{\Theta,m} q,\quad k_n' = R_{\Theta,n} k
+\text{pos}' = \frac{\text{pos}}{\rho}
 \]
 
-Attention logits depend on \(m-n\) through \(\langle R_{\Theta,m} q, R_{\Theta,n} k \rangle\). Base frequencies \(\theta_i\) control how quickly phase wraps with distance.
+!!! math-intuition "In Plain English"
+    You **squeeze** the position ruler so the model never “runs out” of trained angles—but **resolution** at short distances can blur—**NTK-aware** methods adjust **frequencies** non-uniformly.
 
-When extrapolating to \(T_{\text{test}} > T_{\text{train}}\), naive RoPE **overshoots** trained phases. **NTK-aware** scaling adjusts base frequencies or uses **non-linear** scaling maps; **YaRN** (Yet another RoPE extensioN) blends scaled and unscaled RoPE with a ramp to stabilize perplexity on long sequences.
+**NTK-aware** scaling adjusts the **base** \(\theta_0\) of RoPE (conceptually):
 
-### Ring Attention (Distributed Long Sequences)
+\[
+\theta_0' = \theta_0 \cdot \rho^{d/(d-2)}
+\]
 
-For model-parallel or context-parallel training, **ring attention** circulates **key/value blocks** around a ring of devices so each GPU computes a shard of attention while receiving \(K,V\) from neighbors—avoiding a single device holding full \(T\) for all heads. Complexity per device improves relative to naive replication; collective communication patterns must hide latency.
+(for common formulations; implementations vary by codebase).
 
-### Sparse Attention Patterns: BigBird, Longformer
+!!! math-intuition "In Plain English"
+    High-frequency components encode **fine** local distinctions; **NTK** scaling tries to stretch **long** wavelengths for far positions without destroying **near** behavior—better than naive linear scaling alone on many models.
 
-**Longformer** uses **local windows** + **global tokens** (e.g., CLS, special tokens attend everywhere). **BigBird** adds **random** sparse edges—enough for universal approximation properties under certain graph connectivity conditions.
+### YaRN (Conceptual)
 
-Sparse patterns reduce \(T^2\) to \(T \cdot s\) for average sparsity \(s \ll T\). Implementation requires **block-sparse** kernels or custom CUDA; not all frameworks ship equal performance.
+**YaRN** blends scaled and unscaled RoPE across dimensions with a **ramp** so low-frequency (long-wavelength) components extrapolate more aggressively—stabilizing perplexity on long documents when extending context.
 
-### Memory vs Compute at Different Context Lengths
+### Grouped-Query Attention and KV Cache
 
-| Regime | Dominant cost | Mitigations |
-|--------|----------------|-------------|
-| Short \(T\) | Compute under-utilization | Batch up |
-| Medium \(T\) | HBM bandwidth | FlashAttention, fused kernels |
-| Long \(T\) | KV cache size | GQA/MQA, quantization, paged attention (vLLM) |
-| Very long \(T\) | Cross-device memory | Ring attention, context parallelism |
+KV cache memory scales with the number of **key/value heads** stored. With **grouped-query attention (GQA)**, heads share \(K,V\), shrinking cache roughly by the **group size** factor:
 
-**Grouped-query attention (GQA)** shares \(K,V\) across head groups, shrinking KV cache roughly by group size—critical for serving.
+\[
+\text{Memory}_{\text{KV}} \propto L_{\text{layers}} \cdot B \cdot T \cdot d_{\text{kv-per-token}}
+\]
 
-### PagedAttention and Prefix Caching (Serving)
+!!! math-intuition "In Plain English"
+    At long \(T\), **KV** dominates serving memory—**GQA/MQA** and **KV quantization** are standard mitigations alongside **FlashAttention** for prefill.
 
-**vLLM** introduced **PagedAttention**: KV cache blocks are stored in **non-contiguous** pages like OS virtual memory, reducing fragmentation when batching requests of different lengths. **Prefix caching** reuses KV blocks for shared system prompts across users—critical for chat templates and tool schemas that repeat identically.
+### Ring Attention (Distributed)
 
-### ALiBi as an Alternative Bias
+**Ring attention** circulates \(K,V\) blocks around devices in a ring so no single GPU holds the full sequence for all heads—**communication** overlaps with **compute** when implemented well.
 
-**Attention with Linear Biases (ALiBi)** adds a **head-specific** linear penalty to logits based on distance \(i-j\) instead of explicit position embeddings. It extrapolates to longer \(T\) without retraining positional tables in some setups—compare with RoPE-heavy stacks where YaRN is more common in open LLaMA-class models.
+### Sparse Patterns: Longformer and BigBird
 
-### Training vs Inference Trade-offs
+**Longformer**: sliding window + **global** tokens (e.g., special tokens attend everywhere). **BigBird**: window + global + **random** edges—sparse \(O(T)\) edges per token under chosen hyperparameters.
 
-During **training**, activation checkpointing trades compute for memory across layers; **tensor parallelism** shards \(d\) across GPUs. During **inference**, batching increases throughput but blows KV cache—**continuous batching** (iteration-level scheduling) interleaves prefill and decode steps to keep GPUs full.
+### Needle in a Haystack (NIAH)
 
-### Memory Accounting: Attention Materialization
+**NIAH** places a **secret fact** at a controlled depth in a long prompt and measures whether the model **retrieves** it—sanity check for **positional extrapolation** and **attention dilution**.
 
-Naive attention **materializes** the score matrix \(S \in \mathbb{R}^{T \times T}\) per head before softmax. The following estimates **HBM footprint** for storing \(S\) and post-softmax weights (ignoring fusion):
+### Lost in the Middle
+
+Empirically, models may attend more to **beginning** and **end** of long contexts; **important** facts in the **middle** can be **under-weighted**—design prompts and **retrieval** accordingly.
+
+### Roofline Model (Compute vs Memory)
+
+A simplified **roofline** bound:
+
+\[
+\text{Attainable FLOPs/s} = \min\left(\text{Peak}_{\text{FLOPs/s}},\; \beta \cdot \text{AI}\right)
+\]
+
+where \(\beta\) is memory bandwidth (bytes/s) and **AI** (arithmetic intensity) is FLOPs per byte moved.
+
+!!! math-intuition "In Plain English"
+    If attention is **memory-starved**, **FlashAttention** raises AI by keeping tiles in SRAM—your kernel moves from the **left** roofline slope to a **higher** plateau before you hit peak FLOPs.
+
+### ALiBi: Linear Biases on Distances
+
+**ALiBi** adds a head-specific penalty proportional to distance \(i-j\) instead of explicit rotary tables:
+
+\[
+\text{score}_{ij} = \frac{q_i^\top k_j}{\sqrt{d_h}} + m_h \cdot (i - j)
+\]
+
+with learned or fixed slopes \(m_h\) per head.
+
+!!! math-intuition "In Plain English"
+    ALiBi **punishes** far-away keys with a linear ramp—simple extrapolation story for longer \(T\) in some setups; compare with **RoPE**-heavy stacks where **YaRN** is more common in open LLaMA-class models.
+
+### Context Window vs Effective Context
+
+**Advertised** \(T_{\max}\) is not **usable** \(T_{\max}\): system prompts, tool schemas, safety prefixes, and user formatting consume tokens. Define **usable** budget:
+
+\[
+T_{\text{usable}} = T_{\max} - T_{\text{system}} - T_{\text{tools}} - T_{\text{safety}}
+\]
+
+!!! math-intuition "In Plain English"
+    Even if the model **accepts** 128K tokens, **effective** reasoning over all positions may be lower—validate with **NIAH** and task-specific evals, not parameter counts alone.
+
+!!! example "Worked Example: RoPE Linear Scale (4K → 32K)"
+    Suppose \(\rho = L'/L = 8\). Position index **32000** maps to **\(32000/8 = 4000\)**—inside the trained 4K regime. **Trade-off**: distant positions become **crowded** into fewer effective indices; **NTK/YaRN** exist to reduce **blur** at short distances.
+
+### Multi-Query Attention (MQA)
+
+**MQA** shares one \(K,V\) pair across all \(H\) heads. Attention still uses \(H\) query heads, but **KV** bandwidth and cache shrink:
+
+\[
+\text{KV heads} = 1 \implies \text{KV cache} \approx \frac{1}{H} \times \text{MHA KV cache}
+\]
+
+!!! math-intuition "In Plain English"
+    You **duplicate** queries for expressivity but **share** keys/values—serving memory wins; some **quality** trade-off vs full MHA depending on architecture and training.
+
+### Chunked Prefill
+
+For very long user prompts, **chunked prefill** splits the sequence into segments and **accumulates** KV cache segment-wise to avoid **peak** activation OOM—**latency** may increase vs one-shot fused kernel, but **peak** memory drops.
+
+### Training vs Inference
+
+| Phase | Dominant concern | Typical mitigations |
+|-------|------------------|---------------------|
+| Training | Activation memory at large \(T\) | Checkpointing, FlashAttention, sequence parallel |
+| Inference (prefill) | \(T^2\) attention + activations | FA, shorter batch |
+| Inference (decode) | KV cache growth | GQA, KV quant, paged KV |
+
+### Interaction with Quantization
+
+**Weight-only** INT4/INT8 cuts model size; **KV cache** INT8/FP8 reduces **long-chat** RAM but can **harm** **long-range** fidelity—**calibrate** on representative transcripts.
+
+??? deep-dive "Deep Dive: FlashAttention-2 vs FlashAttention-1"
+    FlashAttention-2 improves **work partitioning** across warps, better **sequence parallelism**, and reduces **non-matmul** overhead—often ~2× faster than FA-1 on A100/H100-class GPUs for typical shapes. Always **profile** your \((B,T,H,d_h)\).
+
+??? deep-dive "Deep Dive: PagedAttention (vLLM)"
+    **PagedAttention** stores KV cache in **non-contiguous** blocks like virtual memory, reducing **fragmentation** when batching variable-length requests—critical for high-throughput serving with long chats.
+
+## Code
+
+### Memory estimator (runs everywhere)
 
 ```python
+"""Attention score tensor and KV cache byte estimates (FP16/BF16)."""
 from __future__ import annotations
 
 
@@ -135,14 +207,11 @@ def attention_score_bytes(
     heads: int,
     seq: int,
     bytes_per_elem: int = 2,
-    include_softmax_output: bool = True,
+    include_softmax: bool = True,
 ) -> int:
-    """
-    FP16/BF16 = 2 bytes. Counts S = QK^T / sqrt(d) and optionally P = softmax(S).
-    """
     per_head = seq * seq * bytes_per_elem
-    layers = 2 if include_softmax_output else 1
-    return batch * heads * per_head * layers
+    layers_mem = 2 if include_softmax else 1
+    return batch * heads * per_head * layers_mem
 
 
 def kv_cache_bytes(
@@ -153,163 +222,136 @@ def kv_cache_bytes(
     head_dim: int,
     bytes_per_elem: int = 2,
 ) -> int:
-    """K and V tensors cached per autoregressive step during decoding."""
     per_layer = 2 * batch * heads_kv * seq * head_dim * bytes_per_elem
     return layers * per_layer
 
 
 if __name__ == "__main__":
-    B, H, T, L, Dh = 1, 32, 8192, 80, 128
-    print("Score+softmax bytes (FP16):", attention_score_bytes(B, H, T))
-    print("KV cache bytes (FP16):", kv_cache_bytes(B, L, H, T, Dh))
+    B, H, T, L, Dh = 1, 32, 32768, 80, 128
+    print("S and P tensors (FP16, naive):", attention_score_bytes(B, H, T))
+    print("KV cache (FP16):", kv_cache_bytes(B, L, H, T, Dh))
 ```
 
-FlashAttention avoids materializing full \(S\) in HBM by **fusing** softmax with the \(V\) multiply in SRAM-sized tiles—your profiler should show reduced **memory traffic**, not necessarily fewer FLOPs.
+### Optional FlashAttention forward (GPU + package required)
 
-### Backward Pass and Recomputation
+```python
+"""pip install flash-attn torch -- requires compatible CUDA GPU."""
+from __future__ import annotations
 
-Training attention requires gradients through softmax. FlashAttention **recomputes** forward activations in tiles during the backward pass instead of storing full \(S\) in HBM—trading **extra compute** for **memory** (classic **rematerialization**). The net effect lowers **peak** memory, enabling longer \(T\) or larger batch sizes.
+import torch
 
-### Mistral-Style Sliding Window: Effective Receptive Field
 
-If layer \(\ell\) uses window \(w\) and there are \(L\) layers, information can propagate roughly **\(O(L \cdot w)\)** steps along the sequence—still linear in \(T\) for fixed \(L,w\), but **global** mixing emerges across depth. Some architectures alternate **full** and **windowed** attention layers to balance quality and cost.
+def run_flash_attn_if_available() -> None:
+    try:
+        from flash_attn import flash_attn_func
+    except ImportError:
+        print("flash-attn not installed; skip GPU kernel demo.")
+        return
+    if not torch.cuda.is_available():
+        print("CUDA required for flash_attn_func demo.")
+        return
+    B, T, H, Dh = 2, 512, 8, 64
+    q = torch.randn(B, T, H, Dh, device="cuda", dtype=torch.float16)
+    k = torch.randn(B, T, H, Dh, device="cuda", dtype=torch.float16)
+    v = torch.randn(B, T, H, Dh, device="cuda", dtype=torch.float16)
+    out = flash_attn_func(q, k, v, causal=True)
+    print("out shape:", tuple(out.shape))
 
-### Context Lengths in the Wild (Illustrative)
 
-| Family | Typical context (order of magnitude) | Notes |
-|--------|----------------------------------------|-------|
-| GPT-4 class | 8k–128k tokens | Product-dependent tiers |
-| Claude 3 | 200k tokens | Long document workflows |
-| Open LLaMA / Mistral | 4k–32k extensible | YaRN/NTK extrapolation |
+if __name__ == "__main__":
+    run_flash_attn_if_available()
+```
 
-Always read **vendor system cards**—**usable** context may be lower after system prompts and tool schemas.
+### Sliding-window causal mask (educational)
 
-### Kernel Fusion and Roofline Perspective
+```python
+"""O(T*w) attention mask construction — use fused kernels in production."""
+from __future__ import annotations
 
-Attention is often **memory-bound** on the **roofline model**:
+import torch
+
+
+def sliding_window_mask(seq: int, window: int, device: str = "cpu") -> torch.Tensor:
+    """Boolean mask: True = allow attend. Causal + last w positions."""
+    idx = torch.arange(seq, device=device)
+    diff = idx.unsqueeze(0) - idx.unsqueeze(1)
+    causal = diff >= 0
+    local = diff < window
+    return causal & local
+
+
+if __name__ == "__main__":
+    m = sliding_window_mask(8, window=3)
+    print(m.int())
+```
+
+### Needle-in-a-haystack style check (string match)
+
+```python
+"""Minimal NIAH-style test using substring retrieval from generated filler."""
+from __future__ import annotations
+
+
+def build_long_prompt(needle: str, depth_chars: int, filler_unit: str = "blah ") -> str:
+    prefix = filler_unit * (depth_chars // len(filler_unit))
+    suffix = filler_unit * 200
+    return prefix + needle + suffix
+
+
+def needle_found(model_output: str, needle: str) -> bool:
+    return needle.strip() in model_output
+
+
+if __name__ == "__main__":
+    secret = "THE_SECRET_CODE_IS_4242"
+    prompt = build_long_prompt(secret, depth_chars=5000)
+    fake_model_out = f"I found: {secret} in the text."
+    print("prompt length chars:", len(prompt))
+    print("recovered:", needle_found(fake_model_out, secret))
+```
+
+!!! interview "FAANG-Level Questions"
+    1. Why is standard attention \(O(T^2)\), and what exactly does FlashAttention change vs approximate sparse attention?
+    2. Explain sliding-window attention and how depth increases receptive field.
+    3. What breaks when you extrapolate RoPE from 4K to 128K training lengths?
+    4. Compare linear RoPE scaling vs NTK-aware scaling in one sentence each.
+    5. How does KV cache memory scale with \(T\), and what reduces it at inference?
+    6. What is the “lost in the middle” phenomenon, and how might you mitigate it?
+    7. Describe ring attention or context parallelism at a high level.
+    8. When would you prefer RAG over stuffing an enormous context?
+    9. What does YaRN modify compared to vanilla RoPE extrapolation?
+    10. How does grouped-query attention differ from multi-head attention for serving?
+
+!!! interview "Follow-up Probes"
+    - “At what \(T\) does your workload become memory-bound vs compute-bound?”
+    - “How do you validate long-context quality beyond perplexity?”
+    - “What’s your prefill vs decode memory story for 128K user prompts?”
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “FlashAttention reduces HBM traffic; it’s exact attention, not a sparse approximation.”
+    - “Sliding window is subquadratic per layer; depth propagates information.”
+    - “RoPE extrapolation needs frequency scaling—linear divide is a blunt instrument.”
+    - “Serving is KV-cache bound—GQA and paged KV are first-class optimizations.”
+
+### Linear Attention (Research Pointer)
+
+**Linear attention** variants replace \(\mathrm{softmax}(QK^\top)V\) with kernel feature maps \(\phi(Q)\phi(K)^\top V\) that admit **recurrent** \(O(T)\) forms—**different** trade-offs vs **FlashAttention**-optimized softmax on modern GPUs:
 
 \[
-\text{Attainable FLOPs/s} = \min \bigl(\text{Peak FLOPs/s},\; \beta \cdot \text{Arithmetic Intensity}\bigr)
+\text{Attention}_{\text{lin}}(Q,K,V) = \bigl(\phi(Q)\bigl(\phi(K)^\top V\bigr)\bigr)
 \]
 
-where \(\beta\) is memory bandwidth. FlashAttention increases **arithmetic intensity** of the attention kernel by keeping tiles resident in SRAM—moving the bottleneck toward **compute** on some shapes.
-
-### When Not to Use Exact Long Attention
-
-If your task is **retrieval-heavy** (open-book QA), **RAG** plus moderate context may beat **naive** full attention over a million tokens on cost and quality. **Long-context** models shine when **cross-span reasoning** within a single document is unavoidable.
-
-### Causal Masking and Memory Footprint
-
-Decoder-only models apply a **causal** mask: position \(i\) attends only to \(j \le i\). **Training** still scales as \(O(T^2)\) in naive implementations for **compute**, but **FlashAttention** reduces **memory** traffic. **Inference** uses **KV cache** storing **past** keys and values—**memory grows linearly** with \(T\) per layer.
-
-### Multi-Query and Grouped-Query Attention
-
-**MQA** shares one \(K,V\) pair across all heads; **GQA** shares within **groups**. This shrinks **KV cache** for serving:
-
-\[
-\text{KV memory} \propto L \cdot B \cdot T \cdot d_{\text{kv}}
-\]
-
-where \(d_{\text{kv}}\) shrinks with sharing—critical for **long** chats at scale.
-
-### YaRN: Blending Scaled and Unscaled RoPE
-
-**YaRN** interpolates RoPE frequencies with a **ramp** across dimensions so **low** frequencies (long wavelengths) extrapolate more aggressively than **high** frequencies—stabilizing perplexity when extending context. Hyperparameters (\(\alpha, \beta\) scalars, **cutoff** dimensions) are tuned on **validation** long sequences.
-
-### Ring Attention Communication Pattern
-
-In **context parallelism**, devices hold **shards** of \(Q,K,V\) along sequence dimension and **rotate** \(K,V\) blocks in a ring. **Attention** is **mathematically** identical if all-to-all communication completes; **implementation** must **overlap** communication with compute to hide latency.
-
-### Long-Context Debugging Tips
-
-- **Spike** in loss at long positions → **positional** extrapolation issue (try YaRN/NTK).
-- **OOM** at **prefill** → reduce **batch** or use **FlashAttention** / **chunked** prefill.
-- **OOM** at **decode** → **KV cache** pressure—enable **GQA**, **KV quantization**, or **paged** attention.
-
-### BigBird: Random, Window, and Global Attention
-
-**BigBird** uses three edge types between tokens: **local windows**, a small set of **global** tokens attending everywhere, and **random** edges. The combination yields **universal approximation** properties under certain graph connectivity assumptions—**sparse** but **expressive** enough for some **long-sequence** tasks.
-
-### Longformer: Dilated Sliding Windows
-
-**Longformer** adds **dilated** patterns to sliding windows to widen receptive fields without dense \(T^2\) cost—implementation detail matters for **GPU** efficiency (block-sparse kernels).
-
-### Positional Extrapolation Experiments
-
-When evaluating **YaRN**/**NTK** scaling, measure:
-
-1. **Perplexity** on **held-out** long documents.
-2. **Needle-in-a-haystack** retrieval accuracy (does the model attend to **distant** facts?).
-3. **Latency** and **memory** at target \(T\).
-
-### Interaction with Quantization
-
-**KV cache INT8/FP8** quantization reduces **memory** but can **degrade** long-range attention—**calibrate** on representative **chat** transcripts.
-
-### FlashAttention Forward Pass (Step Outline)
-
-1. **Tile** \(Q\) rows and \(K,V\) columns to SRAM-sized blocks.
-2. For each \(Q\) tile, iterate \(K,V\) tiles along sequence dimension.
-3. Maintain running **max** and **sum-exp** statistics for **numerically stable** softmax.
-4. Accumulate **output** contributions from each \(V\) tile **without** writing full \(S\) to HBM.
-
-This is **exact** (up to floating-point non-associativity) compared to **materialized** attention.
-
-### Sliding Window + Full Attention Hybrids
-
-Some models use **windowed** attention on **most** layers and **full** attention on **selected** layers or **tokens**—balancing **global** mixing with **efficiency**.
-
-### Research Directions: Linear Attention
-
-**Linear attention** approximations replace softmax kernels with **feature maps** enabling \(O(T)\) recurrence—trade-offs include **expressivity** and **hardware** support compared to **FlashAttention**-optimized softmax.
-
-### Needle-in-a-Haystack (NIAH) Testing
-
-**NIAH** embeds a **secret** fact deep in a long prompt and checks whether the model **retrieves** it in the answer—useful for **validating** positional extrapolation **beyond** training length. **False negatives** may indicate **attention** dilution or **positional** encoding failure.
-
-### Document Pretraining vs Chat Fine-Tunes
-
-**Base** models trained on **documents** may handle **long** contexts better than **chat-only** fine-tunes—**distribution** shift matters for **long-context** claims.
-
-### Hardware Mapping: Tensor Cores and Shapes
-
-Attention **kernels** are sensitive to **head** dimensions and **sequence** multiples of **8/16**—**padding** strategies can change **throughput** without changing **semantics**.
-
-### Summary Formula Sheet
-
-- **Attention FLOPs** (rough): \(O(B \cdot H \cdot T^2 \cdot d_h)\)
-- **KV cache size** (rough): \(O(L \cdot B \cdot T \cdot d_{\text{kv}})\)
-- **RoPE** encodes **relative** position via **rotations** in **2D** subspaces
-
-### FlashAttention-3 and Hardware Generations
-
-Newer **FlashAttention** iterations target **Hopper/Blackwell** features (FP8, **warp** specialization). Always **benchmark** on **your** **GPU** generation—**kernel** winners **shift**.
-
-### Variable-Length Batching
-
-**Padding** wastes **compute** on **short** sequences in a **batch**—**variable-length** kernels and **cuDNN** **FlashAttention** paths reduce **waste**.
-
-### Context Parallelism vs Data Parallelism
-
-**Context** parallelism **splits** **sequence**; **data** parallelism **splits** **batch**. They address **different** bottlenecks—**profile** before **choosing**.
-
----
-
-## Interview Takeaways
-
-- Full attention is \(O(T^2)\) in FLOPs **and** memory traffic; **FlashAttention** attacks memory bandwidth while preserving exact attention (up to numerics).
-- **Sliding windows** and **sparse patterns** trade global pairwise attention for subquadratic structure; **depth** increases receptive field.
-- **RoPE extrapolation** requires scaling tricks (**NTK-aware**, **YaRN**)—validate on long-held-out perplexity, not toy tasks only.
-- **Ring attention** and **context parallelism** distribute \(T\) across devices when activations do not fit.
-- **KV cache** dominates serving memory—**GQA/MQA** and **paged KV** (vLLM) are standard optimizations.
-- Always distinguish **training** bottlenecks (activation checkpointing, FSDP) from **inference** (cache, batching).
+!!! math-intuition "In Plain English"
+    If \(\phi\) maps to a **small** feature dimension, you can **stream** tokens with fixed state—**infinite** context in principle—but **expressivity** and **hardware** maturity vary; profile against **FA2** baselines.
 
 ## References
 
 - Dao et al., *FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness* (NeurIPS 2022): [arXiv:2205.14135](https://arxiv.org/abs/2205.14135)
 - Dao, *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning* (2023): [arXiv:2307.08691](https://arxiv.org/abs/2307.08691)
-- Jiang et al., *Mistral 7B* (2023) — sliding window discussion: [arXiv:2310.06825](https://arxiv.org/abs/2310.06825)
-- Beltagy et al., *Longformer: The Long-Document Transformer* (2020): [arXiv:2004.05150](https://arxiv.org/abs/2004.05150)
-- Zaheer et al., *Big Bird: Transformers for Longer Sequences* (2020): [arXiv:2007.14062](https://arxiv.org/abs/2007.14062)
+- Su et al., *RoFormer: Enhanced Transformer with Rotary Position Embedding* (2021): [arXiv:2104.09864](https://arxiv.org/abs/2104.09864)
 - Peng et al., *YaRN: Efficient Context Window Extension of Large Language Models* (2023): [arXiv:2309.00071](https://arxiv.org/abs/2309.00071)
-- Liu et al., *Ring Attention with Blockwise Transformers for Near-Infinite Context* (2023): [arXiv:2310.01889](https://arxiv.org/abs/2310.01889)
+- Jiang et al., *Mistral 7B* (sliding window): [arXiv:2310.06825](https://arxiv.org/abs/2310.06825)
+- Beltagy et al., *Longformer* (2020): [arXiv:2004.05150](https://arxiv.org/abs/2004.05150)
+- Zaheer et al., *Big Bird* (2020): [arXiv:2007.14062](https://arxiv.org/abs/2007.14062)
+- Liu et al., *Ring Attention with Blockwise Transformers* (2023): [arXiv:2310.01889](https://arxiv.org/abs/2310.01889)
+- Liu et al., *Lost in the Middle: How Language Models Use Long Contexts* (2023): [arXiv:2307.03172](https://arxiv.org/abs/2307.03172)

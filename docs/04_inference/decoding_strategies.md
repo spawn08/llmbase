@@ -159,7 +159,12 @@ Top-k sampling restricts sampling to the **\(k\)** largest probabilities, **reno
     P'(0)=\frac{0.50}{0.80}=0.625,\quad P'(1)=\frac{0.30}{0.80}=0.375.
     \]
 
+    **In Plain English:** After **masking** the tail, you **re-scale** so the kept entries still form a **valid probability vector**—the two surviving masses **0.50** and **0.30** were **80%** of the original **100%**, so divide by **0.80**.
+
     Tokens 2 and 3 have **zero** probability under top-2 sampling.
+
+!!! math-intuition "In Plain English"
+    The **renormalized** pair \((0.625, 0.375)\) is what you feed to `torch.multinomial` after top-**k** masking: **only** the **two** largest **original** probabilities survive, scaled to sum to **1**.
 
 ### Top-p (Nucleus) Sampling
 
@@ -175,17 +180,26 @@ Let \(p \in (0,1]\). Sort tokens by probability **descending**: \(p_{(1)} \ge p_
     [0.45, 0.25, 0.15, 0.08, 0.04, 0.03].
     \]
 
+    **In Plain English:** Sorting **largest-first** is what makes top-**p** **adaptive**: you peel off **mass** until you cross the **\(p\)** threshold—**not** a fixed **k** slots.
+
     Cumulative sums:
 
     \[
     [0.45, 0.70, 0.85, 0.93, 0.97, 1.00].
     \]
 
+    **In Plain English:** **Cumulative** sums answer “how much probability have I **included** so far?” The **first** time you meet or exceed **\(p=0.9\)**, you have **enough** nucleus mass—here the **fourth** token pushes cumulative from **0.85** to **0.93**.
+
     For \(p=0.9\), stop at cumulative **first** \(\ge 0.9\): that happens at the **fourth** token (0.93). Keep **four** tokens, renormalize dividing by 0.93:
 
     \[
     [0.45/0.93,\ 0.25/0.93,\ 0.15/0.93,\ 0.08/0.93] \approx [0.484,\ 0.269,\ 0.161,\ 0.086].
     \]
+
+    **In Plain English:** The **0.93** denominator removes the **truncated** tail mass (last two tokens) so the **four** kept probabilities again sum to **1** on the **restricted** support.
+
+!!! math-intuition "In Plain English"
+    Nucleus sampling **adapts** the number of kept tokens: here **four** tokens are needed to capture **90%** of the mass; a **sharper** distribution might have stopped after **one** token.
 
 ### Repetition Penalty
 
@@ -198,7 +212,7 @@ z_i \leftarrow \frac{z_i}{\rho} \quad \text{if } z_i > 0, \qquad z_i \leftarrow 
 with \(\rho > 1\) (e.g., 1.1–1.3).
 
 !!! math-intuition "In Plain English"
-    If a token’s logit was **positive** (encouraging), dividing by \(\rho>1\)**pulls it down**. If it was **negative** (discouraging), multiplying by \(\rho\) makes it **more negative**—stronger avoidance. Net effect: **reduce** the chance of re-selecting tokens already used.
+    If a token’s logit was **positive** (encouraging), dividing by \(\rho>1\) **pulls it down**. If it was **negative** (discouraging), multiplying by \(\rho\) makes it **more negative**—stronger avoidance. Net effect: **reduce** the chance of re-selecting tokens already used.
 
 !!! example "Worked Example: One-Step Repetition Penalty"
     Vocabulary \(\{a,b,c\}\). Logits \(\mathbf{z}=[1.0, 0.2, -0.5]\). Already generated \(\{a\}\) so apply penalty to index 0 with \(\rho=1.2\).

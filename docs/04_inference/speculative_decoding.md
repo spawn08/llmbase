@@ -1,350 +1,366 @@
 # Speculative Decoding
 
+**Speculative decoding** is the standard **draft–verify** framework for faster **autoregressive** generation without (in the **stochastic** case) changing the **target** distribution.
+
 ## Why This Matters for LLMs
 
-Large autoregressive models spend inference time in **matrix multiplies** that are often **memory-bandwidth bound** at small batch sizes: each forward pass for one new token moves **billions** of weights through HBM for only **one** additional token of output. **Speculative decoding** asks: can a **small, fast** “draft” model propose **several** candidate tokens, and a **large** “target” model verify them in **parallel**, accepting a **prefix** that matches what the large model would have sampled anyway? When acceptance rates are high, you **amortize** the cost of the big model across **multiple** emitted tokens per **batched** verification step.
+**Speculative decoding** is one of the few inference optimizations that can deliver **multiplicative** wall-clock speedups **without changing** the **marginal output distribution** of the target model—when implemented correctly—because it is **not** an approximation to the forward pass; it is a **reorganization** of work between a **cheap proposal** mechanism and a **parallel verification** pass by the **large** model. In bandwidth-bound regimes, each target forward pass moves **billions** of parameters through HBM to emit **one** token; speculative methods ask whether a **small draft model** (or **auxiliary heads**) can propose **\(k\)** tokens such that the **large** model can **verify** all \(k\) **dependencies** in a **single** batched forward that **reuses** prefix **KV** state. Interviewers love this topic because it joins **probability** (acceptance sampling), **algorithms** (draft/verify), and **systems** (KV layout, batching).
 
-This matters in interviews because it is the clean bridge between **probabilistic sampling** and **systems**: you must explain **exact sampling** equivalence (no change to the **marginal output distribution** under standard schemes) versus **heuristic** speculative methods that **do** bias outputs. The classic **draft + rejection** construction (Leviathan, 2023; Chen et al., 2023) uses **coupled** sampling so the **target** distribution is preserved.
+A second reason this matters is **quality preservation**. Many “fast decoding” tricks **change** the distribution (heuristic merging, early exit without correction). **Exact** speculative sampling (Chen et al., 2023; Leviathan et al., 2023) ensures that—if you follow the acceptance and resampling rules—the **next accepted token** is drawn **exactly** from the target model’s conditional distribution **\(p(\cdot \mid \text{context})\)**. That distinction is career-relevant: teams can adopt speculation for **latency** without **re-tuning** safety filters that assume **\(p\)**. When a method only preserves **greedy** behavior (common in simpler presentations), it is still useful, but you must label it **greedy–greedy** alignment, not **full distributional** equivalence.
 
-A second thread is **tree** and **parallel head** speculation (**Medusa**, **EAGLE**): instead of a second model, add **heads** that predict **multiple future tokens** from the same hidden state, then verify. The math shifts toward **expected accepted length** per round and **parallel** verification batches.
-
-Third, **latency** SLOs in chat often cap **time-to-first-token** separately from **tokens/sec**—speculation helps **throughput** more than **TTFT** unless draft is nearly free (e.g., tiny model on same GPU).
+Third, **throughput** gains depend on **acceptance rate** \(\alpha\), **draft cost** \(C_q\), and **target cost** \(C_p\). A **weak** draft that disagrees with the target **wastes** work: you pay for **draft** forwards **plus** **target** verification **without** accepting long prefixes. Production systems therefore **distill** drafts toward **\(p\)**, share **tokenizers**, match **context windows**, and sometimes use **feature-space** drafting (**EAGLE**) to raise \(\alpha\). Understanding **expected accepted length** per round and how it interacts with **GPU occupancy** (parallel verification improves **tensor core** utilization) is how you move from “I heard about speculative decoding” to “here is how we’d prototype it on our stack.”
 
 ---
 
 ## Core Concepts
 
-### Draft + Verifier Paradigm
+### The Core Idea
 
-Let **target** model \(p\) (large) and **draft** model \(q\) (small). At state \(x\) (prompt + generated prefix), naive sampling draws \(y \sim p(\cdot \mid x)\). Speculative decoding instead:
-
-1. Draft model samples **\(K\)** tokens **i.i.d.** from \(q(\cdot \mid x)\) autoregressively (often \(K \in [2,8]\)).
-2. Target model **evaluates** conditional probabilities \(p(y_i \mid x, y_{<i})\) for proposed prefix **in parallel** (single batched forward on the concatenated prefix).
-3. **Accept/reject** procedure decides how many draft tokens to keep; may **resample** one token from an adjusted distribution when rejecting.
+A **draft** model \(q_\phi\) proposes a **block** of tokens \(\gamma_1,\ldots,\gamma_K\) cheaply (often **autoregressive** under \(q\)). A **target** model \(p_\theta\) evaluates the **true** next-token distributions \(p_\theta(\cdot \mid x, \gamma_{<i})\) for **each** position \(i\) in **one** parallel forward over the **concatenated** sequence (thanks to causal masking and **KV** reuse). An **acceptance** procedure decides how many proposed tokens to keep; on the first **reject**, a **corrected** sample is drawn so that **marginals** match **\(p_\theta\)**.
 
 !!! math-intuition "In Plain English"
-    - The **draft** proposes a **guess path** cheaply.
-    - The **target** checks “would I have gone there?” using **true** \(p\)—in parallel over positions—then statistics decide **match length**.
+    Think **proposal + verify**: the draft is a **guess**; the target is the **judge**. The cleverness is **batching** the judge’s work across **multiple** future positions **simultaneously**, then using **randomized** acceptance so the judge’s final decision is **statistically identical** to having run the target alone.
 
-### Acceptance–Rejection for One Step (Building Block)
+### Acceptance Probability for a Proposed Token
 
-Consider sampling a single discrete draw with probabilities \(p_i\) but you can only **evaluate** \(p\) and **propose** from \(q\). A standard **accept–reject** step:
-
-1. Sample \(y \sim q\).
-2. Compute acceptance probability \(a = \min\bigl(1,\, p_y / (M q_y)\bigr)\) with envelope \(M \ge \sup_i p_i/q_i\) (discrete case uses specialized bounds).
-
-For **autoregressive** extensions, the **coupled** algorithms in speculative decoding avoid naive global \(M\) by using **token-wise** ratios along the prefix.
-
-### Leviathan / Chen–etal Algorithm (High-Level)
-
-For **greedy** target decoding, the procedure simplifies: **accept** draft tokens while they **match** the argmax of \(p\) at each step; on first mismatch, take the **target’s** argmax instead—**deterministic** speedups without changing **greedy** output (under exact arithmetic).
-
-For **stochastic** target sampling, preserve \(p\) by:
-
-- Defining **acceptance probabilities** using **min** of ratios \(p(y_i)/q(y_i)\) along the chain with careful **renormalization**.
-- Drawing **uniform** random numbers to decide acceptance; on failure, **resample** from a **modified** distribution over the vocabulary for **one** step.
-
-!!! math-intuition "In Plain English"
-    - **Math property**: output token at each **real** step is **exactly** distributed as **one** draw from \(p(\cdot \mid \text{context})\) when the algorithm is implemented correctly—**no** “approximate ChatGPT.”
-    - **Engineering property**: parallel \(p\) evaluations over a **candidate continuation** reduce **wall-clock** vs **serial** \(K\) forwards of the big model.
-
-### Expected Tokens per Target Forward
-
-Let **\(A\)** be the event that the first draft token is accepted (stochastic case). A rough **mean-field** model: if each position **independently** accepts with probability \(\alpha\), the **number** of accepted tokens before failure behaves like a **geometric** stopping time with success parameter related to **mismatch** probability.
-
-Denote **\(L\)** as accepted length per **round**. Then
+Consider a **single** proposed token \(y\) drawn from **\(q(\cdot \mid x)\)**. A standard building block uses acceptance probability
 
 \[
-\mathbb{E}[L] \approx \sum_{k=1}^{K} P(\text{first } k \text{ draft tokens all accepted}).
+a(y) = \min\left(1,\, \frac{p(y \mid x)}{q(y \mid x)}\right).
 \]
 
-Under simplifying assumptions (and **greedy** alignment), if draft matches target with probability \(\alpha\) **per token**, then \(\mathbb{E}[L] \approx \frac{1}{1-\alpha}\) **truncated** at \(K\).
-
 !!! math-intuition "In Plain English"
-    - **Higher** alignment between \(q\) and \(p\) → **longer** accepted runs → **higher** speedup.
-    - If \(q\) is **bad**, most rounds reject immediately → overhead **worse** than baseline.
+    If the draft **overweights** \(y\) relative to the target (\(q > p\)), you **accept** only **sometimes**, with probability \(p/q\). If the draft is **pessimistic** about a token the target likes (\(p \ge q\)), you **always** accept that draw—there is no need to **down-weight** accepted proposals when \(p \ge q\) because the **min** clips at 1.
 
-### Speedup Analysis (Sketch)
+!!! example "Worked Example: Speculative Decoding Steps (Stochastic)"
+    Draft proposes tokens for the continuation: **["The", "cat", "sat", "on"]**. For each position \(i\), compare **target** probability \(p_i = p_\theta(y_i \mid \text{prefix})\) with **draft** probability \(q_i = q_\phi(y_i \mid \text{prefix})\). Acceptance uses **\(r_i = \min(1, p_i/q_i)\)** and a uniform draw \(u_i \sim \mathrm{Unif}(0,1)\); accept if \(u_i \le r_i\) (implementation details chain these carefully; this example illustrates **magnitudes**).
 
-Let **\(C_p\)** = cost of one **target** forward (large), **\(C_q\)** = cost of drafting **\(K\)** tokens (small). **Idealized** speedup factor:
+    - **Token "The"**: \(p=0.9\), \(q=0.8\) → \(r=\min(1, 0.9/0.8)=1.0\) → **always accept** this proposal if it was sampled under \(q\) and passes the **joint** procedure’s checks (single-step intuition: **no downscaling**).
+
+    - **Token "cat"**: \(p=0.3\), \(q=0.4\) → \(r=\min(1, 0.3/0.4)=0.75\) → accept with probability **0.75**.
+
+    - **Token "sat"**: \(p=0.05\), \(q=0.3\) → \(r=\min(1, 0.05/0.3)\approx 0.167\) → usually **reject**; when rejecting, the algorithm draws a **replacement** token from a **residual** distribution derived from **\(p\)** and **\(q\)** so the **overall** next-token marginal remains **\(p\)**.
+
+    **Effective throughput intuition**: if average accepted length per round is **~2.2** tokens for the target model **amortized** over verification cost, you approach **~2×** target-limited decoding **when** draft cost is **negligible** and verification is **batched efficiently**.
+
+### Greedy Speculative Decoding (Deterministic)
+
+If **both** draft and target use **greedy** decoding (argmax), verification simplifies: **accept** draft tokens while **each** matches the **target argmax** at that position; on the **first** mismatch, **emit** the **target** argmax instead. This preserves **greedy** target outputs (under exact tie-breaking assumptions).
 
 \[
-S \approx \frac{\mathbb{E}[L] \cdot C_p}{C_q + C_p}
+y_i^{\text{greedy}} = \arg\max_{w} p_\theta(w \mid x, y_{<i}^{\text{accepted}}).
 \]
 
-(very rough—real systems count **kernels**, **batching**, **KV** appends). When \(\mathbb{E}[L] \gg 1\) and \(C_q \ll C_p\), \(S\) can approach **\(\mathbb{E}[L]\)** in the best case.
-
 !!! math-intuition "In Plain English"
-    - **Draft must be cheap** relative to target—often **2–3 orders** fewer parameters.
-    - **Verification** still needs **target** forward on **extended** context—**KV cache** management matters.
+    **Greedy** speculation is easier to implement and reason about: you are asking whether the draft’s **top-1** choices match the target’s **top-1** choices along a prefix. It does **not**, by itself, guarantee **full** distributional equivalence—only **greedy** alignment.
 
-### Medusa: Parallel Heads on One Model
+### Expected Accepted Length (Geometric Heuristic)
 
-**Medusa** adds **multiple decoding heads** on top of standard LM hidden states to predict **\(y_{t+1}, y_{t+2}, \ldots\)** simultaneously. Tree-based verification compares **candidate continuations** against **base** model probabilities.
+Let **independent** Bernoulli approximations suggest each draft token **survives** with probability \(\alpha\). The **expected** number of **leading** accepts **before** failure (capped at \(K\)) satisfies:
 
 \[
-\hat{y}_{t+j}^{(j)} = \text{head}_j(h_t)
+\mathbb{E}[L] \approx \sum_{j=1}^{K} \alpha^{j} = \frac{\alpha(1-\alpha^{K})}{1-\alpha}\quad (\alpha<1).
 \]
 
-Verification still uses **target** \(p\) to **approve** branches—**no free lunch** if you demand **exact** sampling.
-
 !!! math-intuition "In Plain English"
-    - **Pros**: no separate **weights** for a second model—**heads** are small.
-    - **Cons**: **training** Medusa heads requires **preference** data or **distillation** so proposals **align** with \(p\).
+    **Higher** \(\alpha\) (draft **agrees** with target) **lengthens** accepted runs. Real drafts have **Markov** dependence—this formula is a **pedagogical** guide, not a calibrated production predictor.
 
-### Rejection Probability
+!!! example "Worked Example: \(\alpha=0.7\), \(K=8\)"
+    \[
+    \mathbb{E}[L] \approx \sum_{j=1}^{8} 0.7^{j} = 0.7 \frac{1-0.7^{8}}{1-0.7} \approx 1.96.
+    \]
 
-For a **single** proposed token \(y\) from \(q\), define **acceptance**:
+    Even **70%** per-step **agreement** yields **~2** accepted tokens per round on average under this **independent** toy—strong **alignment** or **larger** effective \(K\) helps **amortize** verification.
+
+### Speedup (Rough Accounting)
+
+Let **\(C_p\)** be the target cost for a **verification** forward that processes **\(K\)** draft tokens in parallel (amortizing prefix), and **\(C_q\)** the cost to **draft** those \(K\) tokens. A **rough** speedup factor:
 
 \[
-a(y) = \min\left(1,\, \frac{p(y)}{q(y)}\right)
+S \approx \frac{\mathbb{E}[L] \cdot \tau_{\text{serial}}}{\tau_{\text{draft}} + \tau_{\text{verify}}},
 \]
 
-in the **independent** Metropolis–Hastings style (simplified illustration—full AR spec uses **vector** corrections). The **rejection** probability is \(1 - \mathbb{E}_q[a(y)]\).
+where \(\tau\) denotes wall-clock time per **round** and \(\mathbb{E}[L]\) is **accepted target tokens per target verification** in expectation.
 
 !!! math-intuition "In Plain English"
-    - When \(q\) **underestimates** \(p\) on high-probability tokens, **acceptance** drops—**adaptive** \(q\) (learned draft) helps.
+    If you **accept** ~3 tokens per target forward and **draft** is **10× cheaper** than **target**, net wins are plausible—but **constants** (attention kernels, **KV** bandwidth) dominate in practice.
+
+### Draft Model Selection
+
+- **Smaller** transformer in the **same family** (e.g., 7B draft vs 70B target).
+- **Distillation** toward **\(p_\theta\)** on the **deployment prompt** distribution.
+- **Self-speculation**: early layers/heads propose tokens; target verifies (**Medusa**-style).
+
+??? deep-dive "Deep Dive: Medusa and Parallel Prediction Heads"
+    **Medusa** attaches **multiple** shallow heads to a **single** backbone to predict **several** future tokens from the **same** hidden state. Verification still uses **\(p_\theta\)** to **approve** candidates—training aligns heads so proposals **match** the target’s **likely** continuations. The **systems** benefit is **avoiding** a **second** full model while keeping a **structured** proposal set.
+
+??? deep-dive "Deep Dive: Feature-Space Drafting (EAGLE-Class)"
+    **EAGLE**-style methods draft **features** (next hidden states) rather than **only** discrete tokens, improving **alignment** between proposal and target dynamics. Acceptance analysis still hinges on **how often** the target’s **token-level** tests accept the **proposed** path.
+
+### Mathematical Guarantee (Informal Statement)
+
+Correct **speculative sampling** algorithms ensure that the **sequence** of tokens produced by the **combined** procedure is **distributed identically** to running **target-only** sampling under **\(p_\theta\)**, **assuming** exact arithmetic and exact **\(p,q\)** evaluation. The proof uses **coupling** and **detailed balance**-style arguments at the token level; the practical **invariant** you cite in interviews is: **“no quality loss relative to the target distribution.”**
+
+\[
+\text{Law}(\text{output} \mid \text{speculative pipeline}) = \text{Law}(\text{output} \mid \text{target-only pipeline}).
+\]
+
+!!! math-intuition "In Plain English"
+    This is **not** claiming the draft is **accurate**—it claims the **final** procedure **does not introduce bias** relative to **\(p\)** when implemented **exactly**. **Numerical** differences (FP16 **argmax** ties) can break **greedy** parity in real stacks—teams sometimes standardize on **BF16** for verification.
+
+### Verification Forward: One Matmul, Many Positions
+
+Let **context** length be \(n\) and draft **block** length \(K\). A **single** target forward on length \(n+K\) computes **all** next-token logits needed to **score** each draft token **in parallel**:
+
+\[
+\mathbf{z}_{n+i-1} = \mathrm{logits}_\theta\bigl(\cdot \mid x_{\le n+i-1}\bigr),\quad i=1..K.
+\]
+
+!!! math-intuition "In Plain English"
+    **Causal** attention lets the model **fill** the lower triangle in **one** go: each position’s hidden state depends **only** on **left** context, which includes **draft** tokens when they are **present** in the input sequence. That is why **verification** is **not** the same as **\(K\)** separate forwards from **scratch** without **KV**—the **implementation** reuses **prefix** computation.
+
+!!! example "Worked Example: Indexing Logits for Draft Checks"
+    Suppose **context** token IDs have length **\(n=4\)** and draft proposes **\(K=3\)** tokens \(\gamma_1,\gamma_2,\gamma_3\). The **model input** is the **concatenation**:
+
+    \[
+    [x_1,x_2,x_3,x_4,\gamma_1,\gamma_2,\gamma_3]\quad(\text{length }7).
+    \]
+
+    **In Plain English:** The **concatenation** is what the **target** model sees in **one** forward: **causal** masking ensures \(\gamma_2\) was **not** available when predicting \(\gamma_1\), matching **autoregressive** semantics.
+
+    **Causal LM convention**: at input position **\(j\)** (0-based), logits predict **token at position \(j+1\)**. The **first** draft token \(\gamma_1\) is the **prediction** after consuming **\(x_1..x_4\)**—that is **logits at position \(n-1=3\)**. The **second** draft \(\gamma_2\) is checked at **position \(4\)** after prefix \(\ldots,x_4,\gamma_1\), and so on: **draft \(\gamma_i\)** uses **position \(n-2+i\)** in 0-based indexing (equivalently **\(n-1+i-1\)**). **Sanity**: if **\(i=1\)**, index \(n-1=3\) predicts the **5th** token \(\gamma_1\). **Implementation** tip: **unit-test** your indexing against **teacher-forced** loss on short sequences.
+
+### Rejection and Residual Sampling (Conceptual)
+
+When a proposed token **fails** the randomized test, algorithms **do not** simply fall back to **argmax**—that would **bias** the chain. Instead, one samples from a **residual** distribution constructed from **\(p\)** and **\(q\)** so that **overall** the next-token marginal remains **\(p\)**. A **common** illustration uses **positive** mass:
+
+\[
+p'(w) \propto \max\bigl(0,\, p(w) - q(w)\bigr)
+\]
+
+(on **support** where needed), followed by **renormalization**—the **exact** discrete construction in papers includes **careful** handling of the **accepted** token case and **coupling** with **uniform** draws.
+
+!!! math-intuition "In Plain English"
+    Think of **reject sampling** as **subtracting** the **draft’s** mass from the **target** where the draft **overclaimed** probability for the **proposed** token—then **renormalize** what remains. The **full** coupled chain is longer to implement than **greedy** verification, which is why **production** stacks often ship **greedy** or **approximate** variants first, then add **exact** sampling.
+
+??? deep-dive "Deep Dive: KV Cache Rollback After Partial Accept"
+    When **only** a **prefix** \(\gamma_{1..i-1}\) is accepted and position \(i\) **rejects**, the **speculative tail** \(\gamma_{i..K}\) must be **discarded** from **KV** state. Engines **checkpoint** cache **blocks** at the **start** of the round or **recompute** a short **suffix**—the **cost** of **rollback** influences **optimal** \(K\) under **memory** pressure.
+
+??? deep-dive "Deep Dive: Tree Speculation (SpecInfer / Sequoia)"
+    **Multiple** draft **branches** can be verified with **batched** attention over **tree**-structured prefixes. **Acceptance** generalizes from **chains** to **paths** in a tree; **throughput** rises when **draft** uncertainty is **multi-modal** (several plausible continuations), but **bookkeeping** and **memory** grow with **branching factor**.
+
+### Comparison to Contrastive Decoding
+
+**Contrastive decoding** forms **logit differences** between **strong** and **weak** models to **shape** outputs—it **changes** the **effective** distribution. **Speculative decoding** **preserves** **\(p\)** when done **exactly**. Do **not** conflate **distribution shaping** with **compute** acceleration.
+
+\[
+z_{\text{contrast}} = z_{\text{large}} - \alpha\, z_{\text{small}}.
+\]
+
+!!! math-intuition "In Plain English"
+    **Contrastive** modifies **logits** to **steer** behavior; **speculative** uses a **small** model as a **proposal** for **faster** **evaluation** of **\(p\)**—orthogonal goals.
 
 ---
 
-## Simulation: Acceptance Length (Toy)
+## Code
 
-The script below does **not** implement full coupled sampling—it **simulates** **greedy agreement** between draft and target **next-token argmax** on random logits to illustrate **\(\mathbb{E}[L]\)** vs mismatch rate.
+The script below is **self-contained** (**PyTorch** only). It defines **two** small causal LMs (**draft** and **target**) over a **tiny** vocabulary, runs **greedy** speculative decoding with **parallel** verification, and demonstrates **one-step** acceptance probabilities **\(\min(1,p/q)\)** using explicit softmax distributions.
 
 ```python
 """
-Toy simulation: greedy agreement between independent 'draft' and 'target' argmax.
-Not full speculative decoding — illustrates acceptance length sensitivity.
+speculative_decoding_demo.py — toy draft/target models + greedy speculative decode.
+Run: python speculative_decoding_demo.py
 """
 from __future__ import annotations
 
-import math
-from typing import Tuple
+from dataclasses import dataclass
+from typing import List, Tuple
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 
-def expected_accepted_length(
-    vocab_size: int = 32000,
-    rounds: int = 2000,
-    max_k: int = 8,
-    seed: int = 0,
-) -> float:
+@dataclass
+class ToyLMConfig:
+    vocab_size: int = 64
+    d_model: int = 32
+    n_layers: int = 1
+
+
+class TinyCausalLM(nn.Module):
+    """Minimal unidirectional LM: token embeddings + 1-layer causal Transformer block + lm_head."""
+
+    def __init__(self, cfg: ToyLMConfig) -> None:
+        super().__init__()
+        self.cfg = cfg
+        self.embed = nn.Embedding(cfg.vocab_size, cfg.d_model)
+        self.ln = nn.LayerNorm(cfg.d_model)
+        self.wq = nn.Linear(cfg.d_model, cfg.d_model, bias=False)
+        self.wk = nn.Linear(cfg.d_model, cfg.d_model, bias=False)
+        self.wv = nn.Linear(cfg.d_model, cfg.d_model, bias=False)
+        self.wo = nn.Linear(cfg.d_model, cfg.d_model, bias=False)
+        self.lm_head = nn.Linear(cfg.d_model, cfg.vocab_size, bias=False)
+
+    def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
+        """
+        token_ids: (B, L) int64
+        returns logits: (B, L, V) — logits at position i predict token at i+1
+        """
+        x = self.embed(token_ids)
+        h = self.ln(x)
+        q, k, v = self.wq(h), self.wk(h), self.wv(h)
+        L = h.size(1)
+        scores = torch.matmul(q, k.transpose(-2, -1)) / (self.cfg.d_model**0.5)
+        mask = torch.triu(torch.ones(L, L, device=scores.device, dtype=torch.bool), diagonal=1)
+        scores = scores.masked_fill(mask, float("-inf"))
+        attn = F.softmax(scores, dim=-1)
+        ctx = self.wo(torch.matmul(attn, v))
+        h2 = h + ctx
+        return self.lm_head(h2)
+
+
+def softmax_row(logits: torch.Tensor) -> torch.Tensor:
+    return F.softmax(logits, dim=-1)
+
+
+def greedy_next(logits_last: torch.Tensor) -> int:
+    return int(torch.argmax(logits_last, dim=-1).item())
+
+
+def draft_greedy_chain(model: TinyCausalLM, context: List[int], k: int) -> List[int]:
+    out: List[int] = []
+    cur = context.copy()
+    for _ in range(k):
+        ids = torch.tensor([cur], dtype=torch.long)
+        logits = model(ids)  # (1, L, V)
+        last = logits[0, -1]
+        nxt = greedy_next(last)
+        out.append(nxt)
+        cur.append(nxt)
+    return out
+
+
+def greedy_speculative_round(
+    draft: TinyCausalLM,
+    target: TinyCausalLM,
+    context: List[int],
+    k: int,
+) -> Tuple[List[int], List[int]]:
+    """
+    Returns (accepted_prefix, final_context) where final_context extends context by accepted
+    tokens plus possibly one correction token when mismatch occurs.
+    """
+    proposal = draft_greedy_chain(draft, context, k)
+    seq = context + proposal
+    ids = torch.tensor([seq], dtype=torch.long)
+    t_logits = target(ids)[0]  # (Ltot, V)
+    n = len(context)
+    accepted: List[int] = []
+    for i, y in enumerate(proposal):
+        pos = n - 1 + i  # logits at pos predict y (next token after prefix)
+        p_last = t_logits[pos]
+        targ_tok = greedy_next(p_last)
+        if y == targ_tok:
+            accepted.append(y)
+        else:
+            # emit target greedy token at mismatch
+            return accepted, context + accepted + [targ_tok]
+    # all draft tokens matched target greedy — take one more greedy step from full sequence
+    last_pos = len(seq) - 1
+    extra = greedy_next(t_logits[last_pos])
+    return proposal, context + proposal + [extra]
+
+
+def min_ratio_acceptance(p: torch.Tensor, q: torch.Tensor) -> float:
+    """Expected acceptance E_{y~q}[min(1, p_y/q_y)] for finite support (demo)."""
+    pq = torch.clamp(p / (q + 1e-12), max=1.0)
+    return float((q * pq).sum().item())
+
+
+def demo() -> None:
+    torch.manual_seed(0)
+    cfg_d = ToyLMConfig(vocab_size=128, d_model=32, n_layers=1)
+    cfg_t = ToyLMConfig(vocab_size=128, d_model=48, n_layers=1)
+    draft = TinyCausalLM(cfg_d)
+    target = TinyCausalLM(cfg_t)
+
+    context = [1, 2, 3, 4]
+    acc, new_ctx = greedy_speculative_round(draft, target, context, k=5)
+    print("Accepted draft prefix:", acc)
+    print("New context length:", len(new_ctx))
+
+    # Single-step acceptance rate demo
     g = torch.Generator()
-    g.manual_seed(seed)
-    total = 0
-    for _ in range(rounds):
-        # random independent logits — unrelated draft/target => low agreement
-        accepted = 0
-        for _i in range(max_k):
-            d_logits = torch.randn(vocab_size, generator=g)
-            t_logits = torch.randn(vocab_size, generator=g)
-            d_tok = int(torch.argmax(d_logits).item())
-            t_tok = int(torch.argmax(t_logits).item())
-            if d_tok == t_tok:
-                accepted += 1
-            else:
-                break
-        total += accepted
-    return total / rounds
-
-
-def softmax_min_ratio_acceptance(p_logits: torch.Tensor, q_logits: torch.Tensor) -> float:
-    """Single-step acceptance prob min(1, p_i / q_i) under independent sampling — demo."""
-    p = F.softmax(p_logits, dim=-1)
-    q = F.softmax(q_logits, dim=-1)
-    # expected acceptance if y ~ q: E_q [min(1, p_y / q_y)]
-    ratio = torch.clamp(p / (q + 1e-12), max=1.0)
-    return float((q * ratio).sum().item())
+    g.manual_seed(1)
+    p_logits = torch.randn(256, generator=g)
+    q_logits = torch.randn(256, generator=g)
+    p = softmax_row(p_logits)
+    q = softmax_row(q_logits)
+    print("Toy E[min(1,p/q)] under q:", min_ratio_acceptance(p, q))
 
 
 if __name__ == "__main__":
-    e_len = expected_accepted_length()
-    print(f"Mean accepted greedy matches (random logits): {e_len:.3f}")
-
-    g = torch.Generator()
-    g.manual_seed(1)
-    p_l = torch.randn(1000, generator=g)
-    q_l = torch.randn(1000, generator=g)
-    print("Single-step avg acceptance (toy ratio):", softmax_min_ratio_acceptance(p_l, q_l))
+    demo()
 ```
 
 !!! math-intuition "In Plain English"
-    - With **random** unrelated logits, agreement is **tiny**—real draft models are **correlated** with target (**distillation**, shared tokenizer, similar data).
-
-### Stochastic Acceptance Math (One-Round Sketch)
-
-Let draft propose \(y \sim q(\cdot \mid x)\). A correct **Metropolis–Hastings** style step uses acceptance
-
-\[
-\alpha(y) = \min\left(1,\, \frac{p(y\mid x)}{q(y\mid x)} \cdot \frac{q(x \mid \ldots)}{p(x \mid \ldots)}\right)
-\]
-
-for **reverse** proposals; the full **autoregressive** coupled sampler in Chen et al. chains **multiple** tokens with **careful** joint ratios so the **stationary** distribution remains \(p\). Interview takeaway: **ratios** \(p/q\) are the **sufficient statistics** for **whether** draft is **trusted**.
-
-### Blockwise Parallel Decoding (Historical Context)
-
-**Stern et al. (2018)** observe that certain **autoregressive** models admit **parallel** prediction of **blocks** when auxiliary networks predict **multiple** steps; verification still ties back to **teacher forcing** objectives. Modern speculative decoding can be seen as **learned** block proposals with **exact** \(p\) **checks**.
-
-### EAGLE and Feature-Space Drafting
-
-Recent **EAGLE**-class methods draft in **hidden feature** space (predicting **next** hidden states) then map through the **LM head**, improving **alignment** between draft and target compared to **token-only** small LMs. The **acceptance** analysis still reduces to **how often** the **large** model’s **next-token** distribution agrees with the **proposal path**—but **feature** drafting raises **\(\mathbb{E}[L]\)** empirically.
-
-### Parallel Verification and Batching
-
-When verifying **\(K\)** draft tokens, the target forward can **concatenate** positions so **attention** is **one** batched matmul over the **extended** sequence (subject to **causal** masks). **GPU utilization** improves vs **\(K\)** serial forwards. The **cost model**:
-
-\[
-T_{\text{verify}} \approx T_{\text{forward}}(L + K) - T_{\text{forward}}(L)
-\]
-
-which is **sublinear** in \(K\) compared to \(K\) **independent** forwards from scratch **without** KV reuse—**amortized** prefix in cache.
-
-### Failure Modes
-
-- **Draft too weak**: \(\mathbb{E}[L] \approx 0\) → extra **\(q\)** passes + **same** \(p\) → **slower** than baseline.
-- **Draft misaligned tokenizer**: **spurious** rejections even when semantics match—**shared** BPE is mandatory.
-- **Numerical** mismatch: FP16 **argmax** differences between machines can break **greedy** equivalence—production stacks sometimes **force** BF16 for verification parity.
-
-### Relationship to Contrastive Decoding (Clarification)
-
-**Contrastive decoding** subtracts **amateur** logits from **expert** logits to **sharpen** reasoning—it is **not** speculative decoding. Do **not** conflate **distribution shaping** with **compute** acceleration.
-
-### Expected Tokens per Round — Geometric Heuristic
-
-Assume **independent** Bernoulli trials with **accept** probability \(\alpha\) for each draft token **conditional** on all previous accepts. Let **\(L\)** be the **number** of leading accepted tokens before first failure (cap at \(K\)). Then \(\mathbb{P}(L \ge j) = \alpha^j\) for \(j \le K\), and
-
-\[
-\mathbb{E}[L] = \sum_{j=1}^{K} \mathbb{P}(L \ge j) = \sum_{j=1}^{K} \alpha^j = \frac{\alpha(1-\alpha^{K})}{1-\alpha}.
-\]
-
-As \(K \to \infty\), \(\mathbb{E}[L] \to \frac{\alpha}{1-\alpha}\) (truncated geometric series).
-
-!!! math-intuition "In Plain English"
-    - **\(\alpha = 0.8\)** → mean accepted prefix \(\approx 4\) if \(K\) large—if **target** verification is **cheap** enough vs **serial**, wall-clock wins.
-    - Real drafts have **Markov** dependence—this formula is **pedagogical**, not calibrated.
-
-### Draft Model Training Strategies
-
-- **Distillation**: train \(q_\phi\) to minimize \(\mathrm{KL}\bigl(p(\cdot \mid x) \,\|\, q_\phi(\cdot \mid x)\bigr)\) on prompts from the **deployment** distribution.
-- **Shared tokenizer + vocabulary**: ensures **token-level** comparisons are **well-defined**.
-- **Depth–width trade**: tiny Transformers (few layers, same \(d_{\text{model}}\)) often beat **RNN** drafts for **\(\alpha\)**.
-
-### Verification Latency vs Throughput
-
-**Latency-sensitive** chat APIs may **disable** speculation under high **concurrency** because **KV** memory **fragmentation** and **queueing** dominate—**speedups** are **workload dependent**. Always report **p50/p95** latency separately from **tokens/sec**.
-
-### Pseudocode: Greedy Speculative Chain (Educational)
-
-```text
-Given: draft q, target p (greedy / argmax), prompt x
-Initialize: accepted prefix = x
-loop until stop:
-    # 1) Draft proposes K tokens greedily under q
-    y[1:K] = greedy_chain_q(x, K)
-    # 2) Target evaluates p(y[i] | x, y[<i]) for all i in parallel
-    logits_stack = p.forward_parallel(x concatenated with draft positions)
-    # 3) Find first index where argmax_p != y[i]
-    i_star = first_mismatch(logits_stack, y)
-    if i_star is None:
-        append y[1:K] to output; continue
-    else:
-        append y[1:i_star]  # accepted shared prefix
-        append argmax_p at position i_star  # correction token
-        # KV caches must roll back speculative tail after i_star in real engines
-```
-
-!!! math-intuition "In Plain English"
-    - Real engines **reuse** **KV** for **shared** prefix and **discard** **wrong** tail—**cache rollback** is subtle engineering.
-
-### Alternative: N-gram / Retrieval Drafts
-
-Some systems use **static** **n-gram** tables or **retrieval** over corpus to propose continuations—**acceptance** still uses **\(p\)**. This avoids a **second neural** draft but only helps when **text** is **memorized** or **template**-like.
-
-### Summary Formula Sheet
-
-| Quantity | Symbol | Role |
-|----------|--------|------|
-| Draft tokens per round | \(K\) | Max speculation depth |
-| Per-token accept prob | \(\alpha\) | Drives \(\mathbb{E}[L]\) |
-| Target cost | \(C_p\) | Big model forward |
-| Draft cost | \(C_q\) | Small model chain |
-| Idealized speedup | \(S\) | \(\approx \mathbb{E}[L] \cdot C_p / (C_q + C_p)\) (rough) |
-
-### Worked Micro-Example: Greedy Agreement Length
-
-Suppose (unrealistically) each draft token matches the greedy **target** token with probability **0.7**, **independently**. Then \(\mathbb{P}(L \ge j) = 0.7^j\) until cap \(K\). With \(K=8\):
-
-\[
-\mathbb{E}[L] = \sum_{j=1}^{8} 0.7^j = 0.7 \frac{1 - 0.7^8}{1 - 0.7} \approx 1.96.
-\]
-
-So even **decent** 70% **per-token** match yields **~2** accepted tokens per round on average—speedups require **stronger** alignment than intuition suggests, or **higher** \(K\) with **cheap** draft.
-
-### Lookahead Decoding (Name Collision Warning)
-
-Some vendors say **“lookahead decoding”** for **speculative** stacks; others reserve it for **different** parallel schemes. In interviews, **define terms**: **speculative sampling** (exact \(p\)) vs **heuristic** **draft** methods.
-
-### Hardware Co-design
-
-**Tensor cores** favor **batched** verification (large \(B\))—speculative decoding increases **micro-batch** **tensor** sizes on the **target** forward, improving **utilization** vs many **single-token** forwards. This **secondary** speedup is **not** captured by **FLOP-only** models.
-
-### Safety and Alignment Note
-
-**Exact** sampling preservation applies to the **target** distribution \(p\). If \(p\) itself is **unsafe**, speculative decoding **does not** fix **harm**—it only preserves **statistics**. Some **filtered** decoding pipelines **change** \(p\) with **constraints**; speculative layers must be **re-derived** against the **constrained** distribution.
-
-### Token Trees and Multiple Candidates
-
-Advanced implementations (**SpecInfer**, **Sequoia**) maintain **trees** of **draft** continuations and **verify** **multiple** branches with **batched** attention—**math** is still **accept/reject** on **paths**, but **bookkeeping** explodes. Interview level: **know** trees improve **\(\mathbb{E}[L]\)** when **draft** uncertainty is **multi-modal**.
-
-### Coupling View (Informal)
-
-Let **\(X \sim p\)** be the **ideal** next token. Speculative algorithms construct a **coupling** between a **proposal** chain and **\(p\)** so that **marginals** match **exactly** while **joint** processes **share randomness** to maximize **acceptance**. The **maximal coupling** intuition: if \(p\) and \(q\) overlap a lot, you can **often** pick the **same** \(X\) from both—speculative decoding operationalizes this at **sequence** level.
-
-### Practical Hyperparameters
-
-| Hyperparameter | Typical range | Effect |
-|----------------|---------------|--------|
-| \(K\) | 2–8 | Larger \(K\) raises **verify** cost linearly |
-| Draft size | 7M–1B params | Smaller → faster **\(C_q\)** but lower \(\alpha\) |
-| Precision | FP16/BF16 | Must **match** target for **greedy** parity |
-| Batch verify | Enabled | Improves **GPU** occupancy |
-
-### Why Independent Draft Tokens Are Easier to Analyze
-
-If draft tokens were **independent** of context (absurd), acceptance at each step would factorize. Real **autoregressive** \(q(y_{1:K}\mid x) = \prod_i q(y_i \mid x, y_{<i})\) introduces **Markov** structure: **mistakes** early **invalidate** later **positions** even if local \(q\) is **sharp**. This is why **teacher-forced** draft **chains** are standard—**joint** \(q\) over the **prefix** matches **how** models **score** continuations.
-
-### Reading the Original Papers
-
-When preparing for **onsite** loops, re-derive **Algorithm 1** from Chen et al. on paper: identify where **uniform** random variables enter, what happens on **reject**, and how **resampling** preserves **\(p\)**. The exercise takes **20 minutes** and **locks in** the **sampling** story.
-
-!!! math-intuition "In Plain English"
-    - If you remember **only** one sentence: **speculative decoding trades cheap sequential proposals for fewer expensive target forwards, while rejection sampling keeps the target distribution exact.**
-    - If you remember **two** numbers: **draft** cost \(C_q\) and **accept** probability \(\alpha\)—they dominate **real** speedups.
-    - **Medusa** swaps a **second model** for **extra heads**—verification still uses **\(p\)**, but **proposals** come from **parallel** classifiers on **\(h_t\)**.
-    - **EAGLE**-style **feature** drafting targets **higher** \(\alpha\) by aligning **hidden** dynamics—not just **surface** tokens.
+    The **toy** `TinyCausalLM` is **not** a production model—it exists to show **tensor shapes** and **parallel** verification. Real stacks fuse kernels, use **KV caches**, and implement **stochastic** acceptance with **exact** residual sampling per **Chen et al.**
 
 ---
 
-*The next page on continuous batching explains how serving engines schedule many sequences so that **verification** batches stay **large** without wasting KV memory.*
+## Interview Guide
+
+!!! interview "FAANG-Level Questions"
+    1. **What problem** does speculative decoding solve, and **why** is the target model often **memory-bandwidth bound** at batch size 1?
+    2. **Explain** the **draft/verify** pattern in **one** sentence suitable for a PM.
+    3. **How** does **parallel** verification differ from **\(K\)** **serial** target forwards for **\(K\)** proposed tokens?
+    4. **What** is **\(\min(1, p/q)\)** trying to enforce in **stochastic** acceptance?
+    5. **Why** can a **weak** draft **slow** the system down versus **baseline** decoding?
+    6. **Contrast** **greedy** speculative decoding with **exact sampling** preservation—what is each **good** for?
+    7. **How** does **Medusa** avoid a **second** full model—what is verified at inference time?
+    8. **Name** three **production** footguns: **numerical** parity, **tokenizer** mismatch, **KV** rollback after reject.
+    9. **Write** a **rough** expected-accepted-length expression under **independent** per-token acceptance \(\alpha\) and cap \(K\).
+    10. **Why** does **distillation** of \(q\) toward **\(p\)** on **realistic** prompts raise **acceptance** \(\alpha\)—often the **highest-ROI** knob before **custom** kernels?
+
+!!! interview "Follow-up Probes"
+    - **Probe A**: “If verification batches **long** candidate sequences, what **memory** component spikes first?”
+    - **Probe B**: “How does **speculative decoding** interact with **structured** decoding / tool-call grammars?”
+    - **Probe C**: “Does speculative decoding **fix** hallucinations? Why or why not?”
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “**Speculative decoding amortizes expensive target forwards across multiple tokens per round.**”
+    - “**Acceptance sampling can preserve the target distribution exactly—unlike heuristic shortcuts.**”
+    - “**Parallel verification evaluates \(p(y_i \mid \text{prefix})\) for all draft positions in one forward.**”
+    - “**Acceptance rate and draft cost dominate real-world speedups; weak drafts add overhead.**”
+    - “**Greedy speculative matches argmax chains; stochastic variants preserve full sampling.**”
+
+### Whiteboard Summary
+
+\[
+\text{Round work} \approx \underbrace{C_q}_{\text{draft chain}} + \underbrace{C_p}_{\text{verify forward on } n+K} \quad\Rightarrow\quad
+S \approx \frac{\mathbb{E}[L]}{C_q + C_p} \cdot C_p^{\text{baseline}}
+\]
+
+(only a **mnemonic**—constants absorb **KV** **append**, **kernel** **launches**, **batch** **shape**.)
+
+!!! math-intuition "In Plain English"
+    - **Draft** proposes a **path**; **target** **batched** forward is the **judge**; **acceptance** keeps **statistics** honest.
+    - If **verification** is **not** **much** **cheaper** than **\(K\)** **serial** **targets**, **check** **KV** **reuse** and **kernel** **batching**—those are the **real** **wins**.
 
 ---
-
-## Interview Takeaways
-
-- **Speculative decoding** uses a **cheap draft** + **parallel verification** by **target** \(p\) to emit **multiple** tokens per **target** forward while preserving **exact** sampling under correct algorithms.
-- **Expected speedup** grows with **acceptance rate** and **cheap** \(C_q\); **bad** drafts add **overhead**.
-- **Greedy** speculative variants compare **argmax** chains—simpler to reason about, **no** distribution guarantee needed beyond **matching** greedy behavior.
-- **Medusa / tree** methods trade **extra heads** and **verification** logic for **avoiding** a second full model.
-- **KV caches** must support **batched** verification forwards over **candidate** prefixes—**memory** spikes are a common **production** footgun.
-- Always distinguish **exact** algorithms from **heuristic** speedups that **change** distributions.
 
 ## References
 
 - Leviathan, Kalman & Matias (2023), *Fast Inference from Transformers via Speculative Decoding* — [arXiv:2211.17192](https://arxiv.org/abs/2211.17192)
 - Chen et al. (2023), *Accelerating Large Language Model Decoding with Speculative Sampling* — [arXiv:2302.01318](https://arxiv.org/abs/2302.01318)
-- Stern et al. (2018), *Blockwise Parallel Decoding for Deep Autoregressive Models* — historical parallel decoding
-- Cai et al. (2024), *Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads* — [arXiv:2401.10774](https://arxiv.org/abs/2401.10774)
+- Stern et al. (2018), *Blockwise Parallel Decoding for Deep Autoregressive Models*
+- Cai et al. (2024), *Medusa* — [arXiv:2401.10774](https://arxiv.org/abs/2401.10774)
+- Li et al. (2024), *EAGLE* — [arXiv:2408.10188](https://arxiv.org/abs/2408.10188)
+- Kwon et al. (2023), *PagedAttention* — [arXiv:2309.06180](https://arxiv.org/abs/2309.06180)
 - Miao et al., *SpecInfer* — tree-based speculative inference
-- Sun et al., *EAGLE* — [arXiv:2408.10188](https://arxiv.org/abs/2408.10188) — feature-space speculative sampling
+- Spector & Re, *Accelerating LLM Inference with Staged Speculative Decoding* — staged variants (ecosystem)
+- Sun et al., *Speculative Decoding via Early Exiting* — related early-exit ideas (compare/contrast)
+- NVIDIA blog — *Speculative Decoding in TensorRT-LLM* — implementation notes (vendor)
+- vLLM documentation — *Speculative Decoding* user guide — [https://docs.vllm.ai](https://docs.vllm.ai)
+
