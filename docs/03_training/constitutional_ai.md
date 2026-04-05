@@ -256,6 +256,32 @@ Constitutions are **human-readable**, enabling **policy teams** to **diff** chan
 
 ---
 
+## Specifying Principles: Style vs Substance
+
+Principles can target **tone** (“be concise”) or **substance** (“refuse illegal instructions”). **Substance** rules need **grounding** in policy and law; **style** rules need **examples** of acceptable length and format. Poorly scoped principles produce **inconsistent** AI labels—**iterate** constitutions like **prompts**, with regression suites after each edit.
+
+### Example Principle Blocks (Illustrative, Not Prescriptive)
+
+1. **Harmlessness**: “Choose the response that **minimizes** risk of enabling illegal acts, even if less detailed.”
+2. **Honesty**: “If uncertain, **say so** and avoid fabricated citations.”
+3. **Helpfulness**: “Prefer answers that **directly** address the user’s stated goal.”
+
+Real systems contain **dozens** of principles with **priority** rules; public papers often show **short** excerpts only.
+
+### Recording and Versioning Constitutions
+
+Treat constitutions like **code**: store in **git**, tag with **model releases**, and run **diff** reviews when **policy** changes. Teams often pair **principle IDs** (e.g., `HARM-01`) with **eval** cases so regressions are **traceable** to a rule change.
+
+### Auditing AI-Labeled Data
+
+When **critics** generate labels, sample **stratified** subsets for **human** audit: focus on **high-stakes** domains (medical, legal), **ambiguous** principles, and **low-confidence** model judgments (if a **calibrated** score exists). **Inter-annotator** agreement between **AI** and **human** judges should be tracked over time—**drift** signals **constitution** or **base model** updates gone wrong.
+
+### Multilingual and Jurisdictional Constitutions
+
+Principles written in **English** may not **transfer** culturally or legally across locales. Production teams maintain **locale-specific** addenda (e.g., EU privacy emphasis) and test **translated** prompts for **consistent** refusals. Interview angle: “**Constitutional AI is not one-size-fits-all** across languages and jurisdictions.”
+
+---
+
 ## Clarifying Questions (Interview Style)
 
 **Q: Is Constitutional AI the same as RLAIF?**  

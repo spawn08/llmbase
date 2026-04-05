@@ -2,361 +2,426 @@
 
 ## Why This Matters for LLMs
 
-Language models define a **conditional distribution** \(P(w_{t+1} \mid w_{\le t})\) over a vocabulary at every step. Training minimizes cross-entropy against **human-written** continuations, but at inference **you choose a policy** that maps logits to the next token: greedy argmax, beam search, or a stochastic sampler (top-\(k\), top-\(p\), temperature). That choice changes **fluency**, **factuality**, **diversity**, and **latency**. Interviewers expect you to explain not only *what* each method does, but *why* it corresponds to manipulating the same softmax family—often with a one-line formula on the whiteboard.
+Decoding strategies are the **policy layer** that sits between a trained language model’s next-token distribution and the **text users actually see**. A 70B-parameter model can be brilliant at estimating probabilities, but greedy decoding may collapse into repetition, beam search may favor bland continuations, and poorly tuned sampling can inject incoherence or unsafe content. In production, **latency**, **determinism**, **diversity**, and **safety** requirements often conflict; the same backbone model may need greedy decoding for structured outputs, nucleus sampling for chat, and constrained decoding for tool calls. Interviewers probe this topic because it is where **probability theory meets systems engineering**: you must reason about logits, temperatures, caches of partial hypotheses, and batching implications without hand-waving.
 
-A second reason decoding matters is **evaluation**. Perplexity is computed with teacher forcing and often **greedy** or **full-vocab** softmax; human preference and downstream task scores respond to **sampling temperature** and **truncation** (top-\(p\)). Comparing two models without fixing decoding hyperparameters is an apples-to-oranges mistake that shows up in both ML research and production A/B tests.
+Second, decoding is not a single knob. **Temperature** rescales logits before softmax; **top-k** and **top-p (nucleus)** truncate or reweight the support of the distribution; **repetition penalties** and **min-p** reshape logits based on history or the shape of the current distribution. These mechanisms **interact**: a high temperature plus a wide top-p can explode variance, while a low temperature plus aggressive repetition penalty can over-suppress frequent words. Understanding these interactions is what separates “I called `model.generate`” from “I can tune a serving stack for a product’s tone and latency budget.” Teams shipping LLM APIs need engineers who can **predict failure modes**—degenerate loops, subtle toxicity spikes, or JSON-invalid outputs—before they reach users.
 
-Third, **systems** people care because beam search multiplies compute by beam width, while top-\(p\) sampling needs **sorting** or **partial top-\(k\)** tricks on huge vocabularies. Repetition penalties touch logits **before** softmax and interact badly with **EOS** tokens if implemented naively. Understanding the math keeps you from shipping a “fast” sampler that silently biases rare tokens or breaks determinism when you need it.
+Third, decoding choices affect **downstream evaluation** and **reproducibility**. Benchmark scores are not comparable unless decoding hyperparameters are fixed and reported; research papers that omit temperature and top-p make replication difficult. For RLHF-aligned models, decoding can shift the effective policy away from the training objective (e.g., excessive randomness undermining refusal behavior). For system-design interviews, you are expected to connect decoding to **KV-cache residency** (long beams), **batching** (diverse temperatures per request), and **hardware** (sampling is cheap, beam search multiplies memory). This page builds the vocabulary and math you need to defend those design decisions crisply.
 
 ---
 
 ## Core Concepts
 
-### Autoregressive Factorization and Logits
+### From Logits to Text
 
-Let vocabulary size be \(V\). At step \(t\), the model outputs logits \(\boldsymbol{\ell}_t \in \mathbb{R}^V\). The **next-token distribution** is
+At autoregressive step \(t\), the model outputs a **logit vector** \(\mathbf{z}_t \in \mathbb{R}^V\) over vocabulary size \(V\). Temperature-scaled probabilities are
 
 \[
-p_i = \frac{\exp(\ell_i)}{\sum_{j=1}^{V}\exp(\ell_j)} = \mathrm{softmax}(\boldsymbol{\ell})_i.
+P_t(i) = \frac{\exp(z_{t,i}/T)}{\sum_{j=1}^{V}\exp(z_{t,j}/T)}.
 \]
 
 !!! math-intuition "In Plain English"
-    - **Logits** are unnormalized scores—bigger means “more plausible” before normalization.
-    - **Softmax** forces a **probability vector**: nonnegative entries summing to \(1\).
-    - Decoding = pick an index \(i\) according to some rule on \(\boldsymbol{\ell}\) or on a **modified** \(\boldsymbol{\ell}'\).
+    **Logits** are unnormalized scores: higher means “more plausible next token” before normalization. **Softmax** turns them into a **probability vector** that sums to 1. **Temperature \(T\)** stretches or compresses differences: dividing logits by \(T\) before the exponential is the same as making the distribution **peaked** (\(T<1\)) or **flat** (\(T>1\)) before sampling.
+
+**Decoding** means turning the sequence of distributions \(\{P_t\}\) into a discrete token sequence \(\{x_t\}\) by **argmax** (deterministic), **sampling** (stochastic), or **search** (maintaining multiple hypotheses).
+
+!!! example "Worked Example: Logits to Probabilities"
+    Suppose \(V=4\) and raw logits are \(\mathbf{z} = [2.1, 1.5, 0.3, -0.2]\) with **temperature \(T=1\)**.
+
+    **Step 1 — exponentials** (use natural exp):
+
+    \[
+    e^{2.1} \approx 8.166,\quad e^{1.5} \approx 4.482,\quad e^{0.3} \approx 1.350,\quad e^{-0.2} \approx 0.819.
+    \]
+
+    **Step 2 — sum**:
+
+    \[
+    Z = 8.166 + 4.482 + 1.350 + 0.819 \approx 14.817.
+    \]
+
+    **Step 3 — softmax**:
+
+    \[
+    P \approx [0.551,\ 0.302,\ 0.091,\ 0.055].
+    \]
+
+    **Step 4 — greedy choice**: \(\arg\max_i P(i) = 0\) (first token), probability about **55%**.
+
+    If we instead set **\(T=0.5\)**, we divide logits by 0.5 before softmax (equivalent to **doubling** them): \(\mathbf{z}/T = [4.2, 3.0, 0.6, -0.4]\). The distribution becomes **sharper**—mass concentrates more on token 0—illustrating how \(T<1\) pushes toward **argmax-like** behavior.
 
 ### Greedy Decoding
 
-**Greedy** decoding selects the single most likely token each step:
+Greedy decoding selects
 
 \[
-w_{t+1} = \arg\max_{i} \, p_i = \arg\max_{i} \, \ell_i.
+x_t = \arg\max_{i} P_t(i).
 \]
 
 !!! math-intuition "In Plain English"
-    - Locally optimal, **not** globally optimal over full sequences—beam search tries to fix that for small search spaces.
-    - Deterministic (given fixed model and no numerical nondeterminism): good for reproducible baselines, often **repetitive** for open-ended generation.
+    Greedy means **no exploration**: at every step you pick the single most likely token. It is **fast** and **deterministic** (given fixed logits), but it can **lock in** suboptimal prefixes because language modeling is **locally** greedy, not **globally** optimal under long-horizon quality.
+
+!!! example "Worked Example: Greedy on Toy Logits"
+    **Vocabulary indices**: 0, 1, 2, 3. **One step** logits: \([2.1, 1.5, 0.3, -0.2]\).
+
+    From the previous example, softmax probabilities are approximately \([0.551, 0.302, 0.091, 0.055]\). **Greedy** picks token **0**.
+
+    **Why this can loop**: if token 0 strongly predicts token 0 again (self-loops in bigrams), greedy never “backs up.” Sampling or penalties are common mitigations.
 
 ### Beam Search
 
-Beam search keeps the top \(B\) **partial hypotheses** (beams) ranked by **aggregated log-probability**. For length-\(t\) prefix \(w_{1:t}^{(b)}\) in beam \(b\),
+Beam search maintains \(k\) **partial sequences** (beams). At each step, each beam is expanded by the top candidates from the next-token distribution; the **best \(k\)** overall sequences by **cumulative log-probability** are kept.
 
-\[
-\log P(w_{1:t}^{(b)}) = \sum_{s=1}^{t} \log P\big(w_s^{(b)} \mid w_{<s}^{(b)}\big).
-\]
-
-Each step expands each beam by all (or top-\(K\) locally pruned) vocabulary entries, scores new prefixes, and keeps the best \(B\) distinct continuations.
-
-**Length normalization** avoids favoring short strings when raw log-probs are compared. A common scoring objective for a completed hypothesis of length \(|y|\) is
-
-\[
-\text{score}(y) = \frac{1}{|y|^{\alpha}} \sum_{s=1}^{|y|} \log P(y_s \mid y_{<s}),
-\]
-
-with **length penalty** exponent \(\alpha \in [0,1]\) (implementation variants exist; the key idea is **normalize** cumulative log-prob by length).
+A common scoring objective (unnormalized length) maximizes \(\sum_{t} \log P(x_t \mid x_{<t})\). **Length normalization** (dividing by \(|x|^\alpha\)) reduces a bias toward short sequences.
 
 !!! math-intuition "In Plain English"
-    - **Beam width** \(B\): more hypotheses explored—better NMT-style quality sometimes, **much** more compute.
-    - **Length penalty**: without it, beams that **end early** (EOS) can look artificially probable because fewer negative log terms are summed.
+    Beam search is **limited lookahead**: it explores multiple plausible prefixes in parallel. Larger \(k\) can find **globally** better strings than greedy, but cost grows with **KV-cache footprint** and **memory** because you must keep multiple hypotheses alive.
 
-### Temperature Scaling
+!!! example "Worked Example: Beam Search with \(k=2\) over 3 Steps"
+    **Vocabulary**: \(\{A,B,C,D\}\) indexed \(0..3\). **Beam width** \(k=2\). Assume **deterministic** transition logits so we can compute by hand at a toy scale.
 
-Apply temperature \(\tau > 0\) **before** softmax:
+    We specify **log-probabilities** \(\log P(\text{next} \mid \text{prefix})\) for expansions (more convenient than raw logits):
 
-\[
-p_i(\tau) = \frac{\exp(\ell_i / \tau)}{\sum_j \exp(\ell_j / \tau)}.
-\]
+    **Start**: empty prefix `""`.
 
-As \(\tau \to 0^+\), \(p(\tau)\) concentrates on \(\arg\max_i \ell_i\) (greedy in the limit). As \(\tau \to \infty\), \(p(\tau)\) approaches **uniform** over the support.
+    - Step 1 candidates (log-probabilities from `""`):  
+      \(A: -0.10,\ B: -0.20,\ C: -1.00,\ D: -1.50\).  
+      Keep top-2 beams by **total log-prob** (here same as step log-prob): **`A`** (-0.10), **`B`** (-0.20).
 
-!!! math-intuition "In Plain English"
-    - **Low** \(\tau\): sharper, more **deterministic** samples—often coherent but repetitive.
-    - **High** \(\tau\): **flat** distribution—more diverse, higher risk of nonsense or hallucinations.
+    - Step 2 expansions:
 
-### Top-\(k\) Sampling
+      From `A`:  
+      \(AA: -0.10 + (-0.05) = -0.15\)  
+      \(AB: -0.10 + (-0.30) = -0.40\)  
+      \(AC: -0.10 + (-2.00) = -2.10\)  
+      \(AD: -0.10 + (-2.50) = -2.60\)
 
-Let \(\pi\) be the sorted probabilities in **descending** order \(p_{(1)} \ge p_{(2)} \ge \cdots\). **Top-\(k\)** keeps indices \(\{ (1), \ldots, (k) \}\), **zeroes** the rest, and **renormalizes**:
+      From `B`:  
+      \(BA: -0.20 + (-0.12) = -0.32\)  
+      \(BB: -0.20 + (-0.18) = -0.38\)  
+      \(BC: -0.20 + (-1.80) = -2.00\)  
+      \(BD: -0.20 + (-2.20) = -2.40\)
 
-\[
-q_i \propto \begin{cases}
-p_i & \text{if } i \text{ among top-}k \\
-0 & \text{otherwise.}
-\end{cases}
-\]
+      Overall top-2 **two-token** prefixes by total log-prob: **`AA`** (-0.15), **`AB`** (-0.40).
 
-Sample \(w \sim q\).
+    - Step 3 expansions (only from surviving beams `AA` and `AB`):
 
-!!! math-intuition "In Plain English"
-    - **Never** samples tokens outside the \(k\) most likely—cuts off the long tail.
-    - If the model is **overconfident**, top-\(k\) still allows only a small set—may feel **stiff** unless \(k\) is large.
+      From `AA`: best child is \(AAA\) with incremental \(-0.04\) → total \(-0.19\).  
+      From `AB`: best child is \(ABA\) with incremental \(-0.06\) → total \(-0.46\).
 
-### Top-\(p\) (Nucleus) Sampling
+      Top-2 after step 3: **`AAA`** (-0.19), **`AAB`** if it beats second (suppose \(AAB\) totals \(-0.41\)) → **`AAA`**, **`AAB`**.
 
-(Holtzman et al., 2020.) Choose smallest set \(V_p \subseteq \{1,\ldots,V\}\) such that
+    This walkthrough shows the bookkeeping: **each step** merges expansions from **all** beams, sorts by **cumulative score**, and **prunes** to \(k\).
 
-\[
-\sum_{i \in V_p} p_{(i)} \ge p_{\text{nucleus}},
-\]
+### Temperature
 
-where \(p_{(i)}\) are probabilities sorted descending. Renormalize over \(V_p\) and sample.
+Temperature \(T>0\) scales logits as \(\mathbf{z}/T\) before softmax.
 
-!!! math-intuition "In Plain English"
-    - **Adaptive** width: easy steps (peaked \(p\)) use a **small** nucleus; uncertain steps automatically include **more** tokens.
-    - Typical \(p_{\text{nucleus}} \in [0.9, 0.98]\) in practice.
+- \(T < 1\): **sharper** distribution (more deterministic).
+- \(T = 1\): **unchanged** (matches training if training used \(T=1\) at softmax).
+- \(T > 1\): **flatter** distribution (more diverse).
 
-### Repetition and Frequency Penalties
-
-**Repetition penalty** (Keskar-style; common in HF) scales logits of **already generated** tokens. Let \(S\) be the set of token ids that appeared in the context. A simple multiplicative form:
-
-\[
-\ell'_i = \begin{cases}
-\ell_i / \theta & \text{if } i \in S \\
-\ell_i & \text{otherwise,}
-\end{cases}
-\quad \theta > 1.
-\]
-
-**Frequency penalty** subtracts a term proportional to how often token \(i\) occurred (count \(c_i\)):
-
-\[
-\ell'_i = \ell_i - \beta \cdot c_i, \quad \beta \ge 0.
-\]
+The limit \(T \to 0^+\) behaves like **argmax** in standard implementations (with tie-breaking rules).
 
 !!! math-intuition "In Plain English"
-    - Both **push down** logits for tokens the model already overused—reduces **degenerate loops**.
-    - Too aggressive penalties can block **necessary** repeated function words or proper nouns; **EOS** handling must be careful so the model can still stop.
+    Temperature controls **how much randomness** you inject **after** the model has spoken. Low \(T\) makes the model act like a **nearly deterministic** policy; high \(T\) increases **entropy** of the next-token choice.
 
-### Probability View: Sampling as Inverse Transform (Conceptual)
+!!! example "Worked Example: Temperature Effect"
+    Logits \(\mathbf{z} = [2.0, 1.0, 0.5, 0.3]\). Compute softmax at **\(T \in \{0.5, 1.0, 2.0\}\)**.
 
-For discrete distributions, sampling can be implemented via **Gumbel-max** trick or **categorical** sampling from \(q\). In libraries, **reparameterization** is not used for discrete choices; instead **inverse CDF** or **alias** methods matter for speed at large \(V\).
+    **Case \(T=0.5\)**: scaled logits \([4.0, 2.0, 1.0, 0.6]\).  
+    Exps: \(\approx [54.60, 7.39, 2.72, 1.82]\). Sum \(\approx 66.53\).  
+    Probs: \(\approx [0.820, 0.111, 0.041, 0.027]\) — **very peaked** on token 0.
+
+    **Case \(T=1.0\)**: logits unchanged.  
+    Exps: \(\approx [7.39, 2.72, 1.65, 1.35]\). Sum \(\approx 13.11\).  
+    Probs: \(\approx [0.564, 0.208, 0.126, 0.103]\).
+
+    **Case \(T=2.0\)**: scaled logits \([1.0, 0.5, 0.25, 0.15]\).  
+    Exps: \(\approx [2.72, 1.65, 1.28, 1.16]\). Sum \(\approx 6.81\).  
+    Probs: \(\approx [0.399, 0.242, 0.188, 0.171]\) — **more uniform**.
+
+    **Takeaway**: raising temperature from 0.5 to 2.0 **reduces** the lead of token 0 from ~0.82 to ~0.40.
+
+### Top-k Sampling
+
+Top-k sampling restricts sampling to the **\(k\)** largest probabilities, **renormalizing** over that set.
+
+!!! math-intuition "In Plain English"
+    Top-k **caps** how many tokens can be chosen. If \(k\) is small, you avoid **rare** tokens; if \(k\) is large, you allow more diversity. The weakness is **fixed \(k\)** regardless of whether the distribution is **peaked** or **flat**.
+
+!!! example "Worked Example: Top-k with \(k=2\)"
+    Probabilities (already softmaxed): \([0.50, 0.30, 0.15, 0.05]\).
+
+    Keep top-2: tokens 0 and 1 with masses 0.50 and 0.30. Renormalize:
+
+    \[
+    P'(0)=\frac{0.50}{0.80}=0.625,\quad P'(1)=\frac{0.30}{0.80}=0.375.
+    \]
+
+    Tokens 2 and 3 have **zero** probability under top-2 sampling.
+
+### Top-p (Nucleus) Sampling
+
+Let \(p \in (0,1]\). Sort tokens by probability **descending**: \(p_{(1)} \ge p_{(2)} \ge \dots\). Choose the **smallest** set \(S\) such that \(\sum_{i \in S} p_{(i)} \ge p\). Renormalize over \(S\).
+
+!!! math-intuition "In Plain English"
+    Top-p adapts the **width** of the sampling support. When the model is **confident**, a small set already reaches cumulative mass \(p\). When the model is **uncertain**, you keep **more** tokens automatically—unlike fixed top-k.
+
+!!! example "Worked Example: Top-p with \(p=0.9\)"
+    Sorted probabilities:
+
+    \[
+    [0.45, 0.25, 0.15, 0.08, 0.04, 0.03].
+    \]
+
+    Cumulative sums:
+
+    \[
+    [0.45, 0.70, 0.85, 0.93, 0.97, 1.00].
+    \]
+
+    For \(p=0.9\), stop at cumulative **first** \(\ge 0.9\): that happens at the **fourth** token (0.93). Keep **four** tokens, renormalize dividing by 0.93:
+
+    \[
+    [0.45/0.93,\ 0.25/0.93,\ 0.15/0.93,\ 0.08/0.93] \approx [0.484,\ 0.269,\ 0.161,\ 0.086].
+    \]
+
+### Repetition Penalty
+
+A common implementation (GPT-2 style) **down-weights** logits for tokens that already appeared. For logits \(\mathbf{z}\), for each previously generated token index \(i\) in a set \(R\), replace
+
+\[
+z_i \leftarrow \frac{z_i}{\rho} \quad \text{if } z_i > 0, \qquad z_i \leftarrow z_i \cdot \rho \quad \text{if } z_i \le 0,
+\]
+
+with \(\rho > 1\) (e.g., 1.1–1.3).
+
+!!! math-intuition "In Plain English"
+    If a token’s logit was **positive** (encouraging), dividing by \(\rho>1\)**pulls it down**. If it was **negative** (discouraging), multiplying by \(\rho\) makes it **more negative**—stronger avoidance. Net effect: **reduce** the chance of re-selecting tokens already used.
+
+!!! example "Worked Example: One-Step Repetition Penalty"
+    Vocabulary \(\{a,b,c\}\). Logits \(\mathbf{z}=[1.0, 0.2, -0.5]\). Already generated \(\{a\}\) so apply penalty to index 0 with \(\rho=1.2\).
+
+    Since \(z_0>0\), new \(z_0 = 1.0/1.2 \approx 0.833\). Others unchanged: \([0.833, 0.2, -0.5]\).
+
+    Softmax shifts probability mass away from `a` compared to the unpenalized case.
+
+### Min-p Sampling
+
+Given current distribution \(P\), let \(p_{\max} = \max_i P(i)\). Choose a threshold \(\tau = \texttt{min\_p} \times p_{\max}\) and keep tokens with \(P(i) \ge \tau\), then renormalize.
+
+!!! math-intuition "In Plain English"
+    Min-p is **adaptive** like top-p but uses the **peak probability** as a ruler. When the model is very confident (high \(p_{\max}\)), the threshold rises and you may keep **fewer** tail tokens; when flat, you keep more.
+
+!!! example "Worked Example: Min-p"
+    Probabilities: \([0.40, 0.25, 0.20, 0.10, 0.05]\). Here \(p_{\max}=0.40\). Let `min_p=0.05`.
+
+    Threshold \(\tau = 0.05 \times 0.40 = 0.02\). All listed probs \(\ge 0.02\), so **no tokens** removed. (Min-p shines when \(p_{\max}\) is tiny—then \(\tau\) is tiny—still typically used with top-p/top-k in pipelines.)
+
+### Combining Strategies
+
+A common **chat** recipe is: **temperature** \(T \approx 0.7\), **top-p** \( \approx 0.9\), **repetition penalty** \(\approx 1.1\). Coding assistants may use **lower temperature** for JSON and **constrained decoding** for grammars (not covered here, but interacts with sampling).
+
+??? deep-dive "Deep Dive: Why Beam Search Can Feel Worse for Open-Ended Text"
+    Beam search optimizes **product of token probabilities** (under Markov factorization). Human text under **maximum likelihood** often looks **generic** because high-probability continuations cluster around **safe** n-grams. For translation or summarization with clear targets, beams help; for creative writing, **stochastic** decoding is often preferred.
+
+??? deep-dive "Deep Dive: Entropy and the Effective Support"
+    The **entropy** \(H(P)=-\sum_i P(i)\log P(i)\) summarizes how “spread out” the next-token distribution is. Temperature increases \(H\) (usually), while top-k/top-p **truncate** tails, reducing \(H\) but controlling **rare-token risk** (hallucinated facts, unicode glitches).
+
+??? deep-dive "Deep Dive: Batched Requests with Different Decoding"
+    Serving systems may pack requests with **different** \(T\), top-p, and penalties. Implementations must ensure **per-request** RNG streams and **per-request** logits post-processing **before** sampling—otherwise batches are not independent.
 
 ---
 
-## From-Scratch Implementations (PyTorch)
+## Code
 
-The following module implements **log-softmax stabilization**, **greedy**, **beam** (with optional length normalization), **top-\(k\)**, **top-\(p\)**, **temperature**, and **repetition penalty**, using only PyTorch—suitable for reading alongside production `transformers` `LogitsProcessor` stacks.
+The following script is **self-contained**: it implements **greedy**, **beam search** (with simple length normalization), **temperature**, **top-k**, **top-p**, **min-p**, and **repetition penalty**, and runs a **toy generation loop** on random logits for demonstration.
 
 ```python
 """
-Decoding strategies from scratch on GPU tensors.
-Requires: torch >= 2.0
+decoding_strategies_demo.py — self-contained decoding utilities (PyTorch).
+Run: python decoding_strategies_demo.py
 """
+
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
 
 
-def apply_temperature(logits: torch.Tensor, tau: float) -> torch.Tensor:
-    if tau <= 0:
-        raise ValueError("temperature must be positive")
-    return logits / tau
-
-
-def apply_repetition_penalty(
-    logits: torch.Tensor,
-    generated_ids: List[int],
-    penalty: float = 1.2,
-) -> torch.Tensor:
-    if penalty == 1.0 or not generated_ids:
-        return logits
-    out = logits.clone()
-    # Unique tokens only (common variant)
-    for tid in set(generated_ids):
-        if out[tid] > 0:
-            out[tid] /= penalty
-        else:
-            out[tid] *= penalty
-    return out
+def softmax_with_temperature(logits: torch.Tensor, temperature: float) -> torch.Tensor:
+    if temperature <= 0:
+        raise ValueError("temperature must be > 0")
+    return F.softmax(logits / temperature, dim=-1)
 
 
 def greedy_step(logits: torch.Tensor) -> int:
-    return int(torch.argmax(logits).item())
+    return int(torch.argmax(logits, dim=-1).item())
+
+
+def apply_repetition_penalty(
+    logits: torch.Tensor, generated: List[int], penalty: float
+) -> torch.Tensor:
+    if penalty <= 0:
+        raise ValueError("penalty must be > 0")
+    if not generated:
+        return logits
+    out = logits.clone()
+    for idx in set(generated):
+        if out[idx] > 0:
+            out[idx] = out[idx] / penalty
+        else:
+            out[idx] = out[idx] * penalty
+    return out
 
 
 def top_k_filter(logits: torch.Tensor, k: int) -> torch.Tensor:
-    if k <= 0 or k >= logits.numel():
+    if k <= 0:
+        raise ValueError("k must be positive")
+    if k >= logits.numel():
         return logits
-    v, _ = torch.topk(logits, k)
-    cutoff = v[-1]
-    filtered = logits.clone()
-    filtered[filtered < cutoff] = float("-inf")
+    values, _ = torch.topk(logits, k)
+    min_keep = values[-1]
+    filtered = torch.where(logits < min_keep, torch.full_like(logits, float("-inf")), logits)
     return filtered
 
 
 def top_p_filter(logits: torch.Tensor, p: float) -> torch.Tensor:
-    """Nucleus (top-p) on 1D logits."""
-    if p >= 1.0:
-        return logits
+    if not (0.0 < p <= 1.0):
+        raise ValueError("p must be in (0, 1]")
     sorted_logits, sorted_idx = torch.sort(logits, descending=True)
     probs = F.softmax(sorted_logits, dim=-1)
-    cumsum = torch.cumsum(probs, dim=-1)
-    # Remove tokens with cumulative mass > p (keep first that exceeds)
-    mask = cumsum > p
-    if mask.any():
-        # shift: keep at least one token
-        mask[1:] = mask[:-1].clone()
-        mask[0] = False
-        sorted_logits = sorted_logits.masked_fill(mask, float("-inf"))
-    # Scatter back
-    out = torch.full_like(logits, float("-inf"))
-    out.scatter_(0, sorted_idx, sorted_logits)
-    return out
+    cum = torch.cumsum(probs, dim=-1)
+    mask = cum <= p
+    if not mask.any():
+        return logits
+    last_true = int(torch.nonzero(mask, as_tuple=False)[-1].item())
+    cutoff_logit = sorted_logits[last_true]
+    filtered = torch.where(logits < cutoff_logit, torch.full_like(logits, float("-inf")), logits)
+    return filtered
 
 
-def sample_from_logits(logits: torch.Tensor, generator: Optional[torch.Generator] = None) -> int:
-    probs = F.softmax(logits, dim=-1)
-    return int(torch.multinomial(probs, 1, generator=generator).item())
+def min_p_filter(probs: torch.Tensor, min_p: float) -> torch.Tensor:
+    if not (0.0 <= min_p <= 1.0):
+        raise ValueError("min_p must be in [0, 1]")
+    pmax = float(torch.max(probs).item())
+    thresh = min_p * pmax
+    filtered = torch.where(probs < thresh, torch.zeros_like(probs), probs)
+    s = float(torch.sum(filtered).item())
+    if s <= 0:
+        return probs
+    return filtered / s
 
 
-@dataclass
-class BeamHypothesis:
-    tokens: List[int]
-    log_prob: float
-    finished: bool
+def sample_from_probs(probs: torch.Tensor, generator: Optional[torch.Generator] = None) -> int:
+    return int(torch.multinomial(probs, 1, replacement=True, generator=generator).item())
 
 
 def beam_search_step(
-    logits: torch.Tensor,
-    beams: List[BeamHypothesis],
+    log_probs_history: List[float],
+    last_tokens: List[int],
+    next_logits: torch.Tensor,
     beam_width: int,
-    eos_id: Optional[int],
-    length_penalty_alpha: float = 0.6,
-) -> List[BeamHypothesis]:
+    length_norm_alpha: float = 0.6,
+) -> List[Tuple[float, List[int]]]:
     """
-    One expansion step: each beam x vocab candidate, keep top `beam_width` by
-    normalized log-prob (length_penalty_alpha > 0 applies (1/L)^alpha factor on log-prob).
+    Expand each beam by all vocab tokens (small-V demo only). Returns new beams scored by
+    length-normalized log-prob.
     """
-    vocab = logits.numel()
-    log_probs = F.log_softmax(logits, dim=-1)  # (V,)
-    candidates: List[BeamHypothesis] = []
-
-    for b in beams:
-        if b.finished:
-            candidates.append(b)
-            continue
-        # For simplicity full vocab — production uses top-k local pruning
-        for tok in range(vocab):
-            lp = b.log_prob + float(log_probs[tok].item())
-            new_toks = b.tokens + [tok]
-            finished = eos_id is not None and tok == eos_id
-            L = len(new_toks)
-            if length_penalty_alpha > 0:
-                score = lp / (L ** length_penalty_alpha)
-            else:
-                score = lp
-            candidates.append(BeamHypothesis(new_toks, lp, finished))
-
-    candidates.sort(key=lambda h: -(h.log_prob / (len(h.tokens) ** length_penalty_alpha)))
-    out: List[BeamHypothesis] = []
-    seen = set()
-    for h in candidates:
-        key = tuple(h.tokens)
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(h)
-        if len(out) >= beam_width:
-            break
-    return out
+    logp_next = F.log_softmax(next_logits, dim=-1)
+    vocab = int(logp_next.numel())
+    candidates: List[Tuple[float, List[int]]] = []
+    for lp_hist, seq in zip(log_probs_history, last_tokens):
+        for v in range(vocab):
+            new_lp = lp_hist + float(logp_next[v].item())
+            new_seq = seq + [v]
+            length = len(new_seq)
+            score = new_lp / (length**length_norm_alpha)
+            candidates.append((score, new_seq))
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    return candidates[:beam_width]
 
 
-def decode_autoregressive_mock(
-    max_steps: int = 20,
-    vocab_size: int = 256,
-    seed: int = 0,
-) -> None:
-    """Toy loop: random 'logits' to exercise APIs (replace with real LM)."""
-    g = torch.Generator(device="cpu")
-    g.manual_seed(seed)
-    generated: List[int] = []
+def demo() -> None:
+    torch.manual_seed(0)
+    vocab = 8
+    logits = torch.randn(vocab)
+    print("Raw logits:", logits.tolist())
+    print("Greedy:", greedy_step(logits))
 
-    for _ in range(max_steps):
-        logits = torch.randn(vocab_size, generator=g)
-        logits = apply_temperature(logits, tau=0.8)
-        logits = apply_repetition_penalty(logits, generated, penalty=1.15)
-        logits = top_k_filter(logits, k=40)
-        logits = top_p_filter(logits, p=0.95)
-        tok = sample_from_logits(logits, generator=g)
-        generated.append(tok)
-        if tok == 0:  # pretend EOS
-            break
-    print("sampled ids:", generated[:10], "...")
+    for T in (0.5, 1.0, 2.0):
+        p = softmax_with_temperature(logits, T)
+        print(f"Temperature {T}: probs={['%.3f' % x for x in p.tolist()]}")
+
+    k_logits = top_k_filter(logits, k=3)
+    print("Top-k filtered logits:", k_logits.tolist())
+
+    p_logits = top_p_filter(logits, p=0.85)
+    print("Top-p filtered logits:", p_logits.tolist())
+
+    probs = F.softmax(logits, dim=-1)
+    mp = min_p_filter(probs, min_p=0.05)
+    print("Min-p renorm probs:", mp.tolist())
+
+    rep = apply_repetition_penalty(logits, generated=[0, 3], penalty=1.15)
+    print("Repetition penalty logits:", rep.tolist())
+
+    gen = torch.Generator()
+    gen.manual_seed(123)
+    for _ in range(3):
+        tok = sample_from_probs(F.softmax(logits / 0.8, dim=-1), generator=gen)
+        print("Sampled token:", tok)
+
+    # Toy beam on tiny vocab
+    tiny = torch.tensor([2.0, 1.0, 0.5, 0.1])
+    beams_lp = [0.0, 0.0]
+    beams_seq = [0, 1]
+    out = beam_search_step(beams_lp, beams_seq, tiny, beam_width=2)
+    print("Beam demo:", out)
 
 
 if __name__ == "__main__":
-    decode_autoregressive_mock()
+    demo()
 ```
-
-!!! math-intuition "In Plain English"
-    - Production code uses **batched** logits, **FP16**, **vocab slicing**, and **FlashAttention**—the **math** above is unchanged.
-    - **Beam** on full vocabulary is \(O(B \cdot V)\) per step—real systems **prune** expansions heavily.
-
-### Entropy and “Randomness Budget”
-
-The **Shannon entropy** of the next-token distribution is
-
-\[
-H(p) = -\sum_{i=1}^{V} p_i \log p_i \quad \text{(nats).}
-\]
-
-Temperature **monotonically** affects typical entropy: very peaked distributions have **low** \(H\); near-uniform have \(H \approx \log V\).
-
-!!! math-intuition "In Plain English"
-    - Interview framing: **temperature** controls how much of the **entropy budget** you spend per step—high entropy → diverse but **risky**; low entropy → safe but **boring**.
-    - **Top-\(p\)** dynamically **caps** the support so you do not sample from the **junk tail** where cumulative model mass is tiny but raw vocabulary is enormous.
-
-### Worked Micro-Example: Three Tokens
-
-Suppose at some step \(V=3\) and logits are \(\boldsymbol{\ell}=(2.0,\, 1.0,\, 0.0)\). Then
-
-\[
-p = \mathrm{softmax}(\boldsymbol{\ell}) \approx (0.665,\, 0.245,\, 0.090).
-\]
-
-- **Greedy** picks token \(1\) (index \(0\)).
-- **Temperature \(\tau=0.5\)** sharpens: \(\mathrm{softmax}((4,2,0))\) puts **more** mass on token \(1\).
-- **Temperature \(\tau=2\)** flattens toward uniform.
-- **Top-\(k=1\)** is **identical** to greedy here (unless ties).
-- **Top-\(p=0.9\)** includes tokens \(\{1,2\}\) because \(0.665 < 0.9\) but \(0.665+0.245 \ge 0.9\); renormalize over two tokens.
-
-This toy case shows **why** nucleus sampling is **adaptive**: if the first mass were \(0.96\), nucleus might keep **only** one token.
-
-### Stochastic Beam and Diversity (Pointers)
-
-Classical beam keeps **deterministic** best partial hypotheses; research systems sometimes inject **stochastic** beams or **diverse** beam objectives (penalize n-gram overlap between beams). You do not need to memorize full objectives, but know **why** plain beam **under-diversifies** for open-ended chat: all beams collapse to **similar** high-probability continuations.
-
-### Logit Processing Order (Production Pitfall)
-
-Typical **order** on each step:
-
-1. **Gather** logits for last position (shape \([V]\) or \([1,1,V]\)).
-2. **Processors**: forbid bad tokens, force grammar, **down-weight** repeats (`LogitsProcessor` list).
-3. **Temperature** scaling.
-4. **Top-\(k\) / top-\(p\)** masking.
-5. **Softmax** + **sample** (or **argmax**).
-
-Changing the order changes semantics—**temperature before vs after** repetition penalty is **not** interchangeable.
 
 ---
 
-## Interview Takeaways
+## Interview Guide
 
-- **Softmax + temperature** is one family; decoding is **policy design** on top of the same logits.
-- **Greedy** is deterministic and fast; **beam** improves local search at **linear-in-\(B\)** cost; **stochastic** methods trade **diversity** for **risk**.
-- **Top-\(p\)** adapts cutoff mass to **uncertainty**; **top-\(k\)** uses a **fixed** width—know when each misbehaves (flat vs peaked distributions).
-- **Length normalization** in beam avoids **short-sentence bias**; exact formula varies by toolkit—know the **purpose**.
-- **Repetition penalty** alters logits **nonlinearly** through softmax—too strong hurts **natural** repetition and **EOS**.
-- At **large \(V\)**, partial sorts and **approximate** top-\(k\) matter for **latency**—connect algorithms to **serving** SLAs.
+!!! interview "FAANG-Level Questions"
+    1. **Explain** how temperature changes the softmax distribution and what failure mode very high temperature causes in chat models.
+    2. **Contrast** greedy decoding vs nucleus (top-p) sampling for creative writing vs code generation.
+    3. **Why** can beam search produce bland text even when it improves perplexity-style scores?
+    4. **Describe** top-p in terms of cumulative mass on sorted probabilities; what happens as \(p \to 1\)?
+    5. **How** does repetition penalty modify logits differently for positive vs negative entries, and why?
+    6. **When** would you prefer top-k alone vs top-p alone in production, and why is top-p often more adaptive?
+    7. **What** system-level costs does beam width \(k\) impose beyond extra compute?
+    8. **How** does min-p relate to the peak probability, and what problem is it trying to mitigate in tail sampling?
+    9. **Why** must decoding hyperparameters be reported alongside benchmark results for reproducibility?
+    10. **How** would you configure decoding differently for JSON tool outputs vs open-ended assistant chat?
+
+!!! interview "Follow-up Probes"
+    - **Probe A**: “If users report ‘the model repeats phrases,’ which knobs do you tune first and why?”
+    - **Probe B**: “How do you keep determinism for regression tests while using sampling in production?”
+    - **Probe C**: “What interactions do you expect between low temperature and aggressive repetition penalty?”
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “**Logits are unnormalized scores; softmax produces a categorical distribution.**”
+    - “**Temperature scales logits before softmax; it controls entropy of the next-token draw.**”
+    - “**Top-p adapts the support set to uncertainty; top-k uses a fixed cutoff.**”
+    - “**Beam search searches multiple hypotheses but can favor generic high-probability text.**”
+    - “**Repetition penalty reshapes logits for tokens already generated to reduce loops.**”
+
+---
 
 ## References
 
-- Holtzman et al. (2020), *The Curious Case of Neural Text Degeneration* — [arXiv:1904.09751](https://arxiv.org/abs/1904.09751)
-- Keskar et al. (2019), *CTRL: A Conditional Transformer Language Model* — repetition control
-- Fan et al. (2018), *Hierarchical Neural Story Generation* — top-\(k\) sampling in context
-- Hochreiter & Bengio (discussion) — softmax temperature in RNN LMs (historical)
-- [Hugging Face: GenerationConfig](https://huggingface.co/docs/transformers/main_classes/text_generation) — practical hyperparameter defaults
+1. **Holtzman et al., “The Curious Case of Neural Text Degeneration” (ICLR 2020)** — nucleus sampling and degeneration analysis: [arXiv:1904.09751](https://arxiv.org/abs/1904.09751).
+2. **Fan et al., “Hierarchical Neural Story Generation” (ACL 2018)** — top-k sampling in neural story generation: [arXiv:1805.04833](https://arxiv.org/abs/1805.04833).
+3. **Brown et al., “Language Models are Few-Shot Learners” (NeurIPS 2020)** — GPT-3 decoding and evaluation practices: [arXiv:2005.14165](https://arxiv.org/abs/2005.14165).
+4. **Vaswani et al., “Attention Is All You Need” (NeurIPS 2017)** — autoregressive factorization and softmax basics in Transformers: [arXiv:1706.03762](https://arxiv.org/abs/1706.03762).
+5. **Hugging Face `generate` documentation** — practical parameter interactions: [https://huggingface.co/docs/transformers/main_classes/model#transformers.generation.utils.GenerationMixin.generate](https://huggingface.co/docs/transformers/main_classes/model#transformers.generation.utils.GenerationMixin.generate).

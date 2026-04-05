@@ -327,10 +327,19 @@ For **total** model bytes \(M\) and parameters \(N\), **average** **bpp** \(= 8M
 - **Perplexity** is a **fast** **regression** test; **task** **benchmarks** still **required** for **deployment** **sign-off**.
 - **INT4/INT8** **speedups** require **fused** **kernels**—**compressed** weights alone are **not** enough if **dequant** is **slow**.
 - **Operator-norm** **bounds** explain why **outliers** **hurt** **quantized** **matmuls**.
+- **NF4** / **K-quants** **non-uniformly** **allocate** **levels**—**better** **PPL** than **uniform** **INT4** at **same** **storage**.
+- **W8A8** needs **activation** **calibration**; **W4A16** is **common** **GPU** **default** for **open** **weights**.
+
+!!! math-intuition "In Plain English"
+    - If you **only** remember **one** **formula**: \(\hat{x} = s(q-z)\) **links** **integer** **codes** to **float** **reconstruction**—every **engine** is a **variant** of this.
+    - **PTQ** vs **QAT**: **PTQ** is **cheap** **deployment**; **QAT** is **expensive** **training-time** **adaptation**—pick based on **budget** and **accuracy** **SLO**.
+
+---
 
 ## References
 
 - Frantar et al. (2023), *GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers* — [arXiv:2210.17323](https://arxiv.org/abs/2210.17323)
+
 - Lin et al. (2023), *AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration* — [arXiv:2306.00978](https://arxiv.org/abs/2306.00978)
 - ggerganov et al., *llama.cpp* — [https://github.com/ggerganov/llama.cpp](https://github.com/ggerganov/llama.cpp)
 - Dettmers et al. (2022), *LLM.int8()* — [arXiv:2208.07339](https://arxiv.org/abs/2208.07339) — outlier handling
@@ -338,3 +347,4 @@ For **total** model bytes \(M\) and parameters \(N\), **average** **bpp** \(= 8M
 - NVIDIA *TensorRT-LLM* quantization docs — [https://nvidia.github.io/TensorRT-LLM/](https://nvidia.github.io/TensorRT-LLM/)
 - Dettmers & Zettlemoyer (2023), *QLoRA* — [arXiv:2305.14314](https://arxiv.org/abs/2305.14314) — NF4 training context
 - *GGUF specification* — [https://github.com/ggerganov/ggml/blob/master/docs/gguf.md](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)
+- Hubara et al. (2016), *Binarized Neural Networks* — historical fixed-point neural nets (context)

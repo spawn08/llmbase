@@ -289,6 +289,40 @@ Smaller groups \(\Rightarrow\) **lower** quantization error, **more** metadata o
 
 **Dynamic** activation scales per **tensor per forward** adjust to runtime ranges—**no** calibration set but **variable** overhead. **Static** calibration uses **representative** batches to fix scales—faster kernel fusion, risk of **out-of-distribution** drift.
 
+### Stochastic Rounding and Accuracy
+
+Some PTQ schemes use **stochastic rounding** to keep \(\mathbb{E}[\hat{w}] = w\) in expectation—reduces **bias** vs deterministic **nearest** rounding at the cost of **run-to-run** variance. Rare in **latency-critical** inference but appears in research-oriented quant recipes.
+
+### Comparison Table: When to Use Which Precision
+
+| Phase | Typical dtypes | Why |
+|-------|----------------|-----|
+| Pre-training | BF16/FP16 + FP32 master | Throughput + stability |
+| SFT / DPO | BF16 often | Simplicity |
+| Inference (GPU) | FP16/BF16 weights, FP16 acts | Kernel support |
+| Edge / CPU | INT4/INT8 weights | Capacity |
+
+### Integer GEMM Sketch (Symmetric INT8)
+
+For quantized matrix multiply \(\hat{W}\hat{x}\) with \(\hat{W} = s_w Q_w\), \(\hat{x} = s_x Q_x\):
+
+\[
+\hat{W}\hat{x} = (s_w s_x) \, Q_w Q_x^\top
+\]
+
+Accumulators often use **INT32** for \(Q_w Q_x\) products before **rescaling** to output dtype—hardware **TensorCore** INT8 paths exploit this pattern.
+
+!!! math-intuition "In Plain English"
+    Quantized inference is **integer matmul** + **cheap** rescales. The heavy work stays in **GEMM** kernels; scales are **per-tensor** or **per-group** metadata.
+
+### Outlier Dimensions in LLMs
+
+Activations in certain **feature** dimensions can be **orders of magnitude** larger than others (especially late layers). **LLM.int8()** routes **outlier** dimensions to **FP16** while keeping the bulk in **INT8**—a **mixed** scheme that preserves quality better than naive **per-tensor** INT8 for both weights and activations.
+
+### Calibration Sets for PTQ
+
+Choose **diverse** calibration batches (domains, lengths) to estimate **\(w_{\min}, w_{\max}\)** or **percentile** ranges for clipping outliers before quant. **Too small** calibration \(\Rightarrow\) **mis-scaled** tensors; **too narrow** domain \(\Rightarrow\) **OOD** deployment drift.
+
 ---
 
 ## Interview Takeaways

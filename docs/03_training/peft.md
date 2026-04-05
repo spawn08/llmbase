@@ -240,6 +240,14 @@ Take \(d_{\text{in}} = d_{\text{out}} = 4096\), rank \(r = 16\).
 
 Mention as **follow-on** methods; **LoRA/QLoRA** remain default **baseline** answers.
 
+### IA3 (Infused Adapter by Inhibiting and Amplifying Gates)
+
+**IA3** multiplies **hidden activations** by **learned** per-channel scalings (often applied to **value** and **FFN** paths) with **very few** parameters. Different **inductive bias** than additive LoRA—worth naming as “**multiplicative** PEFT.”
+
+### BitFit and Bias-Only Baselines
+
+**BitFit** trains **bias** terms only—surprisingly strong on some NLP tasks with **minimal** parameters. Useful **interview baseline**: “before LoRA, try **bias-only** or **last-layer** tuning for ablations.”
+
 ---
 
 ## Gradient Checkpointing + PEFT
@@ -282,6 +290,44 @@ if __name__ == "__main__":
 ## Orthogonal Subspaces and Overfitting
 
 Because \(\Delta W\) is **low rank**, capacity to **memorize** idiosyncratic training noise is **reduced** vs full FT—often better **generalization** on small datasets. Conversely, **underfitting** can occur if rank \(r\) is too small for the task—**sweep** \(r \in \{8,16,32,64\}\) in practice.
+
+### Freezing Base Weights Correctly
+
+In PyTorch, **freeze** base parameters:
+
+```python
+for p in base_model.parameters():
+    p.requires_grad = False
+```
+
+Only **LoRA** matrices should have `requires_grad=True`. Accidentally leaving **base** trainable **voids** memory savings and can **overwrite** pre-trained knowledge.
+
+### Learning Rate and Weight Decay
+
+Adapter-only training often uses **higher** LR than full-model fine-tuning because **fewer** parameters and **smaller** effective step in the full weight manifold. **Weight decay** typically applies **only** to trainable adapter weights—follow PEFT library defaults.
+
+---
+
+## LoRA Hyperparameters (Rule-of-Thumb)
+
+| Knob | Typical range | Effect |
+|------|----------------|--------|
+| Rank \(r\) | 8–64 | Higher \(\Rightarrow\) more capacity, more overfit risk |
+| \(\alpha\) | \(2r\)–\(4r\) often | Scales adapter contribution vs base |
+| Dropout on \(A,B\) | 0.0–0.1 | Regularizes adapter; 0 common if data is large |
+| Target modules | attention + MLP | Broader adaptation; more parameters |
+
+**Search strategy**: fix **budget** (trainable params), sweep **\(r\)** and **layer coverage** (e.g., all attention vs last half of layers only).
+
+### When LoRA Struggles
+
+- **Distribution shift** is extreme (e.g., new language with tiny tokenizer coverage).
+- **Tasks** need **rewiring** deep representations (sometimes **full FT** or **higher rank** wins).
+- **Base** model is already **quantized** poorly—**QLoRA** may need **NF4** + **double quant** tuning.
+
+### Composition with Other Techniques
+
+PEFT **pairs** with **sequence packing**, **flash attention**, and **gradient accumulation** like any fine-tune. It does **not** remove the need for **good data**—adapter capacity is **small**, so **label quality** dominates.
 
 ---
 
