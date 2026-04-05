@@ -1,129 +1,248 @@
-# 2.8 — State Space Models (SSMs): S4 and Mamba
+# State Space Models (SSMs) and Mamba
 
-## Intuition
+## Why This Matters for LLMs
 
-Transformers have a problem: self-attention is \(O(T^2)\) in sequence length. For 128K or 1M-token contexts, this becomes prohibitive. **State Space Models** (SSMs) offer a fundamentally different approach: process sequences through a **continuous-time linear system** that is discretized and computed as a recurrence or convolution. Mamba (Gu & Dao, 2023) made SSMs competitive with Transformers by adding **input-dependent (selective) gating**, achieving linear-time sequence modeling without attention.
+Transformer decoders scale attention with sequence length \(T\) as \(O(T^2)\) in the naive attention matrix formulation, which creates a **quadratic memory and compute wall** for very long documents, high-resolution sequences, or multimodal timelines. **State space models** treat sequence modeling as evolving a hidden state through time with structured linear dynamics, enabling **linear scaling in \(T\)** for the core recurrence when formulated carefully. That matters for LLM discussions because it is no longer theoretical: Mamba-class blocks appear in open models and hybrid stacks aimed at long context without paying full attention cost everywhere.
+
+The second paragraph of relevance is **quality versus efficiency**. Early SSMs like S4 showed strong long-range benchmarks, but the community still asked whether purely linear dynamics could rival Transformers on language. Mamba’s selective mechanism argued that **time-invariant** linear systems are too rigid for language: the model must decide **what to remember and what to discard** based on token content. That moves SSMs closer to the intuitive behavior people associate with attention, while retaining subquadratic structure. Interviewers increasingly ask candidates to compare **attention, RNN-like recurrence, and selective SSMs** on the same axes: complexity, state size, associative recall, and hardware utilization.
+
+Third, **hybrid architectures** (for example interleaving attention layers with Mamba layers) are a practical compromise: attention handles content-based lookup in selective windows, while SSM layers propagate information cheaply across long spans. Understanding SSMs is therefore not an academic detour; it is background for reading system cards, research releases, and serving discussions where **context length** and **throughput per GPU** are first-class requirements.
 
 ---
 
-## Core concepts
+## Continuous-Time Linear State Space Model
 
-### Linear state space model (continuous-time)
-
-An SSM maps an input signal \(u(t)\) to an output \(y(t)\) through a hidden state \(x(t)\):
+A continuous-time linear SSM defines a hidden state \(\mathbf{x}(t) \in \mathbb{R}^N\) driven by an input \(u(t)\) and producing an output \(y(t)\):
 
 \[
-\dot{x}(t) = A x(t) + B u(t)
+\frac{d}{dt}\mathbf{x}(t) = A\mathbf{x}(t) + B u(t)
 \]
-\[
-y(t) = C x(t) + D u(t)
-\]
-
-where \(A \in \mathbb{R}^{N \times N}\), \(B \in \mathbb{R}^{N \times 1}\), \(C \in \mathbb{R}^{1 \times N}\), \(D \in \mathbb{R}^{1 \times 1}\).
-
-This is a classic control-theory system. The innovation is using it as a **sequence model** for discrete tokens.
-
-### Discretization
-
-To handle discrete sequences (tokens, audio samples), we discretize with step size \(\Delta\):
 
 \[
-\bar{A} = \exp(\Delta A), \quad \bar{B} = (\Delta A)^{-1}(\exp(\Delta A) - I) \cdot \Delta B
+y(t) = C\mathbf{x}(t) + D u(t)
 \]
 
-This gives a **recurrence**:
+Here \(A \in \mathbb{R}^{N \times N}\), \(B \in \mathbb{R}^{N \times 1}\), \(C \in \mathbb{R}^{1 \times N}\), and \(D\) is a scalar feedthrough term in the single-input single-output presentation. Multi-dimensional inputs and outputs generalize \(B\) and \(C\) to matrices.
+
+!!! math-intuition "In Plain English"
+    Read the differential equation as a **memory machine**. The state \(\mathbf{x}(t)\) is a compressed summary of past inputs. The matrix \(A\) controls how memory fades or rotates. The term \(B u(t)\) injects new evidence from the current input. The output \(y(t)\) is a linear readout from memory, optionally mixing the current input directly through \(D\). This is the same family of models used in classical control theory, repurposed as a sequence layer.
+
+??? deep-dive "Deep Dive: Why Continuous Time Appears in Sequence Modeling Papers"
+    Continuous-time formulations let authors connect discrete recurrences to principled discretization schemes (zero-order hold, bilinear transforms, exponential integrators). In interviews, you can say: **discrete tokens are samples of an underlying process**, and discretization maps continuous parameters to step updates suitable for GPU scans.
+
+---
+
+## Discretization: From \(dt\) to Token Steps
+
+For token index \(k\), choose a step size \(\Delta_k > 0\) (possibly learned or input-dependent in advanced models). A common exponential discretization uses:
 
 \[
-x_k = \bar{A} x_{k-1} + \bar{B} u_k
+\bar{A}_k = \exp(\Delta_k A), \quad \bar{B}_k = \int_{0}^{\Delta_k} \exp(A\tau)\, d\tau \, B
 \]
+
+For diagonal \(A\) and practical implementations, \(\bar{B}_k\) can be computed in stable forms. The discrete recurrence becomes:
+
 \[
-y_k = C x_k
+\mathbf{x}_k = \bar{A}_k \mathbf{x}_{k-1} + \bar{B}_k u_k
 \]
 
-### Dual computation modes
+\[
+y_k = C \mathbf{x}_k + D u_k
+\]
 
-The key property of linear SSMs: the same model can be computed as either:
+!!! math-intuition "In Plain English"
+    Discretization answers: **if the hidden state evolves continuously but we only observe inputs at token times, what is the exact update between steps?** The matrix \(\bar{A}_k\) tells you how much of the old state survives into the next step. The term \(\bar{B}_k u_k\) adds the influence of the new token. When \(\Delta_k\) is small, updates are local; when \(\Delta_k\) is large, the state can move farther in one step.
 
-| Mode | Algorithm | Complexity | Use case |
+!!! example "Worked Example: Scalar SSM with One-Dimensional State"
+    Let \(N = 1\), \(A = -1\), \(B = 1\), \(C = 1\), \(D = 0\). Let \(\Delta = 1\) fixed. Then \(\bar{A} = \exp(-1) \approx 0.368\) and \(\bar{B}\) simplifies in the scalar case to a value on the order of \((1 - \bar{A}) B\) under common ZOH assumptions, here roughly \(1 - 0.368 = 0.632\).
+
+    If \(u_0 = 1.0\), \(u_1 = 0.0\), \(u_2 = 2.0\), starting from \(x_{-1} = 0\):
+
+    - \(x_0 = 0.368 \cdot 0 + 0.632 \cdot 1.0 = 0.632\), \(y_0 = x_0\)
+    - \(x_1 = 0.368 \cdot 0.632 + 0.632 \cdot 0.0 \approx 0.233\)
+    - \(x_2 = 0.368 \cdot 0.233 + 0.632 \cdot 2.0 \approx 0.086 + 1.264 = 1.350\)
+
+    The state **decays** old evidence through \(\bar{A}\) and **adds** new evidence through \(\bar{B} u_k\).
+
+---
+
+## Dual Computation Modes: Recurrence and Convolution
+
+For **time-invariant** linear SSMs (where \(\bar{A}\) and \(\bar{B}\) do not change with \(k\)), the mapping from inputs \(u_k\) to outputs \(y_k\) is linear time-invariant. Then the sequence can be computed either by recurrence or as a convolution with a structured kernel.
+
+**Recurrence (sequential):**
+
+\[
+\mathbf{x}_k = \bar{A} \mathbf{x}_{k-1} + \bar{B} u_k, \quad y_k = C\mathbf{x}_k
+\]
+
+**Convolution (parallel):** there exists an impulse response kernel \(\bar{K}\) such that \(y = \bar{K} * u\) in the appropriate sense over finite horizons.
+
+| Mode | Typical complexity | Strength | Weakness |
 | --- | --- | --- | --- |
-| Recurrence | \(x_k = \bar{A}x_{k-1} + \bar{B}u_k\) | \(O(T)\) sequential | Inference (token-by-token) |
-| Convolution | \(y = \bar{K} * u\) where \(\bar{K} = (C\bar{B}, C\bar{A}\bar{B}, \ldots)\) | \(O(T \log T)\) parallel | Training (via FFT) |
+| Recurrence | \(O(T)\) sequential steps | Constant memory per step for inference | Harder to saturate GPU parallelism |
+| Convolution / FFT | \(O(T \log T)\) in many implementations | Parallel across time in training | Requires time-invariance for fixed kernel |
 
-During training, use the convolution mode for GPU parallelism. During inference, use the recurrence for \(O(1)\) per-step compute (like an RNN, but with a structured state).
+!!! math-intuition "In Plain English"
+    Recurrence is how you run the model when generating one token at a time: you keep a state and update it. Convolution is how you train faster on fixed-length sequences: the whole output emerges from structured linear algebra that GPUs can parallelize. **Selective** models (Mamba) break strict time-invariance, so the pure convolution trick becomes unavailable in the simplest form, motivating specialized scan algorithms.
 
-### S4 (Structured State Spaces for Sequences)
-
-Gu et al. (2021) made SSMs practical by:
-
-1. **HiPPO initialization** — initialize \(A\) as the HiPPO matrix, which is designed to optimally compress a continuous signal into a fixed-size state. This solves the long-range dependency problem.
-2. **Diagonal approximation** — parameterize \(A\) as diagonal (or diagonal-plus-low-rank) for efficient computation.
-3. **Efficient convolution** — compute the kernel \(\bar{K}\) via FFT in \(O(T \log T)\).
-
-S4 achieved state-of-the-art on the Long Range Arena benchmark (sequences up to 16K tokens) where Transformers failed.
-
-### Mamba — selective state spaces
-
-The limitation of S4: the state transition matrices \(A, B, C\) are **time-invariant** (the same for every token). This means the model can't selectively focus on or ignore specific tokens based on content — it processes everything uniformly.
-
-Mamba fixes this with **input-dependent** (selective) parameters:
-
-\[
-B_k = \text{Linear}_B(x_k), \quad C_k = \text{Linear}_C(x_k), \quad \Delta_k = \text{softplus}(\text{Linear}_\Delta(x_k))
-\]
-
-Now \(B\), \(C\), and \(\Delta\) vary per token, allowing the model to:
-
-- **Selectively remember** — large \(\Delta\) ≈ reset state (forget irrelevant context).
-- **Selectively copy** — project specific tokens into the state and retrieve them later.
-
-This breaks the convolution mode (parameters are no longer constant), so Mamba uses a **hardware-aware scan** algorithm instead — a parallel prefix scan that runs in \(O(T)\) on GPUs.
-
-### Mamba block architecture
-
-```
-Input x
-    ↓
-Linear projection → two branches
-    ↓                    ↓
-Conv1D → SiLU      Linear (gate)
-    ↓                    ↓
-SSM (selective)      SiLU
-    ↓                    ↓
-    ×─────────────────────
-    ↓
-Linear projection
-    ↓
-Output (+ residual)
-```
-
-### SSM vs. Transformer comparison
-
-| Property | Transformer | SSM (Mamba) |
-| --- | --- | --- |
-| Training complexity | \(O(T^2 d)\) | \(O(T d N)\) (linear) |
-| Inference per step | \(O(T d)\) via KV cache | \(O(d N)\) constant |
-| Long-range dependencies | Direct (attention) | Through state (compressed) |
-| Selective retrieval | Excellent (attention is content-based) | Good (with selection, but lossy) |
-| In-context learning | Strong | Weaker than Transformers |
-| Parallelizable (training) | Yes (matrix ops) | Yes (scan/conv) |
-
-### Hybrid architectures
-
-The latest trend: **combine** attention layers and Mamba layers in a single model:
-
-- **Jamba** (AI21, 2024) — alternates Transformer and Mamba blocks with MoE.
-- **Mamba-2** (Dao & Gu, 2024) — shows that the selective SSM can be reformulated as a form of **structured masked attention**, bridging SSMs and Transformers theoretically.
+??? deep-dive "Deep Dive: Why Mamba Uses a Scan"
+    When \(\Delta_k\), \(B_k\), and \(C_k\) depend on the input, kernels change per position. A parallel **prefix scan** can still compute the recurrence in \(O(T)\) work with careful engineering, but it is not the same as one static FFT convolution kernel for the entire sequence.
 
 ---
 
-## Code — Minimal selective SSM (Mamba-style) block
+## S4 and HiPPO Initialization in Plain English
+
+S4 (Structured State Spaces for Sequences) made long-range modeling practical by combining:
+
+- Structured parameterizations of \(A\) (often diagonal or diagonal-plus-low-rank) for speed and stability.
+- **HiPPO** initializations for \(A\) matrices designed so the hidden state acts like a **compressed memory** of recent history with mathematically motivated decay structure.
+- Fast kernel computation for training using FFT-based methods in the time-invariant setting.
+
+!!! math-intuition "In Plain English"
+    HiPPO is often described informally as: **choose the internal dynamics so that the state stores a useful summary of the past**, not random oscillations. Random initialization of recurrent dynamics frequently forgets or explodes. HiPPO-derived structure gives a strong inductive bias for remembering signals over long horizons, which is exactly what long-sequence benchmarks punish when models behave like weak RNNs.
+
+---
+
+## Mamba: Selective Gating on \(B\), \(C\), and \(\Delta\)
+
+Mamba makes key parameters **input-dependent**:
+
+\[
+B_k = W_B x_k, \quad C_k = W_C x_k, \quad \Delta_k = \text{softplus}(W_\Delta x_k)
+\]
+
+(Exact projections differ by implementation; the core idea is **functions of \(x_k\)**, not global constants.)
+
+!!! math-intuition "In Plain English"
+    If \(B_k\), \(C_k\), and \(\Delta_k\) do not depend on the input, the system applies the same forgetting and reading rules at every token. Language is not like that: some tokens should **flush** context, others should **write** facts into memory, and others should **read** selectively. Making these parameters depend on \(x_k\) lets the model learn **content-based** control of memory, which is the selective behavior people want from attention-like mechanisms without full pairwise attention cost.
+
+---
+
+## Worked Example: Two-Dimensional State Over Five Tokens
+
+This example uses **made-up but numerically consistent** 2D vectors to show accumulation and forgetting. The goal is pedagogy, not a production parameterization.
+
+**State:** \(\mathbf{h}_k \in \mathbb{R}^2\). Initialize \(\mathbf{h}_0 = [0, 0]^\top\).
+
+**Simplified discrete update (per channel diagonal decay for readability):**
+
+\[
+\mathbf{h}_k = \alpha_k \odot \mathbf{h}_{k-1} + \beta_k \odot \mathbf{e}_k
+\]
+
+where \(\odot\) is elementwise multiplication, \(\mathbf{e}_k \in \mathbb{R}^2\) is an embedding vector for token \(k\), and \(\alpha_k, \beta_k \in \mathbb{R}^2\) are decay and input gates in \([0,1]\).
+
+Let the five tokens produce:
+
+| Step \(k\) | \(\mathbf{e}_k\) | \(\alpha_k\) | \(\beta_k\) |
+| --- | --- | --- | --- |
+| 1 | \([1.0,\ 0.0]\) | \([0.5,\ 0.5]\) | \([1.0,\ 0.8]\) |
+| 2 | \([0.0,\ 2.0]\) | \([0.8,\ 0.7]\) | \([0.6,\ 1.0]\) |
+| 3 | \([0.5,\ 0.5]\) | \([0.9,\ 0.6]\) | \([0.5,\ 0.5]\) |
+| 4 | \([2.0,\ 0.0]\) | \([0.7,\ 0.8]\) | \([1.0,\ 0.2]\) |
+| 5 | \([0.0,\ 0.0]\) | \([0.6,\ 0.6]\) | \([0.4,\ 0.4]\) |
+
+**Compute \(\mathbf{h}_1\):**
+
+\[
+\mathbf{h}_1 = \alpha_1 \odot \mathbf{h}_0 + \beta_1 \odot \mathbf{e}_1
+= [0.5\cdot 0,\ 0.5\cdot 0] + [1.0\cdot 1.0,\ 0.8\cdot 0.0]
+= [1.0,\ 0.0]
+\]
+
+**Compute \(\mathbf{h}_2\):**
+
+\[
+\alpha_2 \odot \mathbf{h}_1 = [0.8\cdot 1.0,\ 0.7\cdot 0.0] = [0.8,\ 0.0]
+\]
+\[
+\beta_2 \odot \mathbf{e}_2 = [0.6\cdot 0.0,\ 1.0\cdot 2.0] = [0.0,\ 2.0]
+\]
+\[
+\mathbf{h}_2 = [0.8,\ 2.0]
+\]
+
+**Compute \(\mathbf{h}_3\):**
+
+\[
+\alpha_3 \odot \mathbf{h}_2 = [0.9\cdot 0.8,\ 0.6\cdot 2.0] = [0.72,\ 1.20]
+\]
+\[
+\beta_3 \odot \mathbf{e}_3 = [0.5\cdot 0.5,\ 0.5\cdot 0.5] = [0.25,\ 0.25]
+\]
+\[
+\mathbf{h}_3 = [0.97,\ 1.45]
+\]
+
+**Compute \(\mathbf{h}_4\):**
+
+\[
+\alpha_4 \odot \mathbf{h}_3 = [0.7\cdot 0.97,\ 0.8\cdot 1.45] = [0.679,\ 1.160]
+\]
+\[
+\beta_4 \odot \mathbf{e}_4 = [1.0\cdot 2.0,\ 0.2\cdot 0.0] = [2.0,\ 0.0]
+\]
+\[
+\mathbf{h}_4 = [2.679,\ 1.160]
+\]
+
+**Compute \(\mathbf{h}_5\):**
+
+\[
+\alpha_5 \odot \mathbf{h}_4 = [0.6\cdot 2.679,\ 0.6\cdot 1.160] = [1.6074,\ 0.696]
+\]
+\[
+\beta_5 \odot \mathbf{e}_5 = [0.4\cdot 0.0,\ 0.4\cdot 0.0] = [0.0,\ 0.0]
+\]
+\[
+\mathbf{h}_5 \approx [1.607,\ 0.696]
+\]
+
+**Interpretation:** early steps write directional evidence into the two channels. Later steps scale down prior state through \(\alpha\) and add new evidence through \(\beta \odot \mathbf{e}\). The fifth token carries zero embedding, yet the state still decays and retains partial history: forgetting is gradual rather than instantaneous.
+
+!!! example "Worked Example"
+    The table above is the worked example in compact form: you can trace \(\mathbf{h}_1\) through \(\mathbf{h}_5\) and point to which coordinates remember earlier tokens and which coordinates are overwritten when new evidence arrives.
+
+---
+
+## SSM versus Transformer: Comparison Table
+
+| Topic | Transformer (causal self-attention) | SSM / Mamba-style |
+| --- | --- | --- |
+| **Training complexity (attention layer)** | \(O(T^2 d)\) for full attention | \(O(T \cdot \text{state work})\) for recurrence or scan |
+| **Inference per new token** | Needs KV cache scaling with past length | Recurrent state size often fixed (does not grow with \(T\) like KV) |
+| **Content-based pairwise interactions** | Direct via attention weights | Approximated via selective gates and state dynamics |
+| **Parallelism** | Excellent with GPUs | Good with scans; different kernel patterns |
+| **Associative recall of specific past tokens** | Strong when attention can attend back | Can be weaker unless hybridized |
+
+---
+
+## Hybrid Architectures: Jamba and Attention Interleaving
+
+**Jamba** (Lieber et al., 2024) combines Transformer attention blocks with Mamba blocks and can incorporate MoE for capacity. The engineering motivation is simple: **attention handles local and content-sharp interactions**, while **SSM layers propagate information across long spans at lower cost** than full attention everywhere.
+
+!!! math-intuition "In Plain English"
+    A hybrid stack is an admission that no single primitive wins every metric. Attention is flexible but expensive. SSMs are efficient carriers of state but can be lossy compared to full attention for certain retrieval-style tasks. Interleaving trades off complexity for a better total package.
+
+---
+
+## Full Code: Selective SSM Block with Inference Timing
+
+The following PyTorch module implements a **minimal selective SSM path** with per-token \(\Delta\), and input-dependent \(B\) and \(C\) projections. Variable names avoid shadowing dimensions. The `__main__` block runs a short timing loop across sequence lengths.
 
 ```python
 """
-Minimal Selective State Space Model (Mamba-style) in PyTorch.
-Implements: discretization, selective scan (sequential), and the Mamba block.
+Minimal selective state space block (Mamba-style) with sequential scan and timing demo.
+
+Dependencies: torch
+Educational code: not a byte-for-byte reproduction of official CUDA kernels.
 """
-import math
+from __future__ import annotations
+
+import time
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -131,77 +250,71 @@ import torch.nn.functional as F
 
 class SelectiveSSM(nn.Module):
     """
-    Selective (input-dependent) State Space Model.
-    B, C, and delta are functions of the input.
+    Input-dependent B, C, and delta; diagonal A in log-space per channel.
+    State shape: (batch, d_inner, d_state)
     """
 
-    def __init__(self, d_model: int, d_state: int = 16):
+    def __init__(self, d_inner: int, d_state: int) -> None:
         super().__init__()
+        self.d_inner = d_inner
         self.d_state = d_state
 
-        # A is initialized from a structured (diagonal) matrix
-        A = torch.arange(1, d_state + 1, dtype=torch.float32).repeat(d_model, 1)
-        self.A_log = nn.Parameter(torch.log(A))  # log-space for stability
+        a = torch.arange(1, d_state + 1, dtype=torch.float32).view(1, d_state).repeat(d_inner, 1)
+        self.a_log = nn.Parameter(torch.log(a))
 
-        self.D = nn.Parameter(torch.ones(d_model))
-
-        # Input-dependent projections
-        self.proj_B = nn.Linear(d_model, d_state, bias=False)
-        self.proj_C = nn.Linear(d_model, d_state, bias=False)
-        self.proj_delta = nn.Linear(d_model, d_model, bias=True)
-
-        # Initialize delta bias to be positive (softplus maps to ~1)
+        self.proj_b = nn.Linear(d_inner, d_state, bias=False)
+        self.proj_c = nn.Linear(d_inner, d_state, bias=False)
+        self.proj_delta = nn.Linear(d_inner, d_inner, bias=True)
         nn.init.constant_(self.proj_delta.bias, 1.0)
+
+        self.d_out = nn.Parameter(torch.ones(d_inner))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Args:
-            x: (B, T, D) — input after conv/projection
-        Returns:
-            y: (B, T, D)
+        x: (batch, time, d_inner)
+        returns y: (batch, time, d_inner)
         """
-        B_batch, T, D = x.shape
-        N = self.d_state
+        b_batch, time_steps, d_in = x.shape
+        assert d_in == self.d_inner
 
-        A = -torch.exp(self.A_log)                   # (D, N)
-        D = self.D                                      # (D,)
+        a_neg = -torch.exp(self.a_log)
+        b_mat = self.proj_b(x)
+        c_mat = self.proj_c(x)
+        delta = F.softplus(self.proj_delta(x))
 
-        B = self.proj_B(x)                              # (B, T, N)
-        C = self.proj_C(x)                              # (B, T, N)
-        delta = F.softplus(self.proj_delta(x))          # (B, T, D)
+        outputs: list[torch.Tensor] = []
+        state = torch.zeros(b_batch, self.d_inner, self.d_state, device=x.device, dtype=x.dtype)
 
-        # Discretize: A_bar = exp(delta * A), B_bar = delta * B
-        delta_A = torch.exp(delta.unsqueeze(-1) * A)    # (B, T, D, N)
-        delta_B = delta.unsqueeze(-1) * B.unsqueeze(2)  # (B, T, D, N)
+        for t in range(time_steps):
+            delta_t = delta[:, t, :]
+            b_t = b_mat[:, t, :]
+            c_t = c_mat[:, t, :]
+            x_t = x[:, t, :]
 
-        # Sequential scan (production code uses a parallel scan kernel)
-        h = torch.zeros(B_batch, D, N, device=x.device)  # state
-        ys = []
-        for t in range(T):
-            h = delta_A[:, t] * h + delta_B[:, t] * x[:, t].unsqueeze(-1)
-            y_t = (h * C[:, t].unsqueeze(1)).sum(-1)      # (B, D)
-            ys.append(y_t)
+            decay = torch.exp(delta_t.unsqueeze(-1) * a_neg)
+            delta_b = delta_t.unsqueeze(-1) * b_t.unsqueeze(1)
+            state = decay * state + delta_b * x_t.unsqueeze(-1)
+            y_t = (state * c_t.unsqueeze(1)).sum(dim=-1)
+            y_t = y_t + x_t * self.d_out
+            outputs.append(y_t)
 
-        y = torch.stack(ys, dim=1)  # (B, T, D)
-        y = y + x * D               # skip connection with D
-        return y
+        return torch.stack(outputs, dim=1)
 
 
-class MambaBlock(nn.Module):
-    """
-    Simplified Mamba block: Conv1D → SelectiveSSM with gated output.
-    """
+class MambaLikeBlock(nn.Module):
+    """Conv1d local mixing + selective SSM + gating."""
 
-    def __init__(
-        self, d_model: int, d_state: int = 16, d_conv: int = 4, expand: int = 2
-    ):
+    def __init__(self, d_model: int, d_state: int = 16, d_conv: int = 4, expand: int = 2) -> None:
         super().__init__()
         d_inner = d_model * expand
-
         self.in_proj = nn.Linear(d_model, 2 * d_inner, bias=False)
         self.conv1d = nn.Conv1d(
-            d_inner, d_inner, kernel_size=d_conv,
-            padding=d_conv - 1, groups=d_inner, bias=True,
+            d_inner,
+            d_inner,
+            kernel_size=d_conv,
+            padding=d_conv - 1,
+            groups=d_inner,
+            bias=True,
         )
         self.ssm = SelectiveSSM(d_inner, d_state)
         self.out_proj = nn.Linear(d_inner, d_model, bias=False)
@@ -210,98 +323,97 @@ class MambaBlock(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         residual = x
         x = self.norm(x)
-
-        # Two branches: SSM path and gate
         xz = self.in_proj(x)
-        x_ssm, z = xz.chunk(2, dim=-1)
+        x_branch, z_branch = xz.chunk(2, dim=-1)
 
-        # Conv1D (causal)
-        x_ssm = x_ssm.transpose(1, 2)                  # (B, D_inner, T)
-        x_ssm = self.conv1d(x_ssm)[:, :, : x.size(1)]  # causal trim
-        x_ssm = x_ssm.transpose(1, 2)                   # (B, T, D_inner)
-        x_ssm = F.silu(x_ssm)
+        x_c = x_branch.transpose(1, 2)
+        x_c = self.conv1d(x_c)[:, :, : x_branch.size(1)]
+        x_c = x_c.transpose(1, 2)
+        x_c = F.silu(x_c)
 
-        # Selective SSM
-        y = self.ssm(x_ssm)
-
-        # Gated output
-        y = y * F.silu(z)
+        y = self.ssm(x_c)
+        y = y * F.silu(z_branch)
         y = self.out_proj(y)
+        return residual + y
 
-        return y + residual
 
+class TinyModel(nn.Module):
+    """Small stack for timing; not trained."""
 
-class MambaModel(nn.Module):
-    """Stack of Mamba blocks with embedding and LM head."""
-
-    def __init__(
-        self,
-        vocab_size: int,
-        d_model: int = 128,
-        n_layers: int = 4,
-        d_state: int = 16,
-    ):
+    def __init__(self, vocab_size: int, d_model: int, layers: int, d_state: int) -> None:
         super().__init__()
-        self.embedding = nn.Embedding(vocab_size, d_model)
-        self.layers = nn.ModuleList(
-            [MambaBlock(d_model, d_state) for _ in range(n_layers)]
-        )
+        self.embed = nn.Embedding(vocab_size, d_model)
+        self.blocks = nn.ModuleList(MambaLikeBlock(d_model, d_state=d_state) for _ in range(layers))
         self.norm = nn.LayerNorm(d_model)
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
-        self.embedding.weight = self.lm_head.weight  # weight tying
 
-    def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
-        x = self.embedding(input_ids)
-        for layer in self.layers:
-            x = layer(x)
-        return self.lm_head(self.norm(x))
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        h = self.embed(ids)
+        for block in self.blocks:
+            h = block(h)
+        return self.lm_head(self.norm(h))
 
 
-# ── Demo ────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    torch.manual_seed(42)
-    V, D, L = 256, 128, 4
-    B, T = 2, 64
-
-    model = MambaModel(V, D, L)
-    n_params = sum(p.numel() for p in model.parameters())
-    print(f"Mamba model: {n_params:,} parameters")
-
-    tokens = torch.randint(0, V, (B, T))
-    logits = model(tokens)
-    print(f"Input:  {tokens.shape}")
-    print(f"Output: {logits.shape}")
-
-    # Compare inference modes: full sequence vs token-by-token
-    with torch.no_grad():
-        full_out = model(tokens)
-        # In theory, recurrent mode gives the same result
-        # (our sequential scan is already recurrent)
-        print(f"Full sequence output matches token-by-token: "
-              f"{torch.allclose(full_out, model(tokens), atol=1e-5)}")
-
-    # Show linear scaling
-    import time
-    for seq_len in [64, 256, 1024, 4096]:
-        x = torch.randint(0, V, (1, seq_len))
-        start = time.perf_counter()
+def benchmark_forward(model: nn.Module, lengths: Tuple[int, ...], device: torch.device) -> None:
+    model.eval()
+    vocab_size = model.lm_head.out_features
+    for seq_len in lengths:
+        x = torch.randint(0, vocab_size, (1, seq_len), device=device)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
         with torch.no_grad():
             _ = model(x)
-        elapsed = time.perf_counter() - start
-        print(f"  T={seq_len:5d}  time={elapsed * 1000:.1f}ms")
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        t1 = time.perf_counter()
+        print(f"seq_len={seq_len:5d}  seconds={t1 - t0:.4f}")
+
+
+if __name__ == "__main__":
+    torch.manual_seed(0)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    vocab = 4096
+    d_model = 256
+    layers = 4
+    d_state = 16
+    model = TinyModel(vocab, d_model, layers, d_state).to(device)
+    params = sum(p.numel() for p in model.parameters())
+    print(f"parameters={params:,}  device={device}")
+    sample = torch.randint(0, vocab, (2, 128), device=device)
+    logits = model(sample)
+    print(f"logits shape={tuple(logits.shape)}")
+    benchmark_forward(model, (64, 256, 1024, 4096), device)
 ```
 
 ---
 
-## Interview takeaways
+## Interview Guide
 
-1. **Why SSMs exist** — attention is \(O(T^2)\). SSMs process sequences in \(O(T)\) by maintaining a compressed state, like a learned RNN with structured dynamics.
-2. **Dual modes** — training uses convolution (parallel, \(O(T \log T)\)) or parallel scan; inference uses recurrence (\(O(1)\) per step). Know that this duality comes from the linearity of the system.
-3. **Mamba's key insight** — making B, C, and Δ input-dependent (selective) lets the model decide what to remember and what to forget at each step. Without selection, SSMs can't do content-based retrieval.
-4. **HiPPO initialization** — the A matrix is initialized to optimally compress history into a fixed-size state. This is what makes S4 handle long-range dependencies where RNNs fail.
-5. **Where SSMs fall short** — in-context learning and associative recall (looking up specific past tokens) are weaker than Transformers because the state is lossy. Hybrid models (Jamba) combine both.
-6. **Mamba-2 connection** — the selective SSM can be viewed as **structured masked attention** with specific constraints. This unifies the two paradigms theoretically and suggests future hybrid architectures.
-7. **Practical status (2024+)** — SSMs are proven for long-context and efficiency-critical applications. But for general-purpose LLMs, Transformers (with FlashAttention) remain dominant. Watch this space.
+!!! interview "FAANG-Level Questions"
+    1. Why is naive self-attention \(O(T^2)\), and what bottleneck does that create?
+    2. Write the continuous-time SSM and explain each of \(A\), \(B\), \(C\), and \(D\).
+    3. What changes when you discretize with step \(\Delta\)?
+    4. Explain recurrence versus convolution for time-invariant linear SSMs.
+    5. What problem does HiPPO initialization aim to solve?
+    6. What does Mamba change versus time-invariant S4-style models?
+    7. Why does selectivity break the simplest fixed-kernel FFT training picture?
+    8. Compare inference memory for Transformer KV cache versus fixed-size SSM state.
+    9. Name a hybrid architecture pattern and justify why teams use it.
+    10. How does Mamba-2 connect SSMs and attention at a high level?
+
+!!! interview "Follow-up Probes"
+    - "What kinds of tasks stress associative recall versus long-horizon compression?"
+    - "How would you benchmark a hybrid model fairly against a dense Transformer?"
+    - "What hardware metrics matter for scan kernels on GPUs?"
+    - "When would you still pay for attention despite quadratic cost?"
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - "Linear-time sequence modeling via structured state updates"
+    - "Discretization maps continuous dynamics to token steps"
+    - "Training parallelism via convolution or scan; inference via recurrence"
+    - "Selective parameters make memory input-dependent"
+    - "Hybrids interleave attention for sharp lookup with SSM for efficient propagation"
 
 ---
 

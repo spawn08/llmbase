@@ -1,121 +1,277 @@
-# 2.7 — Mixture of Experts (MoE)
+# Mixture of Experts (MoE)
 
-## Intuition
+## Why This Matters for LLMs
 
-Standard Transformers apply every parameter to every token. **Mixture of Experts** (MoE) breaks the FFN into multiple **expert networks** and routes each token to only a subset (typically 1–2) of them. This lets you scale parameters massively — 8× the FFN capacity — while keeping per-token compute nearly constant.
+Dense Transformers spend the same compute on every token: each layer’s feed-forward network (FFN) activates all weights for every position in the sequence. **Mixture of Experts** replaces that dense FFN with a bank of parallel **expert** networks and a lightweight **router** that sends each token to only a small subset of experts (often top-1 or top-2). Total parameter count can grow into the tens or hundreds of billions while **per-token active parameters** stay closer to a mid-sized dense model. That split is central to how teams reason about frontier systems: you separate **memory footprint and total capacity** from **realized FLOPs per token**.
 
-Mixtral 8×7B has 46.7B total parameters but activates only ~12.9B per token, matching the quality of a 70B dense model at a fraction of the inference cost.
+MoE is a recurring topic in **system design** interviews because routing creates new failure modes: load imbalance across GPUs, all-to-all communication in distributed training, expert collapse during optimization, and tricky fine-tuning dynamics when only a fraction of parameters receives gradients for a given batch. Saying "MoE scales parameters" without mentioning routing stability and serving costs is incomplete. A strong answer connects the gating softmax, top-\(k\) selection, auxiliary losses, and the operational reality that **all experts must typically reside in device memory** even when inactive for a particular token.
+
+Finally, MoE sits at the intersection of model architecture and **hardware**. Parallel expert shards map to multi-GPU layouts; expert choice routing inverts the assignment problem to improve balance; products like open-weight Mixtral models made MoE tangible for developers who experiment locally. Understanding MoE is therefore not only a reading-comprehension exercise about papers: it is preparation for discussing how a 47B-parameter checkpoint might still behave like a 13B active model at inference time, and why that matters for latency budgets and batching strategies.
 
 ---
 
-## Core concepts
+## Router and Gate: From Logits to a Weighted Mixture
 
-### Architecture
-
-An MoE layer replaces the dense FFN in a Transformer block:
-
-```
-Input x → Router (linear + softmax) → select top-k experts → weighted sum of outputs
-```
-
-Formally, with \(E\) experts and a gating function \(G\):
+Let \(\mathbf{x} \in \mathbb{R}^{d_{\text{model}}}\) be a token hidden vector entering an MoE layer. A learned linear map produces **logits** over \(E\) experts:
 
 \[
-G(\mathbf{x}) = \text{softmax}(W_g \mathbf{x}) \in \mathbb{R}^{E}
+\mathbf{z} = W_g \mathbf{x} + \mathbf{b}_g, \quad \mathbf{z} \in \mathbb{R}^E
 \]
 
 \[
-\text{MoE}(\mathbf{x}) = \sum_{i \in \text{TopK}} G(\mathbf{x})_i \cdot \text{Expert}_i(\mathbf{x})
+\mathbf{g} = \text{softmax}(\mathbf{z}), \quad g_i = \frac{\exp(z_i)}{\sum_{j=1}^{E} \exp(z_j)}
 \]
 
-Each expert is a standard FFN (e.g., SwiGLU). Only the top-\(k\) experts (usually \(k = 1\) or \(k = 2\)) are computed; the rest are skipped entirely.
+For **top-\(k\)** routing with small \(k\) (often 1 or 2), define the set \(\mathcal{S}(\mathbf{x})\) as the indices of the \(k\) largest entries of \(\mathbf{g}\). The MoE output is a weighted sum of expert functions \(f_i\):
 
-### Router design
+\[
+\text{MoE}(\mathbf{x}) = \sum_{i \in \mathcal{S}(\mathbf{x})} \tilde{g}_i \, f_i(\mathbf{x})
+\]
 
-The **router** (or **gate**) is a small linear layer that decides which experts handle each token. Key challenges:
+where \(\tilde{g}_i\) are the selected gate values renormalized to sum to one over the chosen experts:
 
-**Load balancing** — without constraints, the router tends to send most tokens to a few "popular" experts, wasting the others. Solutions:
+\[
+\tilde{g}_i = \frac{g_i}{\sum_{j \in \mathcal{S}(\mathbf{x})} g_j}
+\]
 
-- **Auxiliary load-balancing loss** — penalize uneven expert usage:
+!!! math-intuition "In Plain English"
+    The router answers: **which specialists should look at this token, and how much should I trust each one?** The softmax converts a raw score vector into nonnegative weights that sum to one. Top-\(k\) keeps only the largest weights, which means most experts do no work for that token. Renormalization rescales the surviving weights so they still form a convex combination of expert outputs.
+
+!!! example "Worked Example: Eight Experts, Top-Two Routing for One Token"
+    Let \(E = 8\). Suppose the router logits for a specific token are:
+
+    \[
+    \mathbf{z} = [2.0,\ 0.5,\ -1.0,\ 3.5,\ 0.0,\ -0.5,\ 1.0,\ -2.0]
+    \]
+
+    Compute softmax probabilities (using natural exponentials):
+
+    - \(\exp(3.5) \approx 33.12\), \(\exp(2.0) \approx 7.39\), \(\exp(1.0) \approx 2.72\), \(\exp(0.5) \approx 1.65\), \(\exp(0.0) = 1.00\), \(\exp(-0.5) \approx 0.61\), \(\exp(-1.0) \approx 0.37\), \(\exp(-2.0) \approx 0.14\)
+
+    Sum \(\approx 33.12 + 7.39 + 2.72 + 1.65 + 1.00 + 0.61 + 0.37 + 0.14 \approx 47.00\) (rounded).
+
+    Normalized weights (approximate):
+
+    - \(g_4 \approx 33.12 / 47.00 \approx 0.705\)  
+    - \(g_1 \approx 7.39 / 47.00 \approx 0.157\)  
+    - \(g_8 \approx 2.72 / 47.00 \approx 0.058\)  
+    - remaining indices carry the rest.
+
+    Top-\(k\) with \(k = 2\) selects experts 4 and 1 (indices 4 and 1 if one-indexed naming is used carefully; here 0-indexed they are index 3 and index 0). Suppose the two largest are indices **3** and **0** in zero-based numbering (values 3.5 and 2.0). Renormalize:
+
+    \[
+    \tilde{g}_3 = \frac{g_3}{g_3 + g_0}, \quad \tilde{g}_0 = \frac{g_0}{g_3 + g_0}
+    \]
+
+    Using approximate \(g_3 \approx 0.705\) and \(g_0 \approx 0.157\):
+
+    \[
+    \tilde{g}_3 \approx \frac{0.705}{0.705 + 0.157} \approx 0.818, \quad \tilde{g}_0 \approx \frac{0.157}{0.862} \approx 0.182
+    \]
+
+    If expert outputs are vectors \(f_0(\mathbf{x}) = \mathbf{o}_0\) and \(f_3(\mathbf{x}) = \mathbf{o}_3\), the MoE output is \(\mathbf{y} \approx 0.818\, \mathbf{o}_3 + 0.182\, \mathbf{o}_0\). Only those two experts execute a full FFN for this token.
+
+---
+
+## Load Balancing and the Auxiliary Loss
+
+A practical MoE must avoid **router collapse**, where a few experts receive almost all tokens. A common training-time fix adds an auxiliary loss that encourages **both** high routing probability mass and **actual token counts** to spread across experts.
+
+Let \(f_i\) be the fraction of tokens in a batch whose routing includes expert \(i\) (counting each token’s top-\(k\) slots), normalized so \(\sum_i f_i = k\) when each token selects \(k\) experts and each selection is counted. Let \(P_i\) be the mean of \(g_i\) across tokens in the batch. A Switch-style balance term often resembles:
 
 \[
 \mathcal{L}_{\text{balance}} = \alpha \cdot E \cdot \sum_{i=1}^{E} f_i \cdot P_i
 \]
 
-where \(f_i\) = fraction of tokens routed to expert \(i\), \(P_i\) = average router probability for expert \(i\).
+!!! math-intuition "In Plain English"
+    Think of \(f_i\) as **how often expert \(i\) actually fires** and \(P_i\) as **how strongly the router wanted expert \(i\) on average**. If the router assigns high probability to an expert but that expert rarely runs, or the opposite, the product \(f_i P_i\) can drift away from a uniform ideal. Multiplying by \(E\) scales the penalty relative to the number of experts. The coefficient \(\alpha\) trades off routing regularization against the main language modeling loss.
 
-- **Expert capacity factor** — cap how many tokens each expert can process per batch. Overflow tokens are dropped or sent to a shared "default" expert.
+!!! example "Worked Example: Load Balancing Loss"
+    **Setup:** \(E = 8\) experts, batch of **16 tokens**, top-\(k = 2\) so each token contributes two expert selections, 32 expert-slots total.
 
-- **Random noise** — add Gaussian noise to router logits during training to encourage exploration.
+    **Step 1 — Count routed slots per expert (toy but concrete).**  
+    Suppose after routing, expert slot counts are:
 
-**Expert choice routing** (Zhou et al., 2022) — flip the selection: instead of tokens choosing experts, experts choose their top-\(k\) tokens. This guarantees perfect load balance.
+    | Expert index | Routed slots (out of 32) |
+    | --- | --- |
+    | 0 | 10 |
+    | 1 | 2 |
+    | 2 | 2 |
+    | 3 | 2 |
+    | 4 | 2 |
+    | 5 | 2 |
+    | 6 | 6 |
+    | 7 | 6 |
 
-### MoE scaling properties
+    Check sum: \(10 + 2 + 2 + 2 + 2 + 2 + 2 + 6 + 6 = 32\).
 
-| Property | Dense | MoE |
-| --- | --- | --- |
-| Total params | \(P\) | \(E \times P_{\text{expert}} + P_{\text{shared}}\) (much larger) |
-| Active params per token | \(P\) | \(\approx k \times P_{\text{expert}} + P_{\text{shared}}\) |
-| Training FLOP | Proportional to \(P\) | Proportional to active params (cheaper) |
-| Memory | \(P\) | All \(E\) experts must fit in memory |
+    Convert to \(f_i\) as **fraction of expert-slots**:
 
-The memory requirement is the main drawback: you need to load all expert weights even though only \(k\) are used per token. This makes MoE models memory-bound, not compute-bound.
+    \[
+    f_0 = 10/32 = 0.3125,\ f_1 = 2/32 = 0.0625,\ f_2 = 0.0625,\ f_3 = 0.0625,
+    \]
+    \[
+    f_4 = 0.0625,\ f_5 = 0.0625,\ f_6 = 6/32 = 0.1875,\ f_7 = 0.1875
+    \]
 
-### Notable MoE models
+    **Step 2 — Router probability mass per expert (batch mean of \(g_i\)).**  
+    Suppose the average softmax probabilities are:
 
-| Model | Year | Experts | Top-k | Total params | Active params |
-| --- | --- | --- | --- | --- | --- |
-| Switch Transformer | 2021 | 128–2048 | 1 | Up to 1.6T | Dense-equivalent |
-| GLaM | 2022 | 64 | 2 | 1.2T | ~97B |
-| Mixtral 8×7B | 2023 | 8 | 2 | 46.7B | 12.9B |
-| Mixtral 8×22B | 2024 | 8 | 2 | 141B | 39B |
-| DeepSeek-V2 | 2024 | 160 | 6 | 236B | 21B |
-| Grok-1 | 2024 | 8 | 2 | 314B | ~79B |
+    | Expert | \(P_i\) |
+    | --- | --- |
+    | 0 | 0.30 |
+    | 1 | 0.08 |
+    | 2 | 0.08 |
+    | 3 | 0.08 |
+    | 4 | 0.08 |
+    | 5 | 0.08 |
+    | 6 | 0.15 |
+    | 7 | 0.15 |
 
-### MoE training challenges
+    Sum \(P_i = 1.00\).
 
-1. **Instability** — MoE models are harder to train stably. Router collapse (all tokens go to one expert) can happen early in training.
-2. **Expert specialization** — ideally each expert specializes in different domains/skills. In practice, specialization is weak and hard to interpret.
-3. **Communication overhead** — in distributed training, tokens must be dispatched to the GPU hosting the correct expert (all-to-all communication).
-4. **Fine-tuning** — MoE models are harder to fine-tune efficiently because only a subset of experts see each example.
+    **Step 3 — Compute \(\sum_i f_i P_i\):**
+
+    - \(f_0 P_0 = 0.3125 \times 0.30 = 0.09375\)  
+    - \(f_1 P_1 = 0.0625 \times 0.08 = 0.005\)  
+    - Experts 2–5 each: \(0.0625 \times 0.08 = 0.005\) (four experts → \(0.02\))  
+    - \(f_6 P_6 = 0.1875 \times 0.15 = 0.028125\)  
+    - \(f_7 P_7 = 0.1875 \times 0.15 = 0.028125\)
+
+    Sum:
+
+    \[
+    0.09375 + 0.02 + 0.028125 + 0.028125 = 0.17
+    \]
+
+    (since \(0.09375 + 0.02 = 0.11375\), plus \(0.05625 = 0.17\)).
+
+    **Step 4 — Scale by \(E\) and \(\alpha\).**  
+    With \(\alpha = 0.01\):
+
+    \[
+    \mathcal{L}_{\text{balance}} \approx 0.01 \times 8 \times 0.17 = 0.0136
+    \]
+
+    **Interpretation:** Expert 0 is both frequently chosen and strongly preferred by the router, driving a larger product term. Training nudges the router and representations so that **traffic** and **intent** align more evenly, reducing idle experts.
 
 ---
 
-## Code — Simple MoE layer in PyTorch
+## Expert Choice Routing (Tokens versus Experts)
+
+Classic routing: **tokens pick experts** via softmax and top-\(k\). **Expert choice** routing flips the assignment: each expert selects its top tokens from a pool. This can enforce **perfect balance** because each expert takes a fixed quota.
+
+!!! math-intuition "In Plain English"
+    Imagine a job fair. Token-choice routing lets every candidate apply to their favorite employers, which can produce long lines at popular booths. Expert-choice routing lets each booth interview a fixed number of applicants chosen from the crowd. The second scheme caps wait imbalance by construction, which helps hardware utilization at the cost of a different scheduling algorithm and sometimes different gradient statistics.
+
+??? deep-dive "Deep Dive: Why Expert Choice Changes Implementation"
+    Token-choice routing maps naturally to "for each token, gather expert outputs." Expert-choice routing requires sorting or grouping tokens per expert after an initial scoring pass. Distributed systems must implement **buffering** and **capacity** carefully to avoid dropping tokens. Interview answers should mention that load balance improves but **communication patterns** and **kernel fusion** requirements change.
+
+---
+
+## Scaling Properties: Mixtral and the Active Parameter Budget
+
+Public Mixtral-style models illustrate the **total versus active** split. A commonly cited profile for **Mixtral 8×7B** is on the order of **47B total parameters** with roughly **13B active parameters per token** when two experts are selected from eight (the precise headline numbers vary slightly by counting conventions and shared tensors).
+
+!!! math-intuition "In Plain English"
+    Total parameters count every expert’s weights sitting on disk or in GPU memory. Active parameters count the FFN weights actually multiplied during the forward pass for a token, plus shared components like attention projections. The ratio explains why MoE can match a much larger dense model’s quality without multiplying inference FLOPs by the full depth of all experts.
+
+---
+
+## Notable Models (Orientation Table)
+
+| Model family | Experts (order of magnitude) | Top-\(k\) (typical) | Notes |
+| --- | --- | --- | --- |
+| Switch Transformer | Hundreds to low thousands | 1 | Early large-scale MoE training recipes |
+| GLaM | Dozens | 2 | Large sparse mixture with dense counterparts in studies |
+| Mixtral 8×7B | 8 | 2 | Widely deployed open-weights MoE LLM |
+| Mixtral 8×22B | 8 | 2 | Larger experts, higher total parameter count |
+| DeepSeek-V2 | Large (hundreds) | >2 | Strong open model line with MoE FFN blocks |
+| Grok-1 | 8 (reported in many summaries) | 2 | Closed weights; cited in public benchmarking discussions |
+
+**GPT-4** is widely speculated to use MoE-style sparsity, but public sources do not provide authoritative architecture tables. In interviews, phrase it as **industry rumor** unless you have private knowledge.
+
+??? deep-dive "Deep Dive: Memory Versus Compute in Serving"
+    MoE reduces compute per token relative to a dense model with the same expert width, but the **checkpoint size** still includes all experts. Serving stacks therefore worry about **VRAM**, **expert offloading**, **CPU RAM fallback**, and **batching** to saturate GPUs. A complete system answer mentions **all-to-all** dispatch when experts shard across devices.
+
+---
+
+## Training Challenges: Collapse, Instability, Communication
+
+1. **Expert collapse** — the router sends most tokens to one expert, wasting capacity.
+2. **Router instability** — sharp softmax distributions early in training can freeze exploration; remedies include noise on logits, temperature, auxiliary losses, and curriculum.
+3. **Communication overhead** — distributed training must move activations to the devices that own the selected experts.
+4. **Fine-tuning brittleness** — small task-specific datasets may overfit a subset of experts unless learning rates, regularization, and data mixing are tuned.
+
+!!! interview "FAANG-Level Questions"
+    1. Define MoE at the layer level and contrast dense FFN with sparse expert FFN.
+    2. Write the softmax gate equation and explain top-\(k\) sparsification.
+    3. Why does load balancing matter, and what does an auxiliary loss penalize?
+    4. Compare token-choice and expert-choice routing at a systems level.
+    5. Given total parameters and active parameters, how do you reason about inference cost?
+    6. What causes all-to-all communication in distributed MoE training?
+    7. Why might MoE fine-tuning behave differently from dense fine-tuning?
+    8. How would you detect expert collapse in telemetry (histograms of expert indices)?
+    9. Why is VRAM pressure often worse than FLOPs for MoE deployment?
+    10. Explain why Mixtral can approach larger dense quality with smaller active compute.
+
+!!! interview "Follow-up Probes"
+    - "What happens if one expert is overloaded beyond its capacity cap?"
+    - "How does mixed-precision training interact with router numerics?"
+    - "Would you shard experts by layer or across layers on the same device?"
+    - "How do you evaluate whether experts specialize meaningfully?"
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - "Conditional computation: sparse activation of FFN experts"
+    - "Gating softmax plus top-\(k\) selection with renormalized weights"
+    - "Auxiliary load-balancing loss on \(f_i\) and \(P_i\)"
+    - "Total parameters versus active parameters per token"
+    - "Distributed all-to-all dispatch for expert shards"
+
+---
+
+## Full Code: MoE Layer with Top-\(k\) Routing and Auxiliary Loss
+
+The module below is **self-contained**, uses explicit loops for clarity (production stacks use fused kernels), and reports the auxiliary loss using the same structural terms as the explanation above.
 
 ```python
 """
-Mixture of Experts (MoE) layer in PyTorch.
-Implements: top-k routing, load balancing loss, and expert capacity.
+Mixture of Experts (MoE) layer: top-k routing, renormalized weights, load-balancing loss.
+
+Requires: torch >= 2.0 recommended (works with 1.x for basic tensors).
+
+Educational implementation: loops per expert for transparency; production code uses grouping.
 """
+from __future__ import annotations
+
+import math
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Expert(nn.Module):
-    """A single expert — standard SwiGLU FFN."""
+class SwiGLUExpert(nn.Module):
+    """One expert: SwiGLU-style feed-forward block."""
 
-    def __init__(self, d_model: int, d_ff: int):
+    def __init__(self, d_model: int, d_ff: int) -> None:
         super().__init__()
         self.w1 = nn.Linear(d_model, d_ff, bias=False)
         self.w2 = nn.Linear(d_ff, d_model, bias=False)
         self.w3 = nn.Linear(d_model, d_ff, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # SwiGLU: silu(w1(x)) * w3(x) then w2
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
 
 class MoELayer(nn.Module):
     """
-    Top-k Mixture of Experts with load-balancing loss.
-
-    Args:
-        d_model: hidden dimension
-        d_ff: expert FFN inner dimension
-        n_experts: total number of experts
-        top_k: number of experts per token (1 or 2)
-        balance_coeff: weight for load-balancing auxiliary loss
+    Top-k MoE with Switch-style balance loss:
+      aux = balance_coeff * E * sum_i f_i * P_i
+    where f_i is the fraction of routed slots to expert i,
+    P_i is the mean softmax probability for expert i across tokens.
     """
 
     def __init__(
@@ -125,106 +281,78 @@ class MoELayer(nn.Module):
         n_experts: int = 8,
         top_k: int = 2,
         balance_coeff: float = 0.01,
-    ):
+    ) -> None:
         super().__init__()
+        self.d_model = d_model
         self.n_experts = n_experts
         self.top_k = top_k
         self.balance_coeff = balance_coeff
-
         self.gate = nn.Linear(d_model, n_experts, bias=False)
-        self.experts = nn.ModuleList(
-            [Expert(d_model, d_ff) for _ in range(n_experts)]
-        )
+        self.experts = nn.ModuleList(SwiGLUExpert(d_model, d_ff) for _ in range(n_experts))
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Args:
-            x: (B, T, D)
-        Returns:
-            output: (B, T, D)
-            aux_loss: scalar load-balancing loss
+        x: (batch, time, d_model)
+        returns: output with same shape, scalar aux_loss
         """
-        B, T, D = x.shape
-        flat_x = x.view(-1, D)  # (B*T, D)
-        N = flat_x.size(0)
+        b, t, d = x.shape
+        flat = x.reshape(b * t, d)
+        n_tokens = flat.size(0)
 
-        # Router
-        router_logits = self.gate(flat_x)         # (N, E)
-        router_probs = F.softmax(router_logits, dim=-1)
+        logits = self.gate(flat)
+        probs = F.softmax(logits, dim=-1)
 
-        # Top-k selection
-        topk_probs, topk_indices = router_probs.topk(self.top_k, dim=-1)  # (N, k)
-        topk_probs = topk_probs / topk_probs.sum(dim=-1, keepdim=True)   # renormalize
+        topk_weight, topk_idx = probs.topk(self.top_k, dim=-1)
+        # Renormalize selected weights so each token's mixture sums to 1.
+        topk_weight = topk_weight / topk_weight.sum(dim=-1, keepdim=True).clamp_min(1e-8)
 
-        # Compute expert outputs (simple loop — production uses scatter/gather)
-        output = torch.zeros_like(flat_x)
-        for k_idx in range(self.top_k):
-            expert_idx = topk_indices[:, k_idx]  # (N,)
-            weight = topk_probs[:, k_idx]        # (N,)
-            for e in range(self.n_experts):
-                mask = expert_idx == e
-                if mask.any():
-                    expert_input = flat_x[mask]
-                    expert_output = self.experts[e](expert_input)
-                    output[mask] += weight[mask].unsqueeze(-1) * expert_output
+        out = torch.zeros_like(flat)
 
-        # Load-balancing loss
-        # f_i = fraction of tokens routed to expert i
-        # P_i = average router probability for expert i
-        tokens_per_expert = torch.zeros(self.n_experts, device=x.device)
-        for k_idx in range(self.top_k):
-            for e in range(self.n_experts):
-                tokens_per_expert[e] += (topk_indices[:, k_idx] == e).float().sum()
-        f = tokens_per_expert / (N * self.top_k)
-        P = router_probs.mean(dim=0)
-        aux_loss = self.balance_coeff * self.n_experts * (f * P).sum()
+        # Route: for each k slot, accumulate weighted expert outputs.
+        for slot in range(self.top_k):
+            sel = topk_idx[:, slot]
+            w = topk_weight[:, slot]
+            for expert_id in range(self.n_experts):
+                mask = sel == expert_id
+                if not mask.any():
+                    continue
+                sub_in = flat[mask]
+                sub_out = self.experts[expert_id](sub_in)
+                out[mask] = out[mask] + w[mask].unsqueeze(-1) * sub_out
 
-        return output.view(B, T, D), aux_loss
+        # Load-balancing: f_i uses routed slots (k per token).
+        counts = torch.zeros(self.n_experts, device=x.device, dtype=torch.float32)
+        for slot in range(self.top_k):
+            counts.scatter_add_(0, topk_idx[:, slot], torch.ones_like(topk_idx[:, slot], dtype=torch.float32))
+        total_slots = float(n_tokens * self.top_k)
+        f = counts / max(total_slots, 1.0)
+        p_mean = probs.mean(dim=0)
+        aux_loss = self.balance_coeff * float(self.n_experts) * torch.sum(f * p_mean)
+
+        return out.view(b, t, d), aux_loss
 
 
-# ── Demo ────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    torch.manual_seed(42)
-    D, D_FF, E, K = 128, 256, 8, 2
-    B, T = 2, 16
-
-    moe = MoELayer(D, D_FF, n_experts=E, top_k=K)
-    x = torch.randn(B, T, D)
-
-    output, aux_loss = moe(x)
-    print(f"Input:       {x.shape}")
-    print(f"Output:      {output.shape}")
-    print(f"Aux loss:    {aux_loss.item():.6f}")
-
-    # Parameter count comparison
-    dense_ffn = Expert(D, D_FF)
-    dense_params = sum(p.numel() for p in dense_ffn.parameters())
+def demo_parameter_ratio(d_model: int, d_ff: int, n_experts: int, top_k: int) -> None:
+    """Print rough parameter counts for one dense FFN versus MoE replacement."""
+    one_expert = 2 * d_model * d_ff + d_ff * d_model + d_model * d_ff  # w1, w2, w3 shapes (approximate products)
+    # Note: exact SwiGLU counts depend on bias flags; message is scaling.
+    moe = MoELayer(d_model, d_ff, n_experts=n_experts, top_k=top_k)
     moe_params = sum(p.numel() for p in moe.parameters())
-    print(f"\nDense FFN params:  {dense_params:,}")
-    print(f"MoE layer params:  {moe_params:,} ({E} experts)")
-    print(f"Ratio:             {moe_params / dense_params:.1f}× total, "
-          f"~{K}/{E} = {K / E:.0%} active per token")
+    print(f"MoE layer parameters (gate + experts): {moe_params:,}")
+    print(f"Top-{top_k} activates roughly {top_k}/{n_experts} of expert FFN compute per token.")
 
-    # Check expert utilization
-    with torch.no_grad():
-        router_logits = moe.gate(x.view(-1, D))
-        selections = router_logits.argmax(dim=-1)
-        for e in range(E):
-            count = (selections == e).sum().item()
-            print(f"  Expert {e}: {count} tokens ({count / (B * T):.0%})")
+
+if __name__ == "__main__":
+    torch.manual_seed(0)
+    d_model, d_ff = 128, 256
+    batch, time, experts, k = 2, 16, 8, 2
+    layer = MoELayer(d_model, d_ff, n_experts=experts, top_k=k, balance_coeff=0.01)
+    x = torch.randn(batch, time, d_model)
+    y, aux = layer(x)
+    print("output:", tuple(y.shape))
+    print("aux loss:", float(aux))
+    demo_parameter_ratio(d_model, d_ff, experts, k)
 ```
-
----
-
-## Interview takeaways
-
-1. **MoE = conditional computation** — not every parameter is used for every token. This decouples parameter count from compute cost. Be ready to explain the economic argument.
-2. **Top-k routing** — each token is routed to the top \(k\) experts (usually 2). The outputs are weighted by the router's softmax probabilities.
-3. **Load balancing** — without it, the router collapses. Know the auxiliary loss formula and that it's added to the main training loss.
-4. **Mixtral numbers** — 8 experts, top-2, 46.7B total, 12.9B active. Matches Llama 2 70B quality at ~3× lower inference cost.
-5. **Memory vs. compute** — MoE saves compute but not memory. All experts must be loaded. This makes MoE models harder to serve on consumer hardware.
-6. **Expert specialization** — a common interview question. In practice, experts don't cleanly specialize by domain/topic. Specialization is more at the token/feature level.
-7. **All-to-all communication** — in distributed training/inference, tokens may need to be sent to different GPUs hosting different experts. This is a systems bottleneck.
 
 ---
 

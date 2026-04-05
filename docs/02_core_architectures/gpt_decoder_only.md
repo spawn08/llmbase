@@ -89,6 +89,9 @@ For single-head attention (omitting batch and head dimensions), queries, keys, a
 \text{score}_{i,j} = \frac{\mathbf{q}_i^\top \mathbf{k}_j}{\sqrt{d_k}}
 \]
 
+!!! math-intuition "In Plain English"
+    The dot product measures how well **query** \(i\) aligns with **key** \(j\). Dividing by \(\sqrt{d_k}\) keeps variance stable as head dimension grows so softmax does not saturate from the start. High score means position \(i\) wants to pull information from position \(j\) into its own representation through the value vector.
+
 The **causal mask** sets \(\text{score}_{i,j} = -\infty\) for all \(j > i\) so that \(\mathrm{softmax}\) assigns zero weight to future positions.
 
 \[
@@ -97,7 +100,7 @@ The **causal mask** sets \(\text{score}_{i,j} = -\infty\) for all \(j > i\) so t
 \]
 
 !!! math-intuition "In Plain English"
-    Position \(i\) is only allowed to **look backward** along the sequence. The triangular mask enforces an ordering: when predicting token \(i\), the model may not peek at token \(i+1\). That matches the generative story “predict the next token given the past.” Without this mask, the representation at every position could depend on future words and the next-token training objective would be contaminated by leakage.
+    The softmax turns scores into **nonnegative weights that sum to one** over allowed keys. The mask \(M\) removes illegal positions so their probability mass is zero. Position \(i\) may only allocate attention across columns \(j \le i\), which enforces the autoregressive rule: when forming the representation used to predict what comes next at the end of the prefix, the model must not **peek** at tokens that have not been generated yet. Without this constraint, next-token training would leak future information and the learned distribution would not match sequential generation at inference.
 
 ---
 
