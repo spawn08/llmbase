@@ -48,6 +48,9 @@ If components of \(\mathbf{q}, \mathbf{k}\) are i.i.d. with variance 1 and mean 
 \mathbb{E}[\mathbf{q}^\top \mathbf{k}] = 0,\quad \mathrm{Var}(\mathbf{q}^\top \mathbf{k}) = d_k
 \]
 
+!!! math-intuition "In Plain English"
+    Each product \(q_i k_i\) has variance 1 under the i.i.d. unit-variance assumption; summing \(d_k\) **independent** terms gives variance **\(d_k\)** (not \(d_k^2\)). So typical dot-product magnitudes scale with **\(\sqrt{d_k}\)**—the **scale** of logits before softmax.
+
 Thus dot products **grow** like \(\sqrt{d_k}\) in typical magnitude. **Softmax** of huge logits \(\to\) **nearly one-hot** \(\to\) **vanishing gradients** through other positions. Dividing by \(\sqrt{d_k}\) **re-scales** logits to \(\mathrm{Var} \approx 1\).
 
 !!! example "Numerical Demo: \(d_k = 512\)"

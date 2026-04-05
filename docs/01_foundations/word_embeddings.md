@@ -133,7 +133,7 @@ Full softmax costs \(O(V)\) per training step. **Negative sampling** replaces th
     Instead of comparing the true context word against all \(V\) words simultaneously, the model learns by **contrasting** the true word against a handful of impostors sampled from noise. Sigmoid maps the score to \((0,1)\) so the objective looks like logistic regression: predict “is this the true context word?” The sum over negatives says: low scores are good for junk words.
 
 !!! example "Worked Example: Negative Sampling Probability Arithmetic"
-    Suppose \(k = 2\) and the sampled negatives are `child` and `table` for center `king`, with true context `queen`. Write scores \(s = {\mathbf{v}'_{w}}^\top \mathbf{v}_{\text{king}}\). Use \(\sigma(z) = 1 / (1 + \exp(-z))\).
+    Suppose \(k = 2\) and the sampled negatives are `child` and `table` for center `king`, with true context `queen`. For any candidate word \(w\), define the score \(s_w = (\mathbf{v}'_w)^\top \mathbf{v}_{\text{king}}\). Use \(\sigma(z) = 1 / (1 + \exp(-z))\).
     **Positive score** \(s_{\text{queen}} = 2.0\): \(\log \sigma(2.0) \approx \log(0.881) \approx -0.127\).
     **Negative `child`** with \(s_{\text{child}} = -1.0\): the training term is \(\log \sigma(-s_{\text{child}}) = \log \sigma(1.0) \approx \log(0.731) \approx -0.314\).
     **Negative `table`** with \(s_{\text{table}} = 0.5\): \(\log \sigma(-0.5) \approx \log(0.378) \approx -0.975\).

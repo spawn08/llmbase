@@ -28,6 +28,17 @@ P(w_t \mid w_{t-n+1:t-1}) = \text{softmax}(U \mathbf{h} + \mathbf{d}).
 !!! example "Worked Example: Two-Word Context Window"
     Suppose \(n = 3\) so two context embeddings \(\mathbf{e}_1, \mathbf{e}_2 \in \mathbb{R}^2\) feed the network. Let \(\mathbf{e}_1 = (1, 0)\), \(\mathbf{e}_2 = (0, 1)\), and pretend \(W\) is a \(2 \times 4\) map so \(\mathbf{h} \in \mathbb{R}^2\) after tanh. If \(U \mathbf{h} = (0.2, 1.5, 0.1)\) for a three-word vocabulary, softmax yields \(P \approx (0.21, 0.68, 0.11)\). The model assigns the highest mass to vocabulary index \(2\). Changing embeddings changes \(\mathbf{h}\) and therefore the entire next-token distribution **without** touching a sparse count table.
 
+### Training Objective (Cross-Entropy Over Time)
+
+For a sequence, the model minimizes the average negative log-likelihood of each true next token:
+
+\[
+\mathcal{L} = -\frac{1}{T} \sum_{t=1}^{T} \log P(w_t \mid w_1, \ldots, w_{t-1}).
+\]
+
+!!! math-intuition "In Plain English"
+    Each position contributes \(-\log p\) where \(p\) is the probability assigned to the **correct** next token. Lower loss means higher confidence on human text. This is the same objective scaled LLMs optimize, modulo weighting and masking tricks.
+
 ### Recurrent Neural Networks
 
 An RNN updates a hidden state \(\mathbf{h}_t\) using the previous hidden state and the current input embedding \(\mathbf{x}_t\):
@@ -40,6 +51,7 @@ P(w_{t+1} \mid w_{\le t}) = \text{softmax}(W_{hy} \mathbf{h}_t).
 
 !!! math-intuition "In Plain English"
     The same weight matrices \(W_{hh}\) and \(W_{xh}\) apply at every time step: **parameter sharing** across positions. \(\mathbf{h}_t\) is a summary of the past produced recursively. The softmax reads the current hidden state and emits next-token probabilities.
+    The product structure of backprop through time means the influence of an early input on a late loss passes through many chained derivatives; that is where the spectral norms and tanh saturation enter.
 
 ### Why RNNs Failed: Vanishing Gradients (Concrete Numbers)
 
@@ -154,7 +166,7 @@ GRU merges cell and hidden into one state \(\mathbf{h}_t\) with **reset** \( \ma
 
 ### Bidirectional RNNs and ELMo
 
-A **bidirectional** RNN runs one RNN left-to-right and another right-to-left. Token \(t\) receives \(\mathbf{h}_t = [\overrightarrow{\mathbf{h}}_t; \overleftarrow{\mathbf{h}}_t]\) (concatenation or sum, depending on design).
+A **bidirectional** RNN runs one RNN left-to-right and another right-to-left. Token \(t\) receives \(\mathbf{h}_t = \big[\overrightarrow{\mathbf{h}}_t \,\|\, \overleftarrow{\mathbf{h}}_t\big]\) when the design concatenates forward and backward hidden vectors (some papers sum them instead).
 
 **ELMo** (Embeddings from Language Models) stacks bidirectional LSTMs (actually two **independent** directions without cross-attention between them in the original formulation for language modeling constraints) and combines layer outputs into contextual embeddings. Modern reading: ELMo showed that **deep recurrent stacks** produce token representations far richer than Word2Vec.
 
