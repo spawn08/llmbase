@@ -27,22 +27,18 @@ Skim **TL;DR** first, connect **Why It Matters** to APIs and stacks you use, anc
 ```python
 import numpy as np
 
-def softmax_rows(x: np.ndarray) -> np.ndarray:
-    e = np.exp(x - np.max(x, axis=-1, keepdims=True))
-    return e / np.sum(e, axis=-1, keepdims=True)
-
 def scaled_dot_product_attention(Q, K, V):
     d_k = Q.shape[-1]
-    scores = (Q @ K.T) / np.sqrt(d_k)
-    attn = softmax_rows(scores)
-    return attn @ V  # convex mix of value rows
+    s = (Q @ K.T) / np.sqrt(d_k)
+    s = np.exp(s - np.max(s, axis=-1, keepdims=True))
+    attn = s / np.sum(s, axis=-1, keepdims=True)
+    return attn @ V
 ```
 
 !!! interview "What Interviewers Expect"
     - Walk through **why** dot products measure “compatibility” between queries and keys, and what happens if you **omit** \(\sqrt{d_k}\).
     - Contrast **self-attention** in an encoder (full visibility) versus **masked** attention in a decoder (causal, no peeking at future tokens).
     - Name one **systems** consequence of materializing full attention: memory and FLOPs scaling with **sequence length squared**.
-
 
 ### 2. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
 
@@ -64,7 +60,6 @@ def scaled_dot_product_attention(Q, K, V):
 import numpy as np
 
 def masked_ce_loss(logits, labels, mask_positions):
-    # logits: [seq, vocab], labels: [seq], mask_positions: list of indices
     loss = 0.0
     for i in mask_positions:
         z = logits[i] - np.max(logits[i])
@@ -77,7 +72,6 @@ def masked_ce_loss(logits, labels, mask_positions):
     - Explain **MLM** versus **causal** language modeling and trade-offs for **generation**.
     - Why was **NSP** later criticized, and what did RoBERTa change?
     - How would you use a BERT-style model in a **RAG** stack (retrieval vs reranking)?
-
 
 ### 3. Language Models are Unsupervised Multitask Learners (GPT-2)
 
@@ -105,7 +99,6 @@ def autoregressive_nll(model_logprobs, tokens):
     - Define **zero-shot** versus **few-shot** in the GPT family; where does GPT-2 sit?
     - Why does **byte-level BPE** help with rare words and multiple languages?
     - Name a **failure mode** of relying on zero-shot transfer for production.
-
 
 ### 4. Language Models are Few-Shot Learners (GPT-3)
 
@@ -137,7 +130,6 @@ def few_shot_prompt(examples, query_x):
     - Discuss **scaling laws** at a high level: what trades off against what?
     - How would you detect **benchmark leakage** or **memorization** when evaluating a GPT-3-class model?
 
-
 ### 5. Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5)
 
 **Colin Raffel, Noam Shazeer, Adam Roberts** (and 4 more). **2019** (*JMLR* 2020).
@@ -167,7 +159,6 @@ def span_corrupt(tokens, span_len=3, mask_token="<extra_id_0>"):
     - How does **span corruption** differ from BERT MLM in terms of **supervision signal**?
     - Why might **task prefixes** help multitask training without separate model heads?
 
-
 ### 6. XLNet: Generalized Autoregressive Pretraining for Language Understanding
 
 **Zhilin Yang, Zihang Dai, Yiming Yang** (and 3 more). **2019.** *NeurIPS.*
@@ -185,13 +176,10 @@ def span_corrupt(tokens, span_len=3, mask_token="<extra_id_0>"):
     Different permutations expose different **factorizations** of the same joint—this is how AR training accesses **richer context** than left-to-right only.
 
 ```python
-import itertools
-
 def plm_logprob_order(tokens, logp_fn, perm):
     total = 0.0
     for i, idx in enumerate(perm):
-        ctx = [tokens[j] for j in perm[:i]]
-        total += logp_fn(tokens[idx], ctx)
+        total += logp_fn(tokens[idx], [tokens[j] for j in perm[:i]])
     return total
 ```
 
@@ -199,7 +187,6 @@ def plm_logprob_order(tokens, logp_fn, perm):
     - Explain **permutation LM** versus standard left-to-right GPT training.
     - What problem does **two-stream attention** solve in XLNet?
     - Why did **RoBERTa + scale** often win engineering mindshare over XLNet in practice?
-
 
 ### 7. RoBERTa: A Robustly Optimized BERT Pretraining Approach
 
@@ -233,7 +220,6 @@ def dynamic_mlm_mask(ids, mask_prob=0.15, vocab_mask_token=103):
     - Why might **removing NSP** help or hurt—what was the empirical finding?
     - How do you **fairly compare** two pre-training runs at different batch sizes?
 
-
 ### 8. ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators
 
 **Kevin Clark, Minh-Thang Luong, Quoc V. Le, Christopher D. Manning.** **2020.** *ICLR.*
@@ -266,7 +252,6 @@ def bce_discriminator_loss(scores, y):
     - What role does the **small generator** play—could it be shared with the discriminator?
     - Compare ELECTRA-style objectives to **contrastive** learning (SimCSE, etc.).
 
-
 ### 9. Training Language Models to Follow Instructions with Human Feedback (InstructGPT)
 
 **Long Ouyang, Jeff Wu, Xu Jiang** (and 15 more). **2022.** *NeurIPS.*
@@ -284,22 +269,19 @@ def bce_discriminator_loss(scores, y):
     The KL term stops the policy from collapsing to **high-reward but degenerate** outputs that fool \(r_\phi\).
 
 ```python
+import numpy as np
+
 def kl_penalty(logp_new, logp_ref):
-    # per-token approximate; production code uses full sequences
     return (logp_new - logp_ref).sum()
 
-def ppo_style_objective(r, adv, ratio, clip=0.2):
-    # ratio = exp(logp_new - logp_old)
-    unclipped = ratio * adv
-    clipped = np.clip(ratio, 1 - clip, 1 + clip) * adv
-    return -np.mean(np.minimum(unclipped, clipped))
+def ppo_style_objective(adv, ratio, clip=0.2):
+    return -np.mean(np.minimum(ratio * adv, np.clip(ratio, 1 - clip, 1 + clip) * adv))
 ```
 
 !!! interview "What Interviewers Expect"
     - Draw the **three-stage** pipeline and name failure modes at each stage.
     - Why include a **KL penalty**—what goes wrong without it?
     - Compare **RLHF** to **DPO** at a high level (what each optimizes).
-
 
 ### 10. PaLM: Scaling Language Modeling with Pathways
 
@@ -328,7 +310,6 @@ def shard_batch(batch_x, num_shards):
     - Name **two** distributed parallelism patterns (data, tensor, pipeline) and when each applies.
     - What does **emergence** mean in scaling papers—why is it controversial?
     - How would you **evaluate** a multilingual LM beyond English-centric benchmarks?
-
 
 ### 11. Training Compute-Optimal Large Language Models (Chinchilla)
 
@@ -359,7 +340,6 @@ def flops_budget(N, D, F_per_token=6e18 / 1e24):  # toy coefficient
     - What assumptions break scaling laws (e.g., **data saturation**, **repeated epochs**)?
     - How would you decide whether to **increase data** versus **model width** under a fixed budget?
 
-
 ### 12. LLaMA: Open and Efficient Foundation Language Models
 
 **Hugo Touvron, Thibaut Lavril, Gautier Izacard** (and 4 more). **2023.** *arXiv.*
@@ -388,7 +368,6 @@ def rmsnorm(x, gamma, eps=1e-6):
     - Name **three** architectural choices in LLaMA versus original GPT-2/3 stacks.
     - Connect LLaMA training to **Chinchilla-optimal** thinking.
     - What **deployment** constraints push teams toward 7B/13B rather than 70B?
-
 
 ### 13. LoRA: Low-Rank Adaptation of Large Language Models
 
@@ -419,7 +398,6 @@ def lora_linear(x, W0, A, B):
     - Where would you **not** use LoRA (e.g., full-model **continued pretraining**)?
     - How does **merging adapters** into base weights affect **serving**?
 
-
 ### 14. FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness
 
 **Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré.** **2022.** *NeurIPS.*
@@ -448,7 +426,6 @@ def softmax_stable(x):
     - Why is attention often **memory-bound**, not compute-bound, on GPUs?
     - What does **exact** mean versus **sparse** or **linear** attention approximations?
     - How does FlashAttention interact with **long context** and **batch size** in serving?
-
 
 ### 15. Mistral 7B
 
@@ -479,7 +456,6 @@ def sliding_window_mask(seq_len, W):
     - Compare **GQA** to **MHA** and **MQA**—what is saved at inference?
     - What is the **throughput–quality** trade-off of sliding-window attention?
     - When would you still prefer a **70B dense** over a **strong 7B**?
-
 
 ### 16. Mixtral of Experts
 
@@ -518,7 +494,6 @@ def softmax(z):
     - How do training objectives mitigate **expert imbalance**?
     - Compare **MoE** to **dense** models at the same **active** FLOPs.
 
-
 ### 17. Scaling Instruction-Finetuned Language Models (FLAN)
 
 **Hyung Won Chung, Le Hou, Shayne Longpre** (and 10 more). **2022.** *arXiv.*
@@ -545,7 +520,6 @@ def instruction_prompt(task_name, x):
     - Why include **CoT** demonstrations in some FLAN variants?
     - What limits **zero-shot** transfer to truly **novel** tasks?
 
-
 ### 18. Chain-of-Thought Prompting Elicits Reasoning in Large Language Models
 
 **Jason Wei, Xuezhi Wang, Dale Schuurmans** (and 5 more). **2022.** *NeurIPS.*
@@ -571,7 +545,6 @@ def cot_prompt(question):
     - When does CoT **hurt** (verbosity, hallucinated steps)?
     - Explain **self-consistency** decoding at a high level.
     - How would you **evaluate** reasoning besides final-answer accuracy?
-
 
 ### 19. ReAct: Synergizing Reasoning and Acting in Language Models
 
@@ -606,7 +579,6 @@ def react_loop(model_step, env, query, max_steps=5):
     - What’s the difference between ReAct and **plain CoT** without tools?
     - How does **observation trustworthiness** affect policy design?
 
-
 ### 20. Toolformer: Language Models Can Teach Themselves to Use Tools
 
 **Timo Schick, Jane Dwivedi-Yu, Roberto Dessì** (and 4 more). **2023.** *arXiv.*
@@ -632,7 +604,6 @@ def accept_call(loss_without, loss_with):
     - How does Toolformer **discover** useful calls without hand-labeled tool traces?
     - What **risks** arise from letting models invoke external APIs?
     - Compare Toolformer to **ReAct-style** prompt engineering with a frozen model.
-
 
 ### 21. Constitutional AI: Harmlessness from AI Feedback
 
@@ -661,7 +632,6 @@ def bradley_terry_logit(rw, rl):
     - Compare **RLHF**, **RLAIF**, and **constitutional** critique steps.
     - What failure modes appear from **AI-only** feedback (circular preferences)?
     - How would you **audit** a constitution for **bias** or **over-blocking**?
-
 
 ### 22. Learning Transferable Visual Models From Natural Language Supervision (CLIP)
 
@@ -696,7 +666,6 @@ def clip_infonce(g, t, tau=0.07):
     - How does CLIP enable **zero-shot** classification via prompts?
     - Name **failure modes** (texture bias, OCR gaps, domain shift).
 
-
 ### 23. Evaluating Large Language Models Trained on Code (Codex)
 
 **Mark Chen, Jerry Tworek, Heewoo Jun** (and 20 more). **2021.** *arXiv.*
@@ -727,7 +696,6 @@ def pass_at_k(n, c, k):
     - Explain **pass@\(k\)** versus **pass@1** for temperature-sampled models.
     - What **security** issues arise from training on public GitHub?
 
-
 ### 24. Mamba: Linear-Time Sequence Modeling with Selective State Spaces
 
 **Albert Gu, Tri Dao.** **2023.** *arXiv.*
@@ -755,7 +723,6 @@ def ssm_step(h, x, Abar, Bbar, C):
     - Contrast **Mamba/SSM** complexity versus **self-attention** versus **RNNs**.
     - What does **selectivity** buy you that fixed S4 parameters lack?
     - Where might you still want **attention** (e.g., **global** retrieval)?
-
 
 ### 25. Gemini: A Family of Highly Capable Multimodal Models
 
@@ -799,33 +766,20 @@ def interleave_tokens(text_toks, image_toks):
 
 ## Paper Interconnections
 
-Directed edges read as **“influences / builds on / operationalizes”**—informal, for study purposes.
+Informal dependency sketch (not exhaustive):
 
 ```mermaid
 flowchart LR
-    T[Transformer 2017] --> BERT[BERT]
-    T --> GPT2[GPT-2]
-    GPT2 --> GPT3[GPT-3]
-    GPT3 --> Inst[InstructGPT]
-    Inst --> CAI[Constitutional AI]
-    BERT --> ELEC[ELECTRA]
-    BERT --> XL[XlNet]
-    BERT --> ROB[RoBERTa]
-    T --> T5[T5]
-    T5 --> FLAN[FLAN]
-    GPT3 --> CODEX[Codex]
-    GPT3 --> PaLM[PaLM]
-    PaLM --> CHIN[Chinchilla]
-    CHIN --> LLAMA[LLaMA]
-    T --> FA[FlashAttention]
-    LLAMA --> MIST[Mistral 7B]
-    MIST --> MIX[Mixtral MoE]
-    GPT3 --> CoT[Chain-of-Thought]
-    CoT --> ReAct[ReAct]
-    GPT3 --> Tool[Toolformer]
-    CLIP[CLIP] --> GEM[Gemini multimodal]
-    PaLM --> GEM
-    T --> MAM[Mamba]
+    T[Transformer] --> BERT & GPT2 & T5
+    GPT2 --> GPT3
+    GPT3 --> Inst[InstructGPT] & PaLM & CoT & Codex
+    Inst --> CAI
+    PaLM --> Chinchilla --> LLaMA --> Mistral --> Mixtral
+    T5 --> FLAN
+    CoT --> ReAct --> Toolformer
+    CLIP --> Gemini
+    PaLM --> Gemini
+    T --> FlashAttention & Mamba
 ```
 
 **Threads:** architecture (Transformer \(\rightarrow\) BERT/GPT/T5 \(\rightarrow\) FlashAttention / Mistral / Mamba); scaling (GPT-3 \(\rightarrow\) PaLM \(\rightarrow\) Chinchilla \(\rightarrow\) LLaMA); alignment (InstructGPT \(\rightarrow\) CAI / FLAN); tools (CoT \(\rightarrow\) ReAct \(\rightarrow\) Toolformer); multimodal (CLIP \(\rightarrow\) Gemini).
