@@ -1,0 +1,2 @@
+mkdocs-material==9.5.17
+mkdocs-jupyter==0.24.7

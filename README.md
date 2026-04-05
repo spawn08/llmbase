@@ -18,6 +18,7 @@ The goal is a single resource you can return to for interviews, system design, o
 ```
 llmbase/
 ├── README.md                        ← This file (project overview + roadmap)
+├── requirements.txt                 ← Python dependencies for MkDocs
 ├── docs/                            ← GitHub Pages source (Jekyll or MkDocs)
 │   ├── index.md                     ← Landing page
 │   ├── 01_foundations/              ← Part 1: Foundations
@@ -38,6 +39,16 @@ llmbase/
 ├── diagrams/                        ← draw.io source files (.drawio)
 └── mkdocs.yml                       ← Site config (or _config.yml for Jekyll)
 ```
+
+---
+
+## Prerequisites
+
+To get the most out of LLMBase, you should have:
+
+- **Python Proficiency**: Comfortable with Python 3.11+, OOP, and basic functional programming.
+- **Basic Calculus & Linear Algebra**: Understanding of derivatives, matrix multiplication, and vectors.
+- **Familiarity with PyTorch**: Basic tensor operations and neural network modules (`torch.nn`).
 
 ---
 
@@ -71,6 +82,7 @@ llmbase/
 
 | Topic | Description | Visualizations | Code |
 |---|---|---|---|
+| 3.0 Data Preparation | Deduplication, MinHash, filtering, PII removal | Data pipeline diagram | `datatrove` pipeline |
 | 3.1 Pre-training at Scale | Data pipelines, tokenization, BPE | BPE merge tree | `tokenizers` library walkthrough |
 | 3.2 Distributed Training | Data/model/pipeline/tensor parallelism | Parallelism strategy diagram | `torch.distributed` overview |
 | 3.3 Mixed Precision & Quantization | FP16, BF16, INT8, GPTQ | Precision format comparison | BitsAndBytes quantization |
@@ -95,10 +107,12 @@ llmbase/
 | Topic | Description | Visualizations | Code |
 |---|---|---|---|
 | 5.1 RAG — Retrieval-Augmented Generation | Indexing, retrieval, augmentation | RAG pipeline diagram | LangChain / LlamaIndex |
+| 5.1.5 Vector Databases | FAISS, Chroma, Pinecone, HNSW | HNSW graph diagram | FAISS index from scratch |
 | 5.2 Agents & Tool Use | ReAct, tool calling, planning | Agent loop diagram | OpenAI function calling |
 | 5.3 Long-Context Modeling | FlashAttention, sliding window, RoPE scaling | Context window diagram | FlashAttention usage |
 | 5.4 Multimodal LLMs | CLIP, vision encoders, LLaVA | Multimodal fusion diagram | LLaVA walkthrough |
 | 5.5 Emergent Capabilities | In-context learning, chain-of-thought, scaling laws | Scaling law plots | Prompting experiments |
+| 5.5.5 Prompt Engineering | Few-shot, ReAct, DSPy, optimization | Prompt flow diagram | DSPy optimization loop |
 | 5.6 Evaluation & Benchmarking | MMLU, HellaSwag, HumanEval, ELO | Leaderboard comparison chart | `lm-evaluation-harness` |
 | 5.7 Hallucination & Safety | Factuality, groundedness, red-teaming | Failure mode taxonomy | Detection heuristics |
 
