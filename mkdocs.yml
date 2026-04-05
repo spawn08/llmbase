@@ -100,10 +100,27 @@ nav:
     - State Space Models: 02_core_architectures/state_space_models.md
   - Training and Alignment:
     - 03_training/index.md
+    - Pre-training at Scale: 03_training/pretraining.md
+    - Distributed Training: 03_training/distributed_training.md
+    - Mixed Precision and Quantization: 03_training/quantization.md
+    - Pre-training at Scale: 03_training/pretraining.md
+    - Distributed Training: 03_training/distributed_training.md
+    - Mixed Precision & Quantization: 03_training/mixed_precision.md
+    - Instruction Tuning (SFT): 03_training/instruction_tuning.md
+    - RLHF & DPO: 03_training/rlhf.md
+    - Constitutional AI: 03_training/constitutional_ai.md
+    - Parameter-Efficient Fine-Tuning: 03_training/peft.md
   - Inference and Serving:
     - 04_inference/index.md
   - Advanced Topics:
     - 05_advanced/index.md
+    - Retrieval-Augmented Generation: 05_advanced/rag.md
+    - Agents & Tool Use: 05_advanced/agents.md
+    - Long-Context Modeling: 05_advanced/long_context.md
+    - Multimodal LLMs: 05_advanced/multimodal.md
+    - Emergent Capabilities & Scaling: 05_advanced/emergent_capabilities.md
+    - Evaluation & Benchmarking: 05_advanced/evaluation.md
+    - Hallucination & Safety: 05_advanced/safety.md
   - Top 25 Papers:
     - 06_research_papers/index.md
   - Recent Advances:
