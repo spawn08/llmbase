@@ -1,101 +1,158 @@
-# 1.5 — Information Theory for LLMs
+# Information Theory for LLMs
 
-## Intuition
+## Why This Matters for LLMs
 
-Information theory gives us the **language** to talk about uncertainty, surprise, and model quality. When we say "GPT-4 has lower perplexity," we are making a statement rooted in Shannon's entropy. Three quantities — **entropy**, **cross-entropy**, and **KL divergence** — appear everywhere: in loss functions, in evaluation metrics, and in alignment objectives like DPO.
-
----
-
-## Core concepts
-
-### Entropy — how much surprise is in a distribution?
-
-For a discrete random variable \(X\) with probability mass function \(p\):
-
-\[
-H(X) = -\sum_{x} p(x) \log p(x)
-\]
-
-- **Units:** bits if \(\log_2\), nats if \(\ln\).
-- **Minimum:** \(H = 0\) when one outcome has probability 1 (no surprise).
-- **Maximum:** \(H = \log |\mathcal{X}|\) for a uniform distribution (maximum surprise).
-
-**Example — fair vs. biased coin:**
-
-| Coin | \(P(\text{heads})\) | \(H\) (bits) |
-| --- | --- | --- |
-| Fair | 0.5 | 1.0 |
-| Biased | 0.9 | 0.47 |
-| Deterministic | 1.0 | 0.0 |
-
-The biased coin is more predictable, so it has lower entropy.
-
-### Cross-entropy — how well does \(q\) model \(p\)?
-
-If the true distribution is \(p\) but we use model \(q\) to encode symbols:
-
-\[
-H(p, q) = -\sum_{x} p(x) \log q(x)
-\]
-
-**Key properties:**
-
-- \(H(p, q) \ge H(p)\) — using the wrong distribution always costs extra bits.
-- \(H(p, q) = H(p)\) only when \(q = p\).
-- **This is the standard LLM training loss.** For next-token prediction with one-hot targets \(p\), cross-entropy reduces to \(-\log q(w^*)\) — the negative log-likelihood of the correct token.
-
-### KL divergence — the gap between two distributions
-
-**Kullback–Leibler divergence** measures how much extra information \(q\) wastes relative to the true \(p\):
-
-\[
-D_{\text{KL}}(p \| q) = \sum_{x} p(x) \log \frac{p(x)}{q(x)} = H(p, q) - H(p)
-\]
-
-**Key properties:**
-
-- \(D_{\text{KL}} \ge 0\) (Gibbs' inequality).
-- \(D_{\text{KL}} = 0 \iff p = q\).
-- **Not symmetric:** \(D_{\text{KL}}(p \| q) \ne D_{\text{KL}}(q \| p)\) in general.
-- **Forward KL** (\(D_{\text{KL}}(p \| q)\)) — mode-covering: penalizes \(q\) for assigning 0 probability where \(p > 0\). Used in maximum likelihood / cross-entropy training.
-- **Reverse KL** (\(D_{\text{KL}}(q \| p)\)) — mode-seeking: \(q\) may ignore some modes of \(p\). Used in variational inference and KL penalty in RLHF.
-
-### Connecting the pieces: training ≡ minimizing cross-entropy ≡ minimizing KL
-
-Minimizing cross-entropy \(H(p, q)\) over model parameters \(\theta\) is equivalent to minimizing \(D_{\text{KL}}(p \| q_\theta)\), because \(H(p)\) is a constant with respect to \(\theta\):
-
-\[
-\arg\min_\theta H(p, q_\theta) = \arg\min_\theta D_{\text{KL}}(p \| q_\theta)
-\]
-
-This is why cross-entropy loss and maximum likelihood estimation (MLE) are the same thing for LM training.
-
-### Perplexity revisited
-
-Perplexity (from Part 1.1) is just the exponentiated cross-entropy:
-
-\[
-\text{PPL} = \exp\!\bigl(H(p, q)\bigr) = \exp\!\Bigl(-\frac{1}{T}\sum_{t=1}^{T} \log q(w_t \mid w_{<t})\Bigr)
-\]
-
-| Model | PPL on WikiText-103 |
-| --- | --- |
-| Kneser–Ney 5-gram | ~68 |
-| LSTM (Merity, 2018) | ~33 |
-| GPT-2 (small) | ~30 |
-| GPT-2 (large) | ~18 |
-
-### Mutual information (bonus)
-
-\[
-I(X; Y) = D_{\text{KL}}(p(x,y) \| p(x)p(y)) = H(X) - H(X \mid Y)
-\]
-
-Measures how much knowing \(Y\) reduces uncertainty about \(X\). Appears in information-theoretic analyses of attention, representation learning, and the information bottleneck.
+Information theory is the **shared vocabulary** for uncertainty, coding length, and distance between distributions. When you read “**minimize cross-entropy**,” “**perplexity 12**,” or “**KL penalty to the reference model**” in an RLHF paper, those are not slogans—they are precise statements about **entropy**, **expected code length**, and **distributional mismatch**. Modern LLM **pretraining** is overwhelmingly **maximum likelihood** = **cross-entropy minimization**. **Evaluation** uses perplexity (exp of average cross-entropy). **Alignment** often adds **reverse KL**-style penalties so the policy does not drift from a trusted base model. Interviewers expect you to connect **Shannon entropy → cross-entropy → KL → training loss** in one coherent chain.
 
 ---
 
-## Code — Computing entropy, cross-entropy, and KL divergence
+## Core Concepts
+
+### Entropy — Expected Surprise
+
+For discrete \(X\) with PMF \(p(x)\):
+
+\[
+H(X) = -\sum_{x \in \mathcal{X}} p(x) \log p(x)
+\]
+
+Convention: \(0 \log 0 = 0\). Log base 2 gives **bits**; natural log gives **nats**.
+
+!!! math-intuition "In Plain English"
+    - \(p(x)\): how often symbol \(x\) occurs.
+    - \(-\log p(x)\): **surprise** (rare events have large surprise).
+    - The sum \(\sum_x p(x)(-\log p(x))\): **average surprise** if you draw from \(p\)—that is **entropy**.
+    - **High entropy:** hard to predict (spread mass). **Low entropy:** nearly deterministic.
+
+!!! example "Worked Example: Fair vs. Biased Coin (every step of \(-p\log p\))"
+    **Fair coin:** \(P(H)=0.5\), \(P(T)=0.5\). Use \(\log_2\).
+
+    - Term for \(H\): \(-0.5 \log_2(0.5) = -0.5 \cdot (-1) = 0.5\) bits.
+    - Term for \(T\): same, \(0.5\) bits.
+    - **Total:** \(H = 0.5 + 0.5 = 1\) bit. Intuition: one fair binary question resolves the outcome.
+
+    **Biased coin:** \(P(H)=0.9\), \(P(T)=0.1\).
+
+    - \(H\) term: \(-0.9 \log_2(0.9)\). Now \(\log_2(0.9) \approx -0.152\), so \(-0.9 \cdot (-0.152) \approx 0.137\) bits.
+    - \(T\) term: \(-0.1 \log_2(0.1)\). \(\log_2(0.1) \approx -3.322\), so \(-0.1 \cdot (-3.322) \approx 0.332\) bits.
+    - **Total:** \(H \approx 0.137 + 0.332 = 0.469\) bits **< 1**. The outcome is more predictable—entropy dropped.
+
+    **Deterministic:** \(P(H)=1\). Only term is \(-1 \cdot \log_2(1) = 0\). **Zero entropy**—no surprise.
+
+### Cross-Entropy — Coding Under the Wrong Distribution
+
+True distribution \(p\); model \(q\) (your approximate probabilities):
+
+\[
+H(p, q) = -\sum_x p(x) \log q(x)
+\]
+
+!!! math-intuition "In Plain English"
+    You **believe** \(q\); nature follows \(p\). Cross-entropy is the **average number of nats/bits** you spend encoding outcomes **if** your code is optimal for \(q\) but events come from \(p\). It is always \(\ge H(p)\) with equality iff \(q = p\) (Gibbs’ inequality).
+
+!!! example "Worked Example: Token Prediction with Three Words"
+    Vocabulary order: **[cat, dog, fish]**. Model probabilities \(q = [0.7,\, 0.2,\, 0.1]\). True next token: **cat** (one-hot \(p = [1,0,0]\)).
+
+    \[
+    H(p, q) = -\sum_i p_i \log q_i = -\log q(\texttt{cat}) = -\log(0.7)
+    \]
+
+    Natural log: \(-\ln(0.7) \approx 0.357\) nats. If training averages this over tokens, **lower is better**—higher \(q\) on the true token reduces loss.
+
+    If the true token had been **fish** instead:
+
+    \[
+    H(p, q) = -\log(0.1) \approx 2.302\ \text{nats}
+    \]
+
+    **Penalty explodes** when the model assigns near-zero mass to the truth—this is why **label smoothing** and **numerical floors** matter in practice.
+
+### Why Cross-Entropy **IS** the LLM Training Loss (step-by-step)
+
+1. **Data distribution:** a corpus induces a **true** conditional distribution over next tokens \(p(w_t \mid w_{<t})\) (unknown, but we sample from it).
+2. **Model:** \(q_\theta(w_t \mid w_{<t})\) from softmax logits.
+3. **Objective:** **maximum likelihood**—maximize \(\mathbb{E}_{w \sim \text{data}}[\log q_\theta(w_t \mid w_{<t})]\).
+4. **Negate:** minimize \(-\mathbb{E}[\log q_\theta] = \mathbb{E}[-\log q_\theta]\).
+5. For a **single** correct token \(w^*\) (empirical one-hot), that expectation is **one term** \(-\log q_\theta(w^*)\)—the **cross-entropy** between the empirical one-hot and the model distribution.
+
+So **“train with cross-entropy”** and **“do MLE on next-token prediction”** are the same sentence in different notation.
+
+!!! math-intuition "In Plain English"
+    Each training token says: “**raise** probability on **this** symbol.” Summing \(-\log q_\theta(w^*)\) punishes **confident wrongness** exponentially more than mild mistakes—gradient magnitude \(\propto 1/q\) for softmax targets.
+
+### KL Divergence — Extra Cost of Using \(q\) Instead of \(p\)
+
+\[
+D_{\text{KL}}(p \| q) = \sum_x p(x) \log \frac{p(x)}{q(x)} = H(p, q) - H(p)
+\]
+
+!!! math-intuition "In Plain English"
+    - \(H(p)\): unavoidable average surprise if you use the **true** code.
+    - \(H(p, q)\): average surprise using a code tuned to **\(q\)** while nature draws from **\(p\)**.
+    - Their difference is the **overhead** from misspecification—**KL**—always \(\ge 0\), zero iff \(p=q\) a.e. on the support of \(p\).
+
+!!! example "Worked Example: KL with Two Distributions, Term by Term"
+    **True** \(p\): \([0.5,\, 0.5]\) over \(\{a,b\}\). **Model** \(q\): \([0.6,\, 0.4]\).
+
+    \[
+    D_{\text{KL}}(p \| q) = 0.5 \log\frac{0.5}{0.6} + 0.5 \log\frac{0.5}{0.4}
+    \]
+
+    Natural logs:
+
+    - First term: \(0.5 \cdot (\ln 0.5 - \ln 0.6) = 0.5 \cdot (-0.6931 + 0.5108) \approx 0.5 \cdot (-0.1823) \approx -0.0912\)
+    - Second: \(0.5 \cdot (\ln 0.5 - \ln 0.4) = 0.5 \cdot (-0.6931 + 0.9163) \approx 0.5 \cdot (0.2231) \approx 0.1116\)
+
+    Sum \(\approx 0.0204\) nats **\(\ge 0\)**. Small mismatch → small KL.
+
+    **Sanity check:** \(H(p) = -\ln 0.5 = 0.693\) nats. \(H(p,q) = -0.5\ln 0.6 - 0.5\ln 0.4 \approx 0.5(0.511) + 0.5(0.916) \approx 0.714\) nats. Difference \(0.714 - 0.693 \approx 0.021\) ✓.
+
+### Forward vs. Reverse KL (Mode-Covering vs. Mode-Seeking)
+
+- **Forward KL** \(D_{\text{KL}}(p \| q)\): **expectation under \(p\)**. Wherever \(p\) has mass, \(q\) must place mass or pay \(\log(p/q)\) **huge** penalty—**mode-covering** behavior. **MLE / cross-entropy** aligns with this direction when \(p\) is data and \(q\) is the model.
+
+- **Reverse KL** \(D_{\text{KL}}(q \| p)\): **expectation under \(q\)**. Penalty emphasizes regions **\(q\) thinks likely**. If \(q\) is narrow, it can **ignore** a secondary mode of \(p\)**—**mode-seeking**. Used in some **variational** objectives and in **KL-to-reference** penalties where \(p\) is a **frozen** reference LM and \(q\) is the policy.
+
+!!! example "Bimodal Target in Text (no plot needed)"
+    Suppose **true** \(p\) places 0.5 mass on “**The answer is 42.**” and 0.5 on “**The answer is π.**”
+
+    - **Forward-KL-optimal** \(q\) tends to cover **both** modes (mass on both sentences), because missing either mode incurs infinite log penalty where \(p>0\) but \(q \approx 0\).
+    - **Reverse-KL-optimal** \(q\) may put almost all mass on **one** mode (unimodal \(q\))—cheaper to be confidently wrong about the **other** mode if \(q\) rarely visits it.
+
+    **RLHF intuition:** a **KL penalty** \(\beta D_{\text{KL}}(\pi \| \pi_{\text{ref}})\) discourages the tuned policy \(\pi\) from straying from \(\pi_{\text{ref}}\)—often implemented with a **reverse-KL-like** form on sequences or approximations (see Schulman’s notes / PPO-KL variants).
+
+### Perplexity = \(\exp(\)cross-entropy\()\)
+
+Average **per-token** cross-entropy (nats): \(\hat{H} = -\frac{1}{T}\sum_{t=1}^T \log q(w_t \mid w_{<t})\).
+
+\[
+\text{PPL} = \exp(\hat{H})
+\]
+
+!!! math-intuition "In Plain English"
+    If PPL = 30, the model’s predictive distribution is, on average, as “flat” as if you were **uniform over ~30 choices**—a **calibrated** intuition for comparing LMs **on the same vocabulary and test set**.
+
+!!! example "Worked Example: Real Numbers"
+    Suppose for a short sentence the average **negative log-likelihood** is **3.0 nats** per token. Then \(\text{PPL} = e^{3} \approx 20.09\).
+
+    If you improve to **2.5 nats**, \(\text{PPL} = e^{2.5} \approx 12.18\)—**perplexity drops multiplicatively** with small CE improvements.
+
+### Connection to RLHF’s KL Penalty
+
+**Policy** \(\pi_\theta\) (tuned model) vs. **reference** \(\pi_{\text{ref}}\) (SFT or base LM). A typical surrogate adds:
+
+\[
+-\beta \, \mathbb{E}\bigl[D_{\text{KL}}(\pi_\theta(\cdot \mid x) \| \pi_{\text{ref}}(\cdot \mid x))\bigr]
+\]
+
+!!! math-intuition "In Plain English"
+    - Keeps \(\pi_\theta\) **close** to something trusted—reduces **reward hacking** and **incoherent** text.
+    - \(\beta\) trades **helpfulness** vs. **staying on-distribution**.
+    - Implementations approximate KL with **closed-form** expressions for Gaussians in some diffusion work; for discrete tokens, **Monte Carlo** or **analytic** softmax-KL pieces appear depending on algorithm (PPO, DPO, etc.).
+
+---
+
+## Code (with inline comments)
 
 ```python
 """
@@ -109,7 +166,7 @@ import torch.nn.functional as F
 
 def entropy(p: np.ndarray) -> float:
     """Shannon entropy H(p) in nats."""
-    p = p[p > 0]
+    p = p[p > 0]  # 0 log 0 = 0: drop zero masses
     return -np.sum(p * np.log(p))
 
 
@@ -141,6 +198,7 @@ p_t = torch.tensor(p, dtype=torch.float32)
 q_good_t = torch.tensor(q_good, dtype=torch.float32)
 q_bad_t = torch.tensor(q_bad, dtype=torch.float32)
 
+# PyTorch kl_div: input is log_q, target is p — matches KL(p || q) with sum reduction
 kl_good_pt = F.kl_div(q_good_t.log(), p_t, reduction="sum").item()
 kl_bad_pt = F.kl_div(q_bad_t.log(), p_t, reduction="sum").item()
 
@@ -149,10 +207,10 @@ print(f"KL(p || q_good) = {kl_good_pt:.4f}")
 print(f"KL(p || q_bad)  = {kl_bad_pt:.4f}")
 
 # ── Cross-entropy as LLM loss ─────────────────────────────────────────
-logits = torch.tensor([[2.0, 1.5, 0.8, 0.2]])  # raw model outputs
-target = torch.tensor([0])                       # correct token index
+logits = torch.tensor([[2.0, 1.5, 0.8, 0.2]])  # raw model outputs (1,4)
+target = torch.tensor([0])                       # correct token index (class 0)
 
-ce_loss = F.cross_entropy(logits, target)
+ce_loss = F.cross_entropy(logits, target)  # softmax + NLL of true class
 ppl = torch.exp(ce_loss)
 print(f"\nCross-entropy loss for token 0: {ce_loss.item():.4f}")
 print(f"Per-token perplexity: {ppl.item():.2f}")
@@ -160,14 +218,60 @@ print(f"Per-token perplexity: {ppl.item():.2f}")
 
 ---
 
-## Interview takeaways
+## Deep Dive
 
-1. **Cross-entropy IS the LLM loss** — every time someone says "we trained with cross-entropy," they mean \(-\log q(w^*)\) summed over tokens. Know this cold.
-2. **Minimizing cross-entropy = minimizing KL** — because the true entropy \(H(p)\) doesn't depend on model parameters. This equivalence is fundamental.
-3. **Forward vs. reverse KL** — forward KL (standard training) is mode-covering; reverse KL (used in RLHF's KL penalty) is mode-seeking. Be able to sketch why and what each behavior looks like for a bimodal target.
-4. **Perplexity = exp(cross-entropy)** — a perplexity of 30 means the model is as uncertain as choosing uniformly among 30 tokens. Know rough PPL numbers for key models.
-5. **KL is not symmetric** — a common interview question. \(D_{\text{KL}}(p \| q) \ne D_{\text{KL}}(q \| p)\). If pressed, mention Jensen–Shannon divergence as a symmetric alternative.
-6. **Information bottleneck** — advanced question. The idea that intermediate representations should compress input while preserving task-relevant information. Ties to representation learning theory.
+??? deep-dive "Jensen–Shannon and Symmetric 'Distances'"
+    **KL is not symmetric.** Jensen–Shannon divergence \(JSD(p,q) = \tfrac{1}{2}D_{\text{KL}}(p\|m)+\tfrac{1}{2}D_{\text{KL}}(q\|m)\) with \(m=\tfrac{p+q}{2}\) **is** symmetric and bounded. Mention when interviewers ask for a **metric-like** alternative—used in some GAN training (though modern LMs rarely cite JSD in loss).
+
+??? deep-dive "Label Smoothing vs. True Entropy"
+    **Label smoothing** replaces one-hot \(p\) with \((1-\epsilon)\) on true class and \(\epsilon/(K-1)\) elsewhere. This **raises** cross-entropy vs. hard targets but **lowers** overconfidence—acts as regularization. Connect to **calibration** and **generalization**.
+
+---
+
+## Interview Guide
+
+!!! interview "FAANG-Level Questions"
+    1. **What is cross-entropy minimizing in LM training?**  
+       Negative log-likelihood of observed tokens—equivalent to **MLE**.
+
+    2. **Prove or argue that \(D_{\text{KL}}(p\|q) \ge 0\).**  
+       Gibbs’ inequality / Jensen on \(\log\).
+
+    3. **Why is minimizing cross-entropy the same as minimizing forward KL to data?**  
+       \(H(p)\) constant w.r.t. \(\theta\); only \(H(p,q_\theta)\) changes.
+
+    4. **Forward vs. reverse KL—give a bimodal example.**  
+       Forward covers modes; reverse may collapse to one.
+
+    5. **Perplexity 50 on a 50k vocab—how to interpret?**  
+       **Not** “uniform over 50k words”—compare **relative** PPL across models on **same** corpus/tokenizer.
+
+    6. **Why does RLHF add a KL penalty?**  
+       Keep policy near reference; reduce incoherent exploitation of reward model.
+
+    7. **Numerical issue:** what if \(q(w^*)=0\) for a true token?  
+       Infinite CE—**why** masking, label smoothing, and **logit clipping** matter.
+
+    8. **Bits per character vs. perplexity?**  
+       Related reporting units; know **which log base** your metric uses.
+
+    9. **Is KL a metric?**  
+       No—not symmetric, triangle inequality fails; JSD is closer to a metric.
+
+    10. **Connection between entropy rate and compression?**  
+        Shannon source coding; expected length \(\ge H(p)\) per symbol (asymptotically).
+
+!!! interview "Follow-up Probes"
+    - “**Why** is reverse KL mode-seeking?” — mass where \(q\) focuses dominates expectation.
+    - “**Difference** between **uncertainty** (entropy of Bayes posterior) and **epistemic** uncertainty?” — advanced; mention ensembles / latent variables.
+    - “**How** does **temperature** affect implied perplexity?” — softmax sharpening spreads or concentrates mass.
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “**Cross-entropy** is the **expected** \(-\log q\) under the **data** distribution.”
+    - “**MLE** on tokens **is** **cross-entropy** with **one-hot** targets.”
+    - “**KL** measures **extra bits** from using \(q\) instead of \(p\).”
+    - “**Forward KL** is **inclusive**; **reverse KL** can **miss modes**.”
+    - “**Perplexity** is **exp(average cross-entropy)**—geometric mean **branching factor** intuition.”
 
 ---
 
@@ -175,5 +279,6 @@ print(f"Per-token perplexity: {ppl.item():.2f}")
 
 - Shannon (1948), *A Mathematical Theory of Communication*
 - Cover & Thomas, *Elements of Information Theory*
-- Jurafsky & Martin, SLP Ch. 3 — Language Modeling and Entropy
-- Radford et al. (2019), *Language Models are Unsupervised Multitask Learners* (GPT-2 perplexity results)
+- Jurafsky & Martin, SLP — Language Modeling and Entropy
+- Radford et al. (2019), *Language Models are Unsupervised Multitask Learners* (perplexity reporting)
+- Schulman et al. — RLHF / PPO with KL notes (implementation details vary by repo)
