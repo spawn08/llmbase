@@ -18,14 +18,17 @@ A continuous-time linear SSM defines a hidden state \(\mathbf{x}(t) \in \mathbb{
 \frac{d}{dt}\mathbf{x}(t) = A\mathbf{x}(t) + B u(t)
 \]
 
+!!! math-intuition "In Plain English"
+    The derivative \(\frac{d}{dt}\mathbf{x}(t)\) is the **instantaneous change** of the hidden state. The term \(A\mathbf{x}(t)\) makes the state evolve even when the input is zero: internal dynamics can decay, oscillate, or mix coordinates depending on \(A\). The term \(B u(t)\) **injects** the current input into the state. Together they describe how memory updates as new observations arrive.
+
 \[
 y(t) = C\mathbf{x}(t) + D u(t)
 \]
 
-Here \(A \in \mathbb{R}^{N \times N}\), \(B \in \mathbb{R}^{N \times 1}\), \(C \in \mathbb{R}^{1 \times N}\), and \(D\) is a scalar feedthrough term in the single-input single-output presentation. Multi-dimensional inputs and outputs generalize \(B\) and \(C\) to matrices.
-
 !!! math-intuition "In Plain English"
-    Read the differential equation as a **memory machine**. The state \(\mathbf{x}(t)\) is a compressed summary of past inputs. The matrix \(A\) controls how memory fades or rotates. The term \(B u(t)\) injects new evidence from the current input. The output \(y(t)\) is a linear readout from memory, optionally mixing the current input directly through \(D\). This is the same family of models used in classical control theory, repurposed as a sequence layer.
+    The output \(y(t)\) is a **linear projection** of the hidden state through \(C\), plus an optional **direct path** from the current input through \(D\). In sequence modeling, \(C\) selects which aspects of memory become visible at the output, while \(D\) allows immediate passthrough without waiting for state dynamics.
+
+Here \(A \in \mathbb{R}^{N \times N}\), \(B \in \mathbb{R}^{N \times 1}\), \(C \in \mathbb{R}^{1 \times N}\), and \(D\) is a scalar feedthrough term in the single-input single-output presentation. Multi-dimensional inputs and outputs generalize \(B\) and \(C\) to matrices.
 
 ??? deep-dive "Deep Dive: Why Continuous Time Appears in Sequence Modeling Papers"
     Continuous-time formulations let authors connect discrete recurrences to principled discretization schemes (zero-order hold, bilinear transforms, exponential integrators). In interviews, you can say: **discrete tokens are samples of an underlying process**, and discretization maps continuous parameters to step updates suitable for GPU scans.
@@ -37,21 +40,36 @@ Here \(A \in \mathbb{R}^{N \times N}\), \(B \in \mathbb{R}^{N \times 1}\), \(C \
 For token index \(k\), choose a step size \(\Delta_k > 0\) (possibly learned or input-dependent in advanced models). A common exponential discretization uses:
 
 \[
-\bar{A}_k = \exp(\Delta_k A), \quad \bar{B}_k = \int_{0}^{\Delta_k} \exp(A\tau)\, d\tau \, B
+\bar{A}_k = \exp(\Delta_k A)
 \]
 
-For diagonal \(A\) and practical implementations, \(\bar{B}_k\) can be computed in stable forms. The discrete recurrence becomes:
+!!! math-intuition "In Plain English"
+    The discrete-time state transition \(\bar{A}_k\) is an **exponential of the continuous generator** scaled by the step \(\Delta_k\). Intuitively, it packages “how much one continuous-time step of length \(\Delta_k\)” advances the autonomous dynamics governed by \(A\). For stable systems, eigenvalues of \(\bar{A}_k\) often have magnitude below one so old information decays.
+
+\[
+\bar{B}_k = \int_{0}^{\Delta_k} \exp(A\tau)\, d\tau \, B
+\]
+
+!!! math-intuition "In Plain English"
+    The integral expression for \(\bar{B}_k\) is the continuous-time impulse response **accumulated over one sampling interval**. It answers how much input influence lands in the state when \(u\) is held constant between ticks. Libraries implement this with numerically stable exponentials instead of naive matrix series at runtime.
+
+For diagonal \(A\) and practical implementations, \(\bar{B}_k\) can be computed in stable closed forms without explicit numerical integration in the hot path.
+
+The discrete recurrence becomes:
 
 \[
 \mathbf{x}_k = \bar{A}_k \mathbf{x}_{k-1} + \bar{B}_k u_k
 \]
+
+!!! math-intuition "In Plain English"
+    This is the **Markov update**: new state equals transformed old state plus an input injection. Compare to an RNN: same structure, but \(\bar{A}_k\) and \(\bar{B}_k\) have structured parameterizations in SSM work rather than fully general learned matrices in every cell.
 
 \[
 y_k = C \mathbf{x}_k + D u_k
 \]
 
 !!! math-intuition "In Plain English"
-    Discretization answers: **if the hidden state evolves continuously but we only observe inputs at token times, what is the exact update between steps?** The matrix \(\bar{A}_k\) tells you how much of the old state survives into the next step. The term \(\bar{B}_k u_k\) adds the influence of the new token. When \(\Delta_k\) is small, updates are local; when \(\Delta_k\) is large, the state can move farther in one step.
+    The discrete observation equation matches the continuous one: read out through \(C\), add direct feedthrough through \(D\). At token \(k\), the output depends on the updated state after incorporating \(u_k\). **Discretization maps continuous dynamics to token-indexed updates.** Smaller \(\Delta_k\) tends to make each step a small perturbation of the previous state; larger \(\Delta_k\) can move the state farther in one jump, which is one knob selective models learn per token in Mamba-style formulations.
 
 !!! example "Worked Example: Scalar SSM with One-Dimensional State"
     Let \(N = 1\), \(A = -1\), \(B = 1\), \(C = 1\), \(D = 0\). Let \(\Delta = 1\) fixed. Then \(\bar{A} = \exp(-1) \approx 0.368\) and \(\bar{B}\) simplifies in the scalar case to a value on the order of \((1 - \bar{A}) B\) under common ZOH assumptions, here roughly \(1 - 0.368 = 0.632\).
@@ -73,18 +91,28 @@ For **time-invariant** linear SSMs (where \(\bar{A}\) and \(\bar{B}\) do not cha
 **Recurrence (sequential):**
 
 \[
-\mathbf{x}_k = \bar{A} \mathbf{x}_{k-1} + \bar{B} u_k, \quad y_k = C\mathbf{x}_k
+\mathbf{x}_k = \bar{A} \mathbf{x}_{k-1} + \bar{B} u_k
 \]
 
+!!! math-intuition "In Plain English"
+    Recurrence updates the state one time step at a time. This is the default mental model for **online** inference: you keep \(\mathbf{x}_k\) in memory and update it when the next token arrives.
+
+\[
+y_k = C\mathbf{x}_k
+\]
+
+!!! math-intuition "In Plain English"
+    The output at step \(k\) is emitted **after** the state absorbs \(u_k\). In implementations, \(y_k\) may include \(D u_k\) as well; the table below focuses on the recurrent core.
+
 **Convolution (parallel):** there exists an impulse response kernel \(\bar{K}\) such that \(y = \bar{K} * u\) in the appropriate sense over finite horizons.
+
+!!! math-intuition "In Plain English"
+    Convolution says the entire output sequence is a **linear map** from the entire input sequence when the system is time-invariant. FFT-based methods compute this map quickly for long training sequences. When parameters vary with \(k\), the clean convolution picture breaks and you fall back to scans or sequential loops unless you introduce structured approximations.
 
 | Mode | Typical complexity | Strength | Weakness |
 | --- | --- | --- | --- |
 | Recurrence | \(O(T)\) sequential steps | Constant memory per step for inference | Harder to saturate GPU parallelism |
 | Convolution / FFT | \(O(T \log T)\) in many implementations | Parallel across time in training | Requires time-invariance for fixed kernel |
-
-!!! math-intuition "In Plain English"
-    Recurrence is how you run the model when generating one token at a time: you keep a state and update it. Convolution is how you train faster on fixed-length sequences: the whole output emerges from structured linear algebra that GPUs can parallelize. **Selective** models (Mamba) break strict time-invariance, so the pure convolution trick becomes unavailable in the simplest form, motivating specialized scan algorithms.
 
 ??? deep-dive "Deep Dive: Why Mamba Uses a Scan"
     When \(\Delta_k\), \(B_k\), and \(C_k\) depend on the input, kernels change per position. A parallel **prefix scan** can still compute the recurrence in \(O(T)\) work with careful engineering, but it is not the same as one static FFT convolution kernel for the entire sequence.
@@ -106,16 +134,31 @@ S4 (Structured State Spaces for Sequences) made long-range modeling practical by
 
 ## Mamba: Selective Gating on \(B\), \(C\), and \(\Delta\)
 
-Mamba makes key parameters **input-dependent**:
+Mamba makes key parameters **input-dependent** (exact projection shapes differ by implementation; the core idea is **functions of \(x_k\)**, not global constants):
 
 \[
-B_k = W_B x_k, \quad C_k = W_C x_k, \quad \Delta_k = \text{softplus}(W_\Delta x_k)
+B_k = W_B x_k
 \]
 
-(Exact projections differ by implementation; the core idea is **functions of \(x_k\)**, not global constants.)
+!!! math-intuition "In Plain English"
+    \(B_k\) controls **how strongly the current input writes into the state** for step \(k\). When \(B_k\) depends on \(x_k\), the model can route different tokens into memory with different strengths, similar in spirit to deciding which facts deserve storage.
+
+\[
+C_k = W_C x_k
+\]
 
 !!! math-intuition "In Plain English"
-    If \(B_k\), \(C_k\), and \(\Delta_k\) do not depend on the input, the system applies the same forgetting and reading rules at every token. Language is not like that: some tokens should **flush** context, others should **write** facts into memory, and others should **read** selectively. Making these parameters depend on \(x_k\) lets the model learn **content-based** control of memory, which is the selective behavior people want from attention-like mechanisms without full pairwise attention cost.
+    \(C_k\) controls **how the state is read out** at step \(k\). Input-dependent readouts let the model emphasize different memory coordinates depending on content, rather than using one fixed projection for all tokens.
+
+\[
+\Delta_k = \text{softplus}(W_\Delta x_k)
+\]
+
+!!! math-intuition "In Plain English"
+    \(\Delta_k\) sets the **effective step size** of the discrete update. Larger \(\Delta_k\) often behaves like a stronger update or a faster integration step, which can **overwrite** older information; smaller \(\Delta_k\) makes the state evolve more slowly, preserving context longer. Softplus keeps \(\Delta_k\) positive and numerically stable.
+
+!!! math-intuition "In Plain English"
+    Together, input-dependent \(B_k\), \(C_k\), and \(\Delta_k\) let the system vary **write strength**, **read direction**, and **forgetting speed** per token. That is the selective behavior people want from attention-like mechanisms without full pairwise attention cost.
 
 ---
 
@@ -130,6 +173,9 @@ This example uses **made-up but numerically consistent** 2D vectors to show accu
 \[
 \mathbf{h}_k = \alpha_k \odot \mathbf{h}_{k-1} + \beta_k \odot \mathbf{e}_k
 \]
+
+!!! math-intuition "In Plain English"
+    This toy recurrence separates **carry** from **new write**. The vector \(\alpha_k\) scales down the previous state per coordinate (forgetting). The vector \(\beta_k\) scales how much of the current embedding \(\mathbf{e}_k\) is written into memory. Elementwise multiplication makes each coordinate evolve independently in this pedagogical sketch.
 
 where \(\odot\) is elementwise multiplication, \(\mathbf{e}_k \in \mathbb{R}^2\) is an embedding vector for token \(k\), and \(\alpha_k, \beta_k \in \mathbb{R}^2\) are decay and input gates in \([0,1]\).
 
@@ -241,7 +287,7 @@ Educational code: not a byte-for-byte reproduction of official CUDA kernels.
 from __future__ import annotations
 
 import time
-from typing import Tuple
+from typing import Sequence
 
 import torch
 import torch.nn as nn
@@ -354,7 +400,7 @@ class TinyModel(nn.Module):
         return self.lm_head(self.norm(h))
 
 
-def benchmark_forward(model: nn.Module, lengths: Tuple[int, ...], device: torch.device) -> None:
+def benchmark_forward(model: nn.Module, lengths: Sequence[int], device: torch.device) -> None:
     model.eval()
     vocab_size = model.lm_head.out_features
     for seq_len in lengths:

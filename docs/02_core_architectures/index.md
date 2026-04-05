@@ -1,31 +1,37 @@
 # Part 2 — Core Architectures
 
-This part is the backbone of LLM interviews: how the **Transformer** works, how **decoder-only**, **encoder-only**, and **encoder–decoder** families differ, and what **MoE** and **state-space** layers add at scale.
+How modern sequence models work at the tensor level — from the original Transformer through GPT, BERT, T5, Mixture of Experts, and state-space models. This is the most interview-critical section of LLMBase.
+
+---
 
 ## Goals
 
-- Read a **Transformer block diagram** and map it to tensors and code.
-- Compare **GPT-style**, **BERT-style**, and **T5-style** objectives and masks.
-- Recognize **positional encoding** choices (sinusoidal, learned, RoPE, ALiBi) and when they appear in open models.
-- Understand **MoE** routing and **SSM** state dynamics as alternatives to dense attention.
+After completing Part 2 you will be able to:
+
+- Trace a token through every layer of a Transformer block and state the dimension at each step
+- Explain Multi-Head, Grouped-Query, and Multi-Query Attention with memory cost trade-offs
+- Compare sinusoidal, learned, RoPE, and ALiBi positional encodings and know when each is preferred
+- Implement a minimal GPT from scratch and explain the KV cache
+- Contrast BERT's masked language modeling with GPT's autoregressive objective
+- Describe T5's text-to-text framing and span corruption pre-training
+- Explain MoE routing, load balancing, and why sparse models scale better
+- Describe how Mamba's selective state spaces achieve linear-time sequence modeling
+
+---
 
 ## Topics
 
-| # | Topic | Key ideas |
-| --- | --- | --- |
-| 2.1 | [The Transformer](transformer.md) | Full block walkthrough, Pre-Norm, RMSNorm, SwiGLU, residual stream |
-| 2.2 | [Self-Attention & MHA](self_attention_mha.md) | QKV, multi-head, GQA/MQA, masking patterns, cross-attention |
-| 2.3 | [Positional Encoding](positional_encoding.md) | Sinusoidal, learned, RoPE, ALiBi — all four implemented |
-| 2.4 | [GPT (Decoder-Only)](gpt_decoder_only.md) | Causal LM, weight tying, in-context learning, nanoGPT |
-| 2.5 | [BERT (Encoder-Only)](bert_encoder_only.md) | MLM, fine-tuning, embeddings, BERT variants |
-| 2.6 | [T5 (Encoder-Decoder)](t5_encoder_decoder.md) | Text-to-text framing, span corruption, ablation findings |
-| 2.7 | [Mixture of Experts](mixture_of_experts.md) | Top-k routing, load balancing, Mixtral, scaling properties |
-| 2.8 | [State Space Models](state_space_models.md) | S4, Mamba selective scan, dual modes, hybrid architectures |
+| # | Topic | What You Will Learn |
+|---|-------|---------------------|
+| 1 | [The Transformer](transformer.md) | Full architecture walkthrough, residual stream, Pre-Norm |
+| 2 | [Self-Attention and MHA](self_attention_mha.md) | Self vs cross attention, GQA, MQA, masking patterns |
+| 3 | [Positional Encoding](positional_encoding.md) | Sinusoidal, Learned, RoPE, ALiBi, extrapolation |
+| 4 | [GPT (Decoder-Only)](gpt_decoder_only.md) | Causal attention, next-token prediction, KV cache, scaling |
+| 5 | [BERT (Encoder-Only)](bert_encoder_only.md) | MLM, fine-tuning, embeddings, BERT variants |
+| 6 | [T5 (Encoder-Decoder)](t5_encoder_decoder.md) | Text-to-text, span corruption, Flan-T5 |
+| 7 | [Mixture of Experts](mixture_of_experts.md) | Router design, load balancing, Mixtral, DeepSeek |
+| 8 | [State Space Models](state_space_models.md) | S4, Mamba, selective gating, hybrid architectures |
 
-## How to read
+---
 
-Start at 2.1 (the Transformer block) — it's the foundation for all variants. Then 2.2–2.3 go deeper into attention and positional encoding. Pages 2.4–2.6 cover the three major architecture families. Pages 2.7–2.8 cover modern extensions beyond dense Transformers.
-
-## Status
-
-All eight topics are complete with math, runnable code (full imports), and interview takeaways. Diagrams (draw.io SVGs) will be added in a future polish pass.
+Every page includes plain-English math walkthroughs, worked numerical examples, runnable Python code, and FAANG-level interview questions with expected answer depth.

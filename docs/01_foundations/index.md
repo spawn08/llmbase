@@ -1,28 +1,33 @@
 # Part 1 — Foundations
 
-Before transformers and billion-parameter models, language modeling rests on probability, representations, and sequence models. This part builds the vocabulary and math you will reuse everywhere else.
+The mathematical and conceptual bedrock that existed before the Transformer. Understanding these topics deeply is what separates candidates who can explain *why* things work from those who only know *that* they work.
+
+---
 
 ## Goals
 
-- Relate **classical and neural language models** (n-grams → LSTMs) to modern **token prediction**.
-- Understand **embeddings** and why geometry matters for similarity and analogy.
-- Derive **scaled dot-product attention** and softmax weights from first principles.
+After completing Part 1 you will be able to:
+
+- Derive the chain rule decomposition of language models and explain the Markov assumption
+- Explain how Word2Vec, GloVe, and FastText learn vector representations of meaning
+- Trace data through an LSTM cell gate by gate with actual numbers
+- Describe the encoder-decoder framework and how attention solves the bottleneck problem
+- Connect entropy, cross-entropy, and KL divergence to LLM training objectives
+- Derive scaled dot-product attention from first principles and explain why we scale by \(\sqrt{d_k}\)
+
+---
 
 ## Topics
 
-| # | Topic | Key ideas |
-| --- | --- | --- |
-| 1.1 | [Language Modeling Basics](language_modeling_basics.md) | N-grams, chain rule, perplexity, smoothing |
-| 1.2 | [Word Embeddings](word_embeddings.md) | Word2Vec, GloVe, FastText, t-SNE visualization |
-| 1.3 | [Neural Language Models](neural_language_models.md) | FFNN LM, RNNs, LSTMs, vanishing gradients |
-| 1.4 | [Sequence-to-Sequence](sequence_to_sequence.md) | Encoder–decoder, Bahdanau & Luong attention, teacher forcing |
-| 1.5 | [Information Theory](information_theory.md) | Entropy, cross-entropy, KL divergence, perplexity link |
-| 1.6 | [Mathematics of Attention](attention_math.md) | Scaled dot-product, softmax, causal masking, multi-head preview |
+| # | Topic | What You Will Learn |
+|---|-------|---------------------|
+| 1 | [Language Modeling](language_modeling_basics.md) | N-grams, chain rule, smoothing, perplexity |
+| 2 | [Word Embeddings](word_embeddings.md) | Word2Vec, GloVe, FastText, embedding arithmetic |
+| 3 | [Neural Language Models](neural_language_models.md) | RNNs, vanishing gradients, LSTM gates, GRU |
+| 4 | [Sequence-to-Sequence](sequence_to_sequence.md) | Encoder-decoder, Bahdanau attention, teacher forcing |
+| 5 | [Information Theory](information_theory.md) | Entropy, cross-entropy, KL divergence, perplexity |
+| 6 | [Attention Mathematics](attention_math.md) | Scaled dot-product attention, multi-head attention, masking |
 
-## How to read
+---
 
-Each page follows: **Intuition → math → code (with full imports) → interview takeaways → references.** Start at 1.1 and work forward — each topic builds on the previous one, culminating in the attention equation that powers Part 2.
-
-## Status
-
-All six foundation topics are complete with math, runnable code, and interview takeaways. Diagrams (draw.io SVGs) and Jupyter notebooks will be added in a future polish pass.
+Every page includes plain-English math walkthroughs, worked numerical examples, runnable Python code, and FAANG-level interview questions with expected answer depth.

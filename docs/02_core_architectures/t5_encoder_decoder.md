@@ -74,6 +74,17 @@ Target tokens → Decoder (causal self-attention, depth N) → logits → softma
 
 The decoder cannot attend to future target positions because of the causal mask. It can attend to all encoder positions because the source is fully observed when modeling each \(y_j\).
 
+**Cross-attention (decoder queries, encoder keys and values)**
+
+Let \(H_{\text{enc}} \in \mathbb{R}^{T_x \times d}\) be encoder hidden states and let \(h_{t}^{\text{dec}} \in \mathbb{R}^{d}\) be a decoder position hidden state before the cross-attention sublayer. Learned projections produce query \(\mathbf{q}_t = W_Q h_{t}^{\text{dec}}\), keys \(K = W_K H_{\text{enc}}\), and values \(V = W_V H_{\text{enc}}\). One standard scoring form is:
+
+\[
+\mathbf{a}_t = \text{softmax}\left(\frac{\mathbf{q}_t K^\top}{\sqrt{d_k}}\right), \quad \mathbf{o}_t = \mathbf{a}_t V
+\]
+
+!!! math-intuition "In Plain English"
+    The decoder position \(t\) asks a **question** vector \(\mathbf{q}_t\). Every encoder position supplies a **key** describing what it contains. Large dot products mean "this encoder position is relevant for generating the next target token." Softmax turns scores into weights that sum to one. The output \(\mathbf{o}_t\) is a weighted blend of encoder **value** vectors: a soft pointer into the source representation.
+
 **Relative position bias**
 
 T5 does not use sinusoidal absolute position embeddings in the same way as the original Vaswani et al. formulation. Instead, it often relies on **learned relative position biases** (bucketed by distance) inside attention. The exact parameterization is an implementation detail, but the interview point is: **positions enter as relative pairwise relationships**, which can help length generalization compared to a purely absolute scheme in some regimes.

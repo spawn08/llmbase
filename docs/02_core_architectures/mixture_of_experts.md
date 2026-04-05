@@ -18,15 +18,24 @@ Let \(\mathbf{x} \in \mathbb{R}^{d_{\text{model}}}\) be a token hidden vector en
 \mathbf{z} = W_g \mathbf{x} + \mathbf{b}_g, \quad \mathbf{z} \in \mathbb{R}^E
 \]
 
+!!! math-intuition "In Plain English"
+    Logits are **raw scores** assigned to each expert before normalization. A higher \(z_i\) means the linear router favors expert \(i\) for this hidden vector \(\mathbf{x}\), but logits are not probabilities until passed through softmax.
+
 \[
 \mathbf{g} = \text{softmax}(\mathbf{z}), \quad g_i = \frac{\exp(z_i)}{\sum_{j=1}^{E} \exp(z_j)}
 \]
+
+!!! math-intuition "In Plain English"
+    Softmax converts logits into a vector \(\mathbf{g}\) whose entries are positive and sum to one. You can read \(g_i\) as the router’s **intent** to use expert \(i\) before sparsification. If one logit is much larger than the others, \(\mathbf{g}\) becomes sharply peaked.
 
 For **top-\(k\)** routing with small \(k\) (often 1 or 2), define the set \(\mathcal{S}(\mathbf{x})\) as the indices of the \(k\) largest entries of \(\mathbf{g}\). The MoE output is a weighted sum of expert functions \(f_i\):
 
 \[
 \text{MoE}(\mathbf{x}) = \sum_{i \in \mathcal{S}(\mathbf{x})} \tilde{g}_i \, f_i(\mathbf{x})
 \]
+
+!!! math-intuition "In Plain English"
+    This sum is a **sparse mixture**: only experts whose indices lie in \(\mathcal{S}(\mathbf{x})\) are evaluated. Each selected expert maps \(\mathbf{x}\) through its own FFN \(f_i\). The mixture combines those vector outputs using nonnegative weights \(\tilde{g}_i\).
 
 where \(\tilde{g}_i\) are the selected gate values renormalized to sum to one over the chosen experts:
 
@@ -35,7 +44,7 @@ where \(\tilde{g}_i\) are the selected gate values renormalized to sum to one ov
 \]
 
 !!! math-intuition "In Plain English"
-    The router answers: **which specialists should look at this token, and how much should I trust each one?** The softmax converts a raw score vector into nonnegative weights that sum to one. Top-\(k\) keeps only the largest weights, which means most experts do no work for that token. Renormalization rescales the surviving weights so they still form a convex combination of expert outputs.
+    Top-\(k\) masking removes most experts, so the surviving raw weights \(g_i\) may no longer sum to one. Renormalization divides by their sum so \(\{\tilde{g}_i\}_{i \in \mathcal{S}}\) forms a proper convex combination of the expert outputs.
 
 !!! example "Worked Example: Eight Experts, Top-Two Routing for One Token"
     Let \(E = 8\). Suppose the router logits for a specific token are:
@@ -333,13 +342,16 @@ class MoELayer(nn.Module):
 
 
 def demo_parameter_ratio(d_model: int, d_ff: int, n_experts: int, top_k: int) -> None:
-    """Print rough parameter counts for one dense FFN versus MoE replacement."""
-    one_expert = 2 * d_model * d_ff + d_ff * d_model + d_model * d_ff  # w1, w2, w3 shapes (approximate products)
-    # Note: exact SwiGLU counts depend on bias flags; message is scaling.
+    """Print parameter counts: gate plus all experts versus active expert FFNs per token."""
     moe = MoELayer(d_model, d_ff, n_experts=n_experts, top_k=top_k)
-    moe_params = sum(p.numel() for p in moe.parameters())
-    print(f"MoE layer parameters (gate + experts): {moe_params:,}")
-    print(f"Top-{top_k} activates roughly {top_k}/{n_experts} of expert FFN compute per token.")
+    gate_params = moe.gate.weight.numel()
+    one_expert_params = sum(p.numel() for p in moe.experts[0].parameters())
+    all_expert_params = sum(p.numel() for p in moe.experts.parameters())
+    print(f"Gate parameters: {gate_params:,}")
+    print(f"One expert (SwiGLU) parameters: {one_expert_params:,}")
+    print(f"All {n_experts} experts total: {all_expert_params:,}")
+    print(f"MoE layer total (gate + experts): {gate_params + all_expert_params:,}")
+    print(f"Per token, top-{top_k} uses about {top_k} expert forward passes out of {n_experts}.")
 
 
 if __name__ == "__main__":
