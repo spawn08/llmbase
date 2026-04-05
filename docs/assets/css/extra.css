@@ -1,0 +1,5 @@
+/* LLMBase — optional theme tweaks (spacing, diagrams) */
+.md-typeset img {
+  max-width: min(100%, 42rem);
+  height: auto;
+}

@@ -1,7 +1,10 @@
 site_name: LLMBase
 site_description: A Ground-Up Guide to Large Language Models for Engineers
 site_author: Amarsingh Thakur
+site_url: https://spawn08.github.io/llmbase/
 repo_url: https://github.com/spawn08/llmbase
+repo_name: spawn08/llmbase
+copyright: Copyright &copy; 2026 LLMBase contributors
 
 theme:
   name: material
@@ -24,6 +27,21 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+
+plugins:
+  - search
+
+extra_css:
+  - assets/css/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/spawn08/llmbase
 
 markdown_extensions:
   - pymdownx.highlight:
