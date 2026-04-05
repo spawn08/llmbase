@@ -1,5 +1,196 @@
-/* LLMBase — optional theme tweaks (spacing, diagrams) */
+/* ================================================================
+   LLMBase — Professional Theme Overhaul
+   ================================================================ */
+
+/* ── Typography ──────────────────────────────────────────────────── */
+.md-typeset {
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.2em;
+  border-bottom: 2px solid var(--md-primary-fg-color);
+  padding-bottom: 0.4em;
+}
+.md-typeset h2 {
+  font-weight: 600;
+  margin-top: 2.4em;
+  margin-bottom: 0.8em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+.md-typeset h3 {
+  font-weight: 600;
+  margin-top: 1.8em;
+  color: var(--md-primary-fg-color);
+}
+.md-typeset h4 {
+  font-weight: 600;
+  margin-top: 1.4em;
+  font-style: italic;
+}
+
+/* ── Content width ───────────────────────────────────────────────── */
+.md-grid {
+  max-width: 1440px;
+}
+
+/* ── Images and diagrams ─────────────────────────────────────────── */
 .md-typeset img {
   max-width: min(100%, 42rem);
   height: auto;
+  border-radius: 6px;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────── */
+.md-typeset table:not([class]) {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  display: table;
+  width: 100%;
+}
+.md-typeset table:not([class]) th {
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  font-weight: 600;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.md-typeset table:not([class]) td,
+.md-typeset table:not([class]) th {
+  padding: 0.6em 1em;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+.md-typeset table:not([class]) tbody tr:nth-child(even) {
+  background: var(--md-code-bg-color);
+}
+
+/* ── Code blocks ─────────────────────────────────────────────────── */
+.md-typeset pre {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.md-typeset code {
+  border-radius: 4px;
+}
+
+/* ── Math blocks — styled container ──────────────────────────────── */
+.md-typeset .MathJax {
+  font-size: 1.05em;
+}
+.md-typeset mjx-container[display="true"] {
+  margin: 1.2em 0;
+  padding: 1em 1.4em;
+  background: var(--md-code-bg-color);
+  border-left: 4px solid var(--md-primary-fg-color);
+  border-radius: 0 6px 6px 0;
+  overflow-x: auto;
+}
+
+/* ── Horizontal rules — subtle ───────────────────────────────────── */
+.md-typeset hr {
+  border: none;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  margin: 2.5em 0;
+}
+
+/* ================================================================
+   Custom Admonition Types
+   ================================================================ */
+
+/* ── Interview questions (green) ─────────────────────────────────── */
+:root {
+  --md-admonition-icon--interview: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m0 14H6l-2 2V4h16"/></svg>');
+}
+.md-typeset .admonition.interview,
+.md-typeset details.interview {
+  border-color: #2e7d32;
+}
+.md-typeset .interview > .admonition-title,
+.md-typeset .interview > summary {
+  background-color: rgba(46, 125, 50, 0.1);
+  border-color: #2e7d32;
+}
+.md-typeset .interview > .admonition-title::before,
+.md-typeset .interview > summary::before {
+  background-color: #2e7d32;
+  -webkit-mask-image: var(--md-admonition-icon--interview);
+  mask-image: var(--md-admonition-icon--interview);
+}
+
+/* ── Math intuition (blue) ───────────────────────────────────────── */
+:root {
+  --md-admonition-icon--math-intuition: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m1 17h-2v-2h2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25"/></svg>');
+}
+.md-typeset .admonition.math-intuition,
+.md-typeset details.math-intuition {
+  border-color: #1565c0;
+}
+.md-typeset .math-intuition > .admonition-title,
+.md-typeset .math-intuition > summary {
+  background-color: rgba(21, 101, 192, 0.1);
+  border-color: #1565c0;
+}
+.md-typeset .math-intuition > .admonition-title::before,
+.md-typeset .math-intuition > summary::before {
+  background-color: #1565c0;
+  -webkit-mask-image: var(--md-admonition-icon--math-intuition);
+  mask-image: var(--md-admonition-icon--math-intuition);
+}
+
+/* ── Deep dive (purple) ──────────────────────────────────────────── */
+:root {
+  --md-admonition-icon--deep-dive: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.6-.13-1.24-.2-1.86-.2z"/></svg>');
+}
+.md-typeset .admonition.deep-dive,
+.md-typeset details.deep-dive {
+  border-color: #6a1b9a;
+}
+.md-typeset .deep-dive > .admonition-title,
+.md-typeset .deep-dive > summary {
+  background-color: rgba(106, 27, 154, 0.1);
+  border-color: #6a1b9a;
+}
+.md-typeset .deep-dive > .admonition-title::before,
+.md-typeset .deep-dive > summary::before {
+  background-color: #6a1b9a;
+  -webkit-mask-image: var(--md-admonition-icon--deep-dive);
+  mask-image: var(--md-admonition-icon--deep-dive);
+}
+
+/* ── Key phrases (amber) ─────────────────────────────────────────── */
+:root {
+  --md-admonition-icon--key-phrases: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2"/></svg>');
+}
+.md-typeset .admonition.key-phrases,
+.md-typeset details.key-phrases {
+  border-color: #f57f17;
+}
+.md-typeset .key-phrases > .admonition-title,
+.md-typeset .key-phrases > summary {
+  background-color: rgba(245, 127, 23, 0.1);
+  border-color: #f57f17;
+}
+.md-typeset .key-phrases > .admonition-title::before,
+.md-typeset .key-phrases > summary::before {
+  background-color: #f57f17;
+  -webkit-mask-image: var(--md-admonition-icon--key-phrases);
+  mask-image: var(--md-admonition-icon--key-phrases);
+}
+
+/* ── Navigation polish ───────────────────────────────────────────── */
+.md-nav__link {
+  font-size: 0.78rem;
+}
+.md-nav__item--nested > .md-nav__link {
+  font-weight: 600;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.md-footer {
+  margin-top: 3em;
 }
