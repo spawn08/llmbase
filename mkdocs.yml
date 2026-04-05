@@ -84,6 +84,15 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Interview Questions: interview_questions.md
+  - Deep Learning Fundamentals:
+    - 00_prerequisites/index.md
+    - The Perceptron and Feedforward Networks: 00_prerequisites/01_perceptron_and_ffn.md
+    - Activation Functions: 00_prerequisites/02_activation_functions.md
+    - Backpropagation and Gradient Descent: 00_prerequisites/03_backpropagation.md
+    - Loss Functions and Regularization: 00_prerequisites/04_loss_and_regularization.md
+    - Convolutional Neural Networks: 00_prerequisites/05_convolutional_neural_networks.md
+    - Sequence Modeling and RNNs: 00_prerequisites/06_sequence_modeling_and_rnns.md
+    - The Encoder-Decoder Paradigm: 00_prerequisites/07_encoder_decoder_paradigm.md
   - Foundations:
     - 01_foundations/index.md
     - Language Modeling: 01_foundations/language_modeling_basics.md

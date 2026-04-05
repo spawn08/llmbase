@@ -30,7 +30,11 @@ This is not a surface-level overview. Each page is written to give you the depth
 
 ## The learning path
 
-LLMBase is organized into seven progressive parts. Start at Part 1 and work forward — each section builds on the previous one.
+LLMBase is organized into eight progressive parts. Start at Part 0 if you need to build or refresh your deep learning foundations, then continue through Part 1 and beyond — each section builds on the previous one.
+
+### [Deep Learning Fundamentals](00_prerequisites/index.md)
+
+The building blocks that every neural network is made of. Perceptrons, activation functions, backpropagation, loss functions, CNNs, RNNs, and the encoder-decoder paradigm. Start here if you need to solidify your understanding of how neural networks learn before diving into language-specific concepts.
 
 ### [Foundations](01_foundations/index.md)
 
