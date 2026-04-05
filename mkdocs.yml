@@ -137,7 +137,7 @@ nav:
     - Emergent Capabilities: 05_advanced/emergent_capabilities.md
     - Evaluation and Benchmarking: 05_advanced/evaluation.md
     - Hallucination and Safety: 05_advanced/hallucination_safety.md
-  - Top 25 Papers:
+  - Research Papers:
     - 06_research_papers/index.md
     - "1. Transformer": 06_research_papers/01_attention_is_all_you_need.md
     - "2. BERT": 06_research_papers/02_bert.md
@@ -164,5 +164,21 @@ nav:
     - "23. Codex": 06_research_papers/23_codex.md
     - "24. Mamba": 06_research_papers/24_mamba.md
     - "25. Gemini": 06_research_papers/25_gemini.md
+    - "26. DeepSeek-V2": 06_research_papers/26_deepseek_v2.md
+    - "27. DeepSeek-V3": 06_research_papers/27_deepseek_v3.md
+    - "28. DeepSeek-R1": 06_research_papers/28_deepseek_r1.md
+    - "29. GLM-4": 06_research_papers/29_glm4.md
+    - "30. Kimi k1.5": 06_research_papers/30_kimi_k1_5.md
+    - "31. Qwen2.5": 06_research_papers/31_qwen2_5.md
   - Recent Advances:
     - 07_recent_advances/index.md
+    - DeepSeek-R1 (Jan 2025): 07_recent_advances/01_deepseek_r1.md
+    - Kimi k1.5 (Jan 2025): 07_recent_advances/02_kimi_k1_5.md
+    - GPT-4.5 (Feb 2025): 07_recent_advances/03_gpt4_5.md
+    - Gemini 2.5 Pro (Mar 2025): 07_recent_advances/04_gemini_2_5_pro.md
+    - Llama 4 (Apr 2025): 07_recent_advances/05_llama_4.md
+    - GPT-5 (Aug 2025): 07_recent_advances/06_gpt5.md
+    - Claude Opus 4.5 (Nov 2025): 07_recent_advances/07_claude_opus_4_5.md
+    - Gemini 3.1 Pro (Feb 2026): 07_recent_advances/08_gemini_3_1_pro.md
+    - GPT-5.4 Family (Mar 2026): 07_recent_advances/09_gpt5_4.md
+    - GLM-4.6 (Sep 2025): 07_recent_advances/10_glm4_6.md

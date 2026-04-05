@@ -78,12 +78,12 @@ The Chinese research ecosystem produced several landmark papers in 2024–2025 t
 
 | # | Paper | Lab | Year | Key Contribution |
 |---|---|---|---|---|
-| 26 | [DeepSeek-V2](#deepseek-v2-2024--multi-head-latent-attention) | DeepSeek | 2024 | Multi-Head Latent Attention (MLA) — 93% KV cache reduction |
-| 27 | [DeepSeek-V3](#deepseek-v3-2024--moe-at-671b-scale) | DeepSeek | 2024 | 671B MoE, auxiliary-loss-free load balancing, FP8 training, MTP |
-| 28 | [DeepSeek-R1](#deepseek-r1-2025--rl-only-reasoning) | DeepSeek | 2025 | RL-only reasoning (R1-Zero), GRPO, cold-start distillation |
-| 29 | [ChatGLM / GLM-4](#chatglm--glm-4-zhipu-ai--tsinghua-20222024) | Zhipu AI / THU | 2024 | GLM pretraining unifies MLM+CLM; bilingual at scale |
-| 30 | [Kimi k1.5](#kimi-k15-moonshot-ai-2025--long-context-rl-scaling) | Moonshot AI | 2025 | Long-context RL scaling; partial rollouts; online mirror descent |
-| 31 | [Qwen2.5](#qwen25-alibaba-2024) | Alibaba | 2024 | 18T tokens, 72B matches 405B Llama; Qwen2.5-Math/Coder family |
+| 26 | [DeepSeek-V2](26_deepseek_v2.md) | DeepSeek | 2024 | Multi-Head Latent Attention (MLA) — 93% KV cache reduction |
+| 27 | [DeepSeek-V3](27_deepseek_v3.md) | DeepSeek | 2024 | 671B MoE, auxiliary-loss-free load balancing, FP8 training, MTP |
+| 28 | [DeepSeek-R1](28_deepseek_r1.md) | DeepSeek | 2025 | RL-only reasoning (R1-Zero), GRPO, cold-start distillation |
+| 29 | [ChatGLM / GLM-4](29_glm4.md) | Zhipu AI / THU | 2024 | GLM pretraining unifies MLM+CLM; bilingual at scale |
+| 30 | [Kimi k1.5](30_kimi_k1_5.md) | Moonshot AI | 2025 | Long-context RL scaling; partial rollouts; online mirror descent |
+| 31 | [Qwen2.5](31_qwen2_5.md) | Alibaba | 2024 | 18T tokens, 72B matches 405B Llama; Qwen2.5-Math/Coder family |
 
 ---
 

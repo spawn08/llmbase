@@ -31,7 +31,8 @@ In one sentence for interviews: **verifiable rewards + multi-sample group baseli
    Training curves sometimes show a **sudden jump** in reasoning quality—an **emergent** transition rather than smooth linear improvement—highlighting that RL on LLMs can produce **phase-like** behavior.
 
 6. **Distillation pipeline**  
-   **R1-Distill** models are trained with **SFT on outputs (traces) from R1**. The **student** may not need RL if it mainly learns to **imitate** the teacher’s reasoning style and steps at a smaller scale.
+   **R1-Distill** models are trained with **SFT on outputs (traces) from R1**. The **student** may not need RL if it mainly learns to **imitate** the teacher’s reasoning style and steps at a smaller scale.  
+   Quality hinges on **teacher trace diversity** and **task coverage**: students can **overfit** to teacher quirks (length, phrasing) unless data is **filtered** and **mixed** with normal instruction tuning.
 
 ## The Math — Explained Step by Step
 ### 1. Group-relative advantage
@@ -252,6 +253,8 @@ Interviewers often probe whether you understand **where the advantage comes from
 
 **Constitutional AI** and related methods emphasize **principles** and **preference optimization**; R1 complements that thread by showing **objective rewards** can dominate when tasks are **checkable**—different safety and capability tradeoffs.
 
+For **system-design** interviews, use this paper when discussing **why** you might prefer **automated evaluators** (unit tests, symbolic checkers) in RL loops, how **test-time scaling** (sampling **\(G\)** solutions) interacts with **latency budgets**, and how **teacher–student** deployment cuts cost for **on-device** assistants.
+
 | Paper / line of work | Connection |
 |----------------------|------------|
 | **InstructGPT (RLHF / PPO)** | Shared **clipped policy** DNA; DeepSeek-R1 shifts emphasis to **verifiable task rewards** and **group-relative** advantages instead of **human preference** modeling. |
@@ -272,4 +275,6 @@ Interviewers often probe whether you understand **where the advantage comes from
 | **Emergence** | Watch for **“Aha”** phase transitions—**nonlinear** quality jumps during training. |
 | **KL penalty** | Keeps **\(\pi_\theta\)** near **\(\pi_{\mathrm{ref}}\)** to reduce collapse and weird exploits. |
 | **Compute tradeoff** | Larger **\(G\)** improves group baseline quality but costs **inference** per step. |
+| **Evaluators** | Automate **correctness** checks where possible—reduces preference noise and **reward hacking** surface. |
+| **Deployment** | **Distill** to small models for **latency**; keep **teacher** for **hard** queries or **verification**. |
 
