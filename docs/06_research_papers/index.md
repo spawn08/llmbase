@@ -72,6 +72,21 @@ This section provides **in-depth documentation** for the 25 landmark papers that
 | 23 | [Codex](23_codex.md) | 2021 | Code generation, HumanEval benchmark, pass@k metric |
 | 25 | [Gemini](25_gemini.md) | 2023 | Native multimodal — text, images, audio, video |
 
+### Chinese Lab Contributions (2024–2025)
+
+The Chinese research ecosystem produced several landmark papers in 2024–2025 that fundamentally changed how the field thinks about reasoning, KV cache efficiency, and MoE training. These are essential reading for any LLM interview in 2025–2026.
+
+| # | Paper | Lab | Year | Key Contribution |
+|---|---|---|---|---|
+| 26 | [DeepSeek-V2](#deepseek-v2-2024--multi-head-latent-attention) | DeepSeek | 2024 | Multi-Head Latent Attention (MLA) — 93% KV cache reduction |
+| 27 | [DeepSeek-V3](#deepseek-v3-2024--moe-at-671b-scale) | DeepSeek | 2024 | 671B MoE, auxiliary-loss-free load balancing, FP8 training, MTP |
+| 28 | [DeepSeek-R1](#deepseek-r1-2025--rl-only-reasoning) | DeepSeek | 2025 | RL-only reasoning (R1-Zero), GRPO, cold-start distillation |
+| 29 | [ChatGLM / GLM-4](#chatglm--glm-4-zhipu-ai--tsinghua-20222024) | Zhipu AI / THU | 2024 | GLM pretraining unifies MLM+CLM; bilingual at scale |
+| 30 | [Kimi k1.5](#kimi-k15-moonshot-ai-2025--long-context-rl-scaling) | Moonshot AI | 2025 | Long-context RL scaling; partial rollouts; online mirror descent |
+| 31 | [Qwen2.5](#qwen25-alibaba-2024) | Alibaba | 2024 | 18T tokens, 72B matches 405B Llama; Qwen2.5-Math/Coder family |
+
+---
+
 ## Timeline
 
 | Year | Papers |
@@ -83,7 +98,8 @@ This section provides **in-depth documentation** for the 25 landmark papers that
 | 2021 | CLIP, Codex, LoRA |
 | 2022 | InstructGPT, PaLM, Chinchilla, FlashAttention, FLAN, Chain-of-Thought, Constitutional AI |
 | 2023 | LLaMA, Mistral 7B, ReAct, Toolformer, Mamba, Gemini |
-| 2024 | Mixtral |
+| 2024 | Mixtral, DeepSeek-V2, DeepSeek-V3, ChatGLM/GLM-4, Qwen2.5 |
+| 2025 | DeepSeek-R1, Kimi k1.5 |
 
 ## Paper Interconnections
 
@@ -99,6 +115,13 @@ flowchart LR
     CLIP --> Gemini
     PaLM --> Gemini
     T --> FlashAttention & Mamba
+    LLaMA --> DSV2[DeepSeek-V2] --> DSV3[DeepSeek-V3] --> DSR1[DeepSeek-R1]
+    Mixtral --> DSV3
+    DSR1 --> KimiK15[Kimi k1.5]
+    BERT --> GLM4[GLM-4]
+    GPT3 --> Qwen25[Qwen2.5]
+    Inst --> DSR1
+    CoT --> DSR1
 ```
 
 **Threads:**
@@ -108,6 +131,8 @@ flowchart LR
 - **Alignment:** InstructGPT → Constitutional AI / FLAN
 - **Tools & Agents:** Chain-of-Thought → ReAct → Toolformer
 - **Multimodal:** CLIP → Gemini
+- **Chinese lab thread:** LLaMA → DeepSeek-V2 (MLA) → DeepSeek-V3 (MoE+FP8) → DeepSeek-R1 (GRPO) → Kimi k1.5 (long-context RL)
+- **Bilingual/GLM thread:** BERT → GLM-4 → GLM-Z1
 
 ## Interview Priority Guide
 
@@ -123,3 +148,140 @@ If you have limited time, focus on these papers first (highest interview frequen
 8. **BERT** — encoder vs. decoder understanding
 9. **GPT-3** — in-context learning and scaling laws
 10. **ReAct** — agent and tool-use systems
+11. **DeepSeek-R1** — now essential; GRPO, RL-only reasoning, distillation
+12. **DeepSeek-V2/V3** — MLA for KV cache, MoE load balancing
+13. **Kimi k1.5** — long-context RL as an alternative to MCTS
+
+---
+
+## Deep Dive: Chinese Lab Papers
+
+### DeepSeek-V2 (2024) — Multi-Head Latent Attention
+
+**Why it matters**: DeepSeek-V2's MLA mechanism reduced KV cache by 93% compared to standard MHA — enabling 128K context windows at practical inference cost. This is now a standard technique interviewers probe for in systems roles.
+
+**Core idea**: instead of caching full K and V matrices (which grow as \(O(T \cdot d_{\text{model}})\)), compress them into a low-rank latent vector \(c_t\):
+
+\[
+c_t = W^{DKV} h_t \in \mathbb{R}^{d_c}, \quad d_c \ll d_{\text{model}} \cdot n_h
+\]
+
+At attention time, decompress:
+
+\[
+K_t = W^{UK} c_t, \quad V_t = W^{UV} c_t
+\]
+
+!!! math-intuition "In Plain English"
+    Instead of storing a 1024-dimensional K and V for each of 64 heads at every token position, store a single ~512-dimensional compressed vector \(c_t\). At inference, project it back to K and V on the fly. You trade a small amount of compute for a huge reduction in memory bandwidth.
+
+**Key results**: 236B total / 21B active MoE model; 93.3% KV cache reduction; 5.76× higher generation throughput vs. DeepSeek 67B.
+
+**Interview questions**:
+
+1. How does MLA differ from MQA (Multi-Query Attention) and GQA (Grouped-Query Attention)? Which provides the largest KV cache savings?
+2. Why does the KV cache size matter for **serving throughput** — what is the memory bandwidth bottleneck during decode?
+3. MLA stores a compressed \(c_t\) instead of full K/V — what is the quality trade-off, and how is it mitigated?
+
+---
+
+### DeepSeek-V3 (2024) — MoE at 671B Scale
+
+**Why it matters**: DeepSeek-V3 trained a 671B-parameter MoE model (37B active) in 2.788M GPU-hours on H800s — remarkably efficient at this scale. Three innovations drove this: **auxiliary-loss-free load balancing**, **FP8 mixed-precision training**, and **multi-token prediction (MTP)** for denser training signals.
+
+**Auxiliary-loss-free load balancing**: traditional MoE uses an auxiliary loss to prevent expert collapse (all tokens routing to one expert). DeepSeek-V3 instead adjusts per-expert **bias terms** dynamically during training:
+
+\[
+g_{i,t} = \text{Softmax}\bigl(e_{i,t} + b_i\bigr)
+\]
+
+where \(b_i\) is updated by \(\pm\gamma\) depending on whether expert \(i\) is over- or under-utilized. No auxiliary loss term pollutes the primary objective.
+
+!!! math-intuition "In Plain English"
+    Instead of penalizing imbalanced routing through a separate loss (which fights the primary task loss), add a learnable bias to each expert's routing score. Over-utilized experts get a lower bias (making them less likely to be chosen), under-utilized ones get a higher bias. The primary loss stays clean.
+
+**Multi-Token Prediction (MTP)**: alongside the standard next-token head, auxiliary heads predict tokens \(t+2, t+3, \ldots, t+k\) during training. These heads are **discarded at inference** but provide denser gradient signal during training.
+
+**FP8 training**: weights, activations, and gradients computed in FP8 with block-wise scaling. Enables ~2× FLOP throughput and halved memory bandwidth vs. BF16.
+
+**Interview questions**:
+
+1. What is **expert collapse** in MoE training, and how do traditional auxiliary losses address it? What is the disadvantage of auxiliary losses?
+2. How does **bias-adjustment load balancing** avoid the auxiliary loss problem while still achieving balanced routing?
+3. What does **multi-token prediction** during training provide that standard next-token prediction does not?
+4. Why is **FP8 training** harder than BF16 training, and what calibration strategies make it stable?
+
+---
+
+### DeepSeek-R1 (2025) — RL-Only Reasoning
+
+**Why it matters**: R1-Zero proved that reasoning capability is **latent in pre-trained weights** and can be elicited purely through RL — no labeled CoT data required. This changed how the field thinks about the relationship between pretraining, SFT, and alignment.
+
+See [Recent Advances §1](../07_recent_advances/index.md#1-deepseek-r1-and-r1-zero-january-2025) for the full GRPO derivation and worked example.
+
+**Interview questions**:
+
+1. R1-Zero trains with RL but no SFT. What does this imply about what is "in" a pretrained model before alignment?
+2. Compare the GRPO group-relative advantage to the PPO critic — when would you prefer each?
+3. Why is distillation from R1 (SFT on R1 traces) often more compute-efficient than running GRPO on the student directly?
+
+---
+
+### ChatGLM / GLM-4 (Zhipu AI / Tsinghua, 2022–2024)
+
+**Why it matters**: the GLM series demonstrated a third pretraining paradigm alongside MLM (BERT) and CLM (GPT): **autoregressive blank infilling**. GLM-4 and GLM-4.6 became competitive frontier models with particularly strong Chinese-English bilingual quality and long-context generation.
+
+**GLM pretraining objective**: randomly sample text spans, replace them with mask tokens, then autoregressively predict each span given the masked context. Unlike BERT, spans are generated left-to-right. Unlike GPT, the context is bidirectional:
+
+\[
+\mathcal{L}_{\text{GLM}} = -\mathbb{E}\left[\sum_{s \in \mathcal{S}} \sum_{i=1}^{|s|} \log P_\theta(s_i \mid \mathbf{x}_{\text{corrupt}},\, s_1,\ldots,s_{i-1})\right]
+\]
+
+where \(\mathcal{S}\) is a set of sampled spans and \(\mathbf{x}_{\text{corrupt}}\) has those spans masked.
+
+!!! math-intuition "In Plain English"
+    The model sees the whole document (with some spans blanked out), and must generate each blanked span token by token. This trains bidirectional understanding (it sees future context around the blank) AND autoregressive generation (it must generate the blank causally). One objective, both capabilities.
+
+**Key results** (GLM-4.6): 357B total / 32B active; 200K input context; 128K output tokens; MIT license.
+
+**Interview questions**:
+
+1. How does the GLM blank-infilling objective differ from BERT's MLM — specifically in what attention mask pattern each uses?
+2. What downstream tasks is the GLM objective better suited for compared to pure CLM, and why?
+3. Why is a **200K output token limit** practically significant for agentic and long-form generation tasks?
+
+---
+
+### Kimi k1.5 (Moonshot AI, 2025) — Long-Context RL Scaling
+
+**Why it matters**: Kimi k1.5 matched o1 on AIME and MATH 500 **without MCTS, value functions, or process reward models** — a simpler RL recipe than most expected to reach frontier reasoning quality. The key insight: a 128K-token context window lets the model reason, reflect, and self-correct within a single trajectory.
+
+See [Recent Advances §2](../07_recent_advances/index.md#2-kimi-k15-january-2025) for the mirror descent formulation.
+
+**Interview questions**:
+
+1. How does **partial rollout reuse** reduce the compute cost of training with 128K-token sequences?
+2. Why does long context itself improve reasoning quality in RL training, even without a process reward model?
+3. Kimi k1.5 outperforms GPT-4o on short-CoT tasks. What does this suggest about the relationship between reasoning training and general capability?
+
+---
+
+### Qwen2.5 (Alibaba, 2024)
+
+**Why it matters**: Qwen2.5-72B matches Llama-3-405B-Instruct — 5× larger — on many benchmarks, making it a landmark data-efficiency result. The key: scaling pre-training data from 7T to **18T high-quality tokens** and investing in post-training alignment via 1M+ SFT examples and multi-stage RL.
+
+**Chinchilla revisited**: Qwen2.5 demonstrates that the compute-optimal frontier has shifted — with sufficiently curated data, smaller models trained on more tokens substantially outperform larger models trained on less. The Chinchilla formula applies, but data quality is a multiplier on the token count:
+
+\[
+L \approx A N^{-\alpha} + B D_{\text{eff}}^{-\beta}
+\]
+
+where \(D_{\text{eff}} = \text{quality}(D) \cdot |D|\) — effective data depends on quality, not just volume.
+
+**Specialized variants**: Qwen2.5-Math, Qwen2.5-Coder, QwQ (reasoning), and multimodal Qwen-VL demonstrate that a single pre-trained base can be efficiently specialized via targeted post-training.
+
+**Interview questions**:
+
+1. Qwen2.5-72B matches a 405B model. What does this say about the Chinchilla compute-optimal hypothesis, and how does data quality modify it?
+2. How does the strategy of training specialized variants (Math, Coder) from a single base compare to training separate models from scratch?
+3. What does Alibaba's model portfolio (open-weight base + API MoE variants + specialized) tell you about the economics of LLM deployment?
