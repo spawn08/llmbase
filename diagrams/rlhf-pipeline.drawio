@@ -1,0 +1,128 @@
+<mxfile host="app.diagrams.net" modified="2026-04-05T00:00:00.000Z" agent="llmbase" version="22.0.0">
+  <diagram id="rlhf-pipe" name="RLHF Pipeline">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="rh-title" value="RLHF: Supervised Fine-Tuning → Reward Modeling → PPO Alignment" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="400" y="24" width="1000" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-s1-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=25;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="48" y="80" width="480" height="520" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-s1-t" value="Stage 1: Supervised Fine-Tuning (SFT)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=13;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="48" y="88" width="480" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-data-sft" value="Demonstrations&#xa;(prompt, response pairs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="140" width="180" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-base" value="Base&#xa;(pretrained) Model" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="240" width="180" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-sft-model" value="SFT Model&#xa;(policy π_SFT)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="360" width="180" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-sft-note" value="Train on human-written or curated completions" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontColor=#333333;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="80" y="440" width="400" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-edge-sft1" value="training data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="rh-data-sft" target="rh-sft-model">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="168"/>
+              <mxPoint x="280" y="386"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rh-edge-sft2" value="initialize" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="rh-base" target="rh-sft-model">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-s2-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=22;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="560" y="80" width="480" height="520" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-s2-t" value="Stage 2: Reward Model (RM)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=13;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="560" y="88" width="480" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-rank" value="Human rankings / preferences&#xa;(chosen vs. rejected)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="140" width="200" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-rm" value="Reward Model r(x, y)&#xa;(scalar score)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="600" y="260" width="200" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-rm-note" value="Often initialized from SFT, trained as classifier / regressor on preferences" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=#333333;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="600" y="340" width="400" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-edge-rm" value="fit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="rh-rank" target="rh-rm">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-s3-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=28;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1072" y="80" width="680" height="520" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-s3-t" value="Stage 3: PPO (Proximal Policy Optimization)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=13;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="1072" y="88" width="680" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-sft-in" value="SFT Model&#xa;(π_SFT reference)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="160" width="160" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-rm-in" value="Reward Model" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="160" width="160" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-ppo" value="PPO loop&#xa;(policy gradient + value)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1180" y="280" width="240" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-kl" value="KL penalty&#xa;vs. π_SFT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1500" y="280" width="140" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-aligned" value="Aligned Model&#xa;(π* policy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1200" y="400" width="200" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-edge-ppo1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="rh-sft-in" target="rh-ppo">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-edge-ppo2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="rh-rm-in" target="rh-ppo">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-edge-kl" value="constraint" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="1" source="rh-kl" target="rh-ppo">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1570" y="240"/>
+              <mxPoint x="1300" y="240"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rh-edge-out" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="rh-ppo" target="rh-aligned">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rh-bridge1" value="policy for rollout" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1" source="rh-sft-model" target="rh-rank">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="386"/>
+              <mxPoint x="380" y="500"/>
+              <mxPoint x="520" y="500"/>
+              <mxPoint x="520" y="168"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rh-bridge2" value="SFT checkpoint" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;strokeColor=#6c8ebf;fontSize=10;" edge="1" parent="1" source="rh-sft-model" target="rh-sft-in">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="386"/>
+              <mxPoint x="440" y="620"/>
+              <mxPoint x="1200" y="620"/>
+              <mxPoint x="1200" y="212"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rh-bridge3" value="reward signal" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1" source="rh-rm" target="rh-rm-in">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="286"/>
+              <mxPoint x="900" y="660"/>
+              <mxPoint x="1400" y="660"/>
+              <mxPoint x="1400" y="212"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

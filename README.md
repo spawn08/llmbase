@@ -13,8 +13,8 @@ A ground-up guide to Large Language Models — from first principles to cutting-
 | **3. Training & Alignment** | Pre-training, distributed training, mixed precision, SFT, RLHF/DPO, Constitutional AI, LoRA/PEFT | Complete |
 | **4. Inference & Serving** | Decoding strategies, KV cache, speculative decoding, continuous batching, quantization, serving systems | Complete |
 | **5. Advanced Topics** | RAG, agents & tool use, long-context, multimodal LLMs, emergent capabilities, evaluation, safety | Complete |
-| **6. Research Papers** | 25 landmark papers with TL;DR, key contributions, and code | Planned |
-| **7. Recent Advances** | Rolling updates on frontier research | Planned |
+| **6. Research Papers** | 25 landmark papers with TL;DR, key contributions, and code | Complete |
+| **7. Recent Advances** | Rolling updates on frontier research (April 2026) | Complete |
 
 ## Quick Start
 
@@ -50,8 +50,8 @@ docs/
 ├── 03_training/             # 7 topics
 ├── 04_inference/            # 6 topics
 ├── 05_advanced/             # 7 topics
-├── 06_research_papers/      # planned
-├── 07_recent_advances/      # planned
+├── 06_research_papers/      # 25 landmark papers
+├── 07_recent_advances/      # 10 frontier topics
 └── interview_questions.md
 ```
 

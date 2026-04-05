@@ -1,0 +1,144 @@
+<mxfile host="app.diagrams.net" modified="2026-04-05T00:00:00.000Z" agent="llmbase" version="22.0.0">
+  <diagram id="tf-arch" name="Transformer Architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="ta-title" value="Transformer: Encoder (left) and Decoder (right)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="480" y="20" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-enc-label" value="Encoder stack" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="80" y="56" width="200" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-dec-label" value="Decoder stack" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="56" width="200" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e1" value="Input tokens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="88" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e2" value="Input Embedding&#xa;+ Positional Encoding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="152" width="160" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e3" value="Multi-Head&#xa;Self-Attention" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="228" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e4" value="Add &amp; Norm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="292" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e5" value="Feed-Forward&#xa;Network (FFN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="352" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e6" value="Add &amp; Norm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="416" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e7" value="× N encoder layers&#xa;(repeat block above)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;dashed=1;fontSize=11;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="80" y="476" width="160" height="44" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-e8" value="Encoder output&#xa;(memory to decoder)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="540" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d1" value="Output tokens&#xa;(shifted right)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="88" width="160" height="44" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d2" value="Output Embedding&#xa;+ Positional Encoding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="152" width="160" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d3" value="Masked Multi-Head&#xa;Self-Attention" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="224" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d4" value="Add &amp; Norm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="288" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d5" value="Multi-Head&#xa;Cross-Attention" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1120" y="344" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d6" value="Add &amp; Norm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="408" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d7" value="Feed-Forward&#xa;Network (FFN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="468" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d8" value="Add &amp; Norm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="532" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d9" value="× N decoder layers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;dashed=1;fontSize=11;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="1120" y="588" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d10" value="Linear + Softmax&#xa;→ probabilities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="648" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-d11" value="Output (next-token dist.)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1120" y="720" width="160" height="44" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-legend-blue" value="Attention" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="640" width="100" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-legend-green" value="FFN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="640" width="100" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-legend-orange" value="Norm (Add&amp;Norm)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="640" width="120" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-e1" target="ta-e2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-e2" target="ta-e3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-e3" target="ta-e4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-e4" target="ta-e5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-e5" target="ta-e6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="ta-e6" target="ta-e7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="ta-e7" target="ta-e8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d1" target="ta-d2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d2" target="ta-d3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d3" target="ta-d4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d4" target="ta-d5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d5" target="ta-d6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d6" target="ta-d7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d7" target="ta-d8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="ta-d8" target="ta-d9">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="ta-d9" target="ta-d10">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-edge-d10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="ta-d10" target="ta-d11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ta-cross" value="K, V from encoder" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeWidth=2;endArrow=classic;endFill=1;strokeColor=#b85450;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontColor=#b85450;fontStyle=1;fontSize=10;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ta-e8" target="ta-d5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="564"/>
+              <mxPoint x="720" y="368"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

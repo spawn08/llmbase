@@ -1,0 +1,113 @@
+<mxfile host="app.diagrams.net" modified="2026-04-05T00:00:00.000Z" agent="llmbase" version="22.0.0">
+  <diagram id="moe-route" name="MoE Routing">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="mo-title" value="Mixture-of-Experts layer: router, top-k gating, sparse experts, weighted fusion" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="360" y="20" width="880" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-tok" value="Token embedding&#xa;h ∈ ℝ^d" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="140" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-router" value="Router / Gate&#xa;G(h) → logits over N experts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="300" y="112" width="200" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-topk" value="Top-k selection&#xa;(e.g. k = 2 of 8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="560" y="120" width="160" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e1" value="Expert 1&#xa;FFN₁(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;strokeWidth=3;" vertex="1" parent="1">
+          <mxGeometry x="200" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e2" value="Expert 2&#xa;FFN₂(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;strokeWidth=3;" vertex="1" parent="1">
+          <mxGeometry x="320" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e3" value="Expert 3&#xa;FFN₃(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e4" value="Expert 4&#xa;FFN₄(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="560" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e5" value="Expert 5&#xa;FFN₅(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="680" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e6" value="Expert 6&#xa;FFN₆(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="800" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e7" value="Expert 7&#xa;FFN₇(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="920" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e8" value="Expert 8&#xa;FFN₈(h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="280" width="100" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-hi-note" value="Activated (k = 2): Expert 1 and Expert 2" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=#26734a;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="200" y="352" width="320" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-sum" value="Weighted combination&#xa;y = Σᵢ gᵢ · Eᵢ(h)&#xa;(only top-k terms nonzero)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="520" y="420" width="220" height="72" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-out" value="Layer output&#xa;(residual path optional)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="560" y="540" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-lbl" value="Auxiliary load-balancing loss: encourage uniform expert usage (e.g. Switch Transformer / GShard style). Reduces collapse where a few experts take most tokens." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9e6;strokeColor=#d6b656;fontSize=10;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="80" y="640" width="1120" height="72" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-t1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="mo-tok" target="mo-router">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-t2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="mo-router" target="mo-topk">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r1" value="g₁" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;endArrow=classic;endFill=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1" source="mo-topk" target="mo-e1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r2g" value="g₂" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;endArrow=classic;endFill=1;strokeColor=#82b366;fontSize=10;" edge="1" parent="1" source="mo-topk" target="mo-e2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r5d" value="not selected" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#cccccc;fontSize=8;fontColor=#999999;" edge="1" parent="1" source="mo-topk" target="mo-e5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#cccccc;" edge="1" parent="1" source="mo-topk" target="mo-e3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#cccccc;" edge="1" parent="1" source="mo-topk" target="mo-e4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#cccccc;" edge="1" parent="1" source="mo-topk" target="mo-e6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#cccccc;" edge="1" parent="1" source="mo-topk" target="mo-e7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-r8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#cccccc;" edge="1" parent="1" source="mo-topk" target="mo-e8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-tok-copy" value="h" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#d6b656;fontSize=9;" edge="1" parent="1" source="mo-tok" target="mo-e1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="150" y="240"/>
+              <mxPoint x="250" y="240"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mo-e-tok-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1;dashed=1;endArrow=classic;endFill=1;strokeColor=#d6b656;fontSize=9;" edge="1" parent="1" source="mo-tok" target="mo-e2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="150" y="240"/>
+              <mxPoint x="370" y="240"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mo-e-s1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;endArrow=classic;endFill=1;strokeColor=#82b366;" edge="1" parent="1" source="mo-e1" target="mo-sum">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-s2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;endArrow=classic;endFill=1;strokeColor=#82b366;" edge="1" parent="1" source="mo-e2" target="mo-sum">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="mo-e-out" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;" edge="1" parent="1" source="mo-sum" target="mo-out">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
