@@ -1,113 +1,223 @@
-# 1.6 — Mathematics of Attention
+# Mathematics of Attention
 
-## Intuition
+## Why This Matters for LLMs
 
-Attention answers one question: **given a set of values, which ones should I focus on right now?** It computes a *weighted sum* of values, where the weights are determined by how relevant each value is to the current query. This mechanism — going from Bahdanau's additive score (Part 1.4) to the scaled dot-product used in every Transformer — is arguably the single most important equation in modern deep learning.
-
----
-
-## Core concepts
-
-### From Bahdanau to dot-product
-
-Recall from Part 1.4 that Bahdanau attention uses a learned scoring network:
-
-\[
-e_{t,j} = \mathbf{v}^T \tanh(W_1 \mathbf{h}_j + W_2 \mathbf{s}_t)
-\]
-
-This is **additive attention** — expressive but slow, requiring a forward pass through a small network for every (query, key) pair.
-
-**Dot-product attention** (Luong, 2015) replaces this with:
-
-\[
-e_{t,j} = \mathbf{s}_t^T \mathbf{h}_j
-\]
-
-This is a simple inner product — fast and parallelizable, but its magnitude grows with the dimension of the vectors.
-
-### Scaled dot-product attention (Vaswani et al., 2017)
-
-The Transformer's attention divides by \(\sqrt{d_k}\) to stabilize gradients:
-
-\[
-\text{Attention}(Q, K, V) = \text{softmax}\!\Bigl(\frac{QK^T}{\sqrt{d_k}}\Bigr) V
-\]
-
-where:
-
-- \(Q \in \mathbb{R}^{n \times d_k}\) — **queries** (what am I looking for?)
-- \(K \in \mathbb{R}^{m \times d_k}\) — **keys** (what do I contain?)
-- \(V \in \mathbb{R}^{m \times d_v}\) — **values** (what information do I provide?)
-- \(n\) = number of query positions, \(m\) = number of key/value positions
-
-### Why scale by \(\sqrt{d_k}\)?
-
-If entries of \(Q\) and \(K\) are i.i.d. with mean 0 and variance 1, then:
-
-\[
-\text{Var}\bigl(\mathbf{q}^T \mathbf{k}\bigr) = d_k
-\]
-
-For large \(d_k\) (e.g., 64 or 128), the dot products become very large in magnitude. When fed into softmax, this pushes outputs toward one-hot vectors — the softmax saturates, and gradients vanish. Dividing by \(\sqrt{d_k}\) restores unit variance:
-
-\[
-\text{Var}\!\Bigl(\frac{\mathbf{q}^T \mathbf{k}}{\sqrt{d_k}}\Bigr) = 1
-\]
-
-### Softmax as a soft argmax
-
-The softmax function converts raw scores into a probability distribution:
-
-\[
-\text{softmax}(z_i) = \frac{\exp(z_i)}{\sum_j \exp(z_j)}
-\]
-
-**Properties:**
-
-- Output sums to 1 (valid probability distribution).
-- Differentiable — unlike hard argmax.
-- **Temperature** — dividing logits by \(\tau\) before softmax controls sharpness: small \(\tau\) → peaky (near argmax), large \(\tau\) → uniform. This is exactly the temperature parameter used during LLM decoding (Part 4.1).
-
-### Attention as soft dictionary lookup
-
-Think of attention as a **differentiable dictionary**:
-
-| Concept | Standard dict | Attention |
-| --- | --- | --- |
-| Lookup | Exact key match | Soft similarity to all keys |
-| Output | Single value | Weighted sum of all values |
-| Gradient | None (discrete) | Flows through weights |
-
-The query "looks up" the most relevant keys, and the output is a blend of their values proportional to relevance.
-
-### Multi-head attention (preview)
-
-Instead of one attention function, the Transformer runs \(h\) parallel heads with separate learned projections:
-
-\[
-\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
-\]
-
-\[
-\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) W^O
-\]
-
-Each head can learn a different type of relationship (positional, syntactic, semantic). The full treatment is in Part 2.2.
-
-### Masking
-
-In decoder self-attention (autoregressive), we prevent position \(i\) from attending to positions \(> i\). This is done by adding \(-\infty\) to those entries in the score matrix before softmax:
-
-\[
-\text{score}_{i,j} = \begin{cases} \frac{\mathbf{q}_i^T \mathbf{k}_j}{\sqrt{d_k}} & \text{if } j \le i \\ -\infty & \text{if } j > i \end{cases}
-\]
-
-After softmax, \(-\infty\) entries become 0 — the model cannot "see the future."
+Every decoder-only LLM (GPT-class), encoder-only model (BERT-class), and encoder–decoder (T5, translation) **is** attention stacks plus MLPs plus norms. **Scaled dot-product attention** \(\text{softmax}(QK^\top/\sqrt{d_k})V\) is the **atomic** operation interviewers whiteboard first. Understanding **scaling**, **masks**, **multi-head** splitting, and **\(O(T^2)\)** cost is table stakes for systems roles (KV cache, FlashAttention) and research roles (linear attention, state-space layers). This page ties **Bahdanau → dot product → scaled softmax → Transformer** into one quantitative thread.
 
 ---
 
-## Code — Scaled dot-product attention from scratch
+## Core Concepts
+
+### From Bahdanau to Dot-Product
+
+Bahdanau (additive) attention:
+
+\[
+e_{t,j} = \mathbf{v}^\top \tanh(W_1 \mathbf{h}_j^{\text{enc}} + W_2 \mathbf{s}_t)
+\]
+
+**Dot-product** attention (Luong / Transformer style) replaces the small MLP score with **compatibility** between **query** and **key** vectors:
+
+\[
+e_{i,j} = \mathbf{q}_i^\top \mathbf{k}_j
+\]
+
+!!! math-intuition "In Plain English"
+    - **Query** \(\mathbf{q}_i\): “what I am looking for at position \(i\).”
+    - **Key** \(\mathbf{k}_j\): “what is offered at position \(j\).”
+    - **Dot product**: similarity if vectors are unit-norm—large positive → **align**; negative → anti-align.
+
+### Scaled Dot-Product Attention
+
+\[
+\text{Attention}(Q, K, V) = \text{softmax}\!\Bigl(\frac{QK^\top}{\sqrt{d_k}}\Bigr) V
+\]
+
+Shapes: \(Q \in \mathbb{R}^{T \times d_k}\), \(K \in \mathbb{R}^{T \times d_k}\), \(V \in \mathbb{R}^{T \times d_v}\). Output: \(\mathbb{R}^{T \times d_v}\).
+
+!!! math-intuition "In Plain English"
+    - \(QK^\top\): **all-pairs** similarity scores between queries (rows of \(Q\)) and keys (rows of \(K\)).
+    - **Softmax** turns each query row into **weights** over positions.
+    - **Multiply by \(V\)**: **blend** value vectors—**differentiable** weighted sum.
+
+### Why \(\sqrt{d_k}\)? — Numerical Stabilization
+
+If components of \(\mathbf{q}, \mathbf{k}\) are i.i.d. with variance 1 and mean 0, then
+
+\[
+\mathbb{E}[\mathbf{q}^\top \mathbf{k}] = 0,\quad \mathrm{Var}(\mathbf{q}^\top \mathbf{k}) = d_k
+\]
+
+Thus dot products **grow** like \(\sqrt{d_k}\) in typical magnitude. **Softmax** of huge logits \(\to\) **nearly one-hot** \(\to\) **vanishing gradients** through other positions. Dividing by \(\sqrt{d_k}\) **re-scales** logits to \(\mathrm{Var} \approx 1\).
+
+!!! example "Numerical Demo: \(d_k = 512\)"
+    Rough i.i.d. heuristic: **unscaled** dot \(\mathbf{q}^\top\mathbf{k}\) has **standard deviation** \(\approx \sqrt{d_k} = \sqrt{512} \approx 22.6\). Softmax on five logits around **22** vs **0** is effectively **argmax**—gradients through non-argmax positions \(\approx 0\).
+
+    **Scaled** logits use \(\mathbf{q}^\top\mathbf{k}/\sqrt{512}\): typical std \(\approx 22.6 / 22.6 = 1\). Softmax is **smoother**; training signal reaches multiple positions.
+
+    (Real networks learn non-i.i.d. statistics; **learned** LayerNorm and projections matter—but the **variance argument** is the textbook reason for the scale.)
+
+### Softmax and Temperature
+
+\[
+\text{softmax}(z_i; \tau) = \frac{\exp(z_i / \tau)}{\sum_j \exp(z_j / \tau)}
+\]
+
+!!! math-intuition "In Plain English"
+    - \(\tau \to 0^+\): **sharper** distribution (approaches one-hot).
+    - \(\tau \to \infty\): **uniform** mixing.
+    - **Decoding temperature** in LMs applies the same idea to **next-token** logits—not identical to attention temperature, but the **same function family**.
+
+---
+
+## Worked Example: Four Tokens, \(d_k = 4\)
+
+**Tokens:** `["The", "cat", "sat", "."]` — indices \(0..3\).
+
+### 1. Toy \(Q\), \(K\), \(V\) (each \(4 \times 4\))
+
+Use **simple integers** (pedagogical, not trained weights):
+
+\[
+Q = 2 I_4 = \begin{bmatrix}
+2&0&0&0\\0&2&0&0\\0&0&2&0\\0&0&0&2
+\end{bmatrix}
+\]
+
+\[
+K = \begin{bmatrix}
+1&1&0&0\\
+1&0&1&0\\
+0&1&1&0\\
+0&0&1&1
+\end{bmatrix},
+\quad
+V = \begin{bmatrix}
+1&0&0&0\\
+0&1&0&0\\
+0&0&1&0\\
+0&0&0&1
+\end{bmatrix}
+\]
+
+(Here \(V=I\) so **output row** is literally the softmax **weight vector** over positions—easy to read.)
+
+### 2. Compute \(S = Q K^\top\) (every cell)
+
+\(K^\top\) is:
+
+\[
+K^\top = \begin{bmatrix}
+1&1&0&0\\
+1&0&1&0\\
+0&1&1&0\\
+0&0&1&1
+\end{bmatrix}
+\]
+
+Since \(Q = 2I\), **\(S = Q K^\top = 2 K^\top\)**:
+
+\[
+S = \begin{bmatrix}
+2&2&0&0\\
+2&0&2&0\\
+0&2&2&0\\
+0&0&2&2
+\end{bmatrix}
+\]
+
+**Cell check (row 0 · col 2):** Row0 of \(Q\) is \([2,0,0,0]\), col2 of \(K^\top\) is \([0,1,1,0]^\top\), dot \(=0\). Matches \(S_{0,2}=0\).
+
+### 3. Scale: \(S / \sqrt{d_k} = S / 2\)
+
+\[
+\frac{S}{2} = \begin{bmatrix}
+1&1&0&0\\
+1&0&1&0\\
+0&1&1&0\\
+0&0&1&1
+\end{bmatrix}
+\]
+
+### 4. Softmax **row-wise** — show **row 0** fully
+
+Row 0 logits: \([1, 1, 0, 0]\).
+
+\[
+e^1 \approx 2.718,\quad e^0 = 1
+\]
+
+Numerators: \([2.718,\, 2.718,\, 1,\, 1]\). Sum \(\approx 7.436\).
+
+\[
+w_{0,0} \approx 2.718/7.436 \approx 0.366,\quad
+w_{0,1} \approx 0.366,\quad
+w_{0,2} \approx 0.134,\quad
+w_{0,3} \approx 0.134
+\]
+
+(Weights sum to 1; positions 0 and 1 tie for **highest** mass because logits tied at 1.)
+
+### 5. Output row 0: \(w_0 V\)
+
+Because \(V=I\), **output row 0** \(\approx [0.366,\, 0.366,\, 0.134,\, 0.134]\)—the **context vector** for token “The” is a **blend** of positional value vectors with those weights.
+
+!!! math-intuition "In Plain English"
+    - Row \(i\) of the attention output is: “**re-read** all positions, mixing their **values** by how well **keys** match **query** \(i\).”
+    - With \(V=I\), you literally see the **attention distribution** as the row vector.
+
+---
+
+## Causal (Autoregressive) Masking
+
+For **decoder** self-attention, position \(i\) must **not** depend on \(j > i\). Take the **scaled** score matrix \(Z = S/\sqrt{d_k}\). **Causal mask** sets \(Z_{i,j} = -\infty\) for \(j > i\) **before** softmax.
+
+!!! example "Mask Walkthrough (same \(Z\) as above)"
+    For **row 3** (token “.”), without mask, logits were \([0,0,1,1]\). With **causal** constraint, positions \(j>3\) do not exist; row 3 only has \(j \le 3\). For **row 0**, mask out \(j>0\): keep only column 0 → softmax over a **single** finite logit → weight \(1\) on self (often combined with **causal** + **additive** pos encodings in real models).
+
+    **Typical 4×4 causal \(Z'\)** (set upper triangle to \(-\infty\); shown symbolically):
+
+    \[
+    Z'_{i,j} = \begin{cases}
+    Z_{i,j} & j \le i \\
+    -\infty & j > i
+    \end{cases}
+    \]
+
+    After softmax, **masked** positions have **weight 0**—no information flows from the future.
+
+!!! math-intuition "In Plain English"
+    - **\(-\infty\)** + softmax = **0** probability—clean masking without “almost zero” numerical hacks (implementation uses large negative floats).
+
+### Multi-Head Intuition
+
+\[
+\text{head}_h = \text{softmax}\!\Bigl(\frac{Q_h K_h^\top}{\sqrt{d_k}}\Bigr) V_h, \quad Q_h = X W_h^Q,\ \ldots
+\]
+
+!!! math-intuition "In Plain English"
+    - Each **head** projects into a **subspace** where a different similarity makes sense.
+    - **Possible specialization (story, not guaranteed):** Head A attends to **local** neighbors (syntax / n-grams); Head B attends to **distant** coreferent mentions. In practice, heads are **mixed**, but **multi-head** increases **capacity** vs. one attention pool.
+
+---
+
+## Complexity Analysis
+
+For sequence length \(T\), head dimension \(d_k\), value dimension \(d_v\), **one** attention layer (single head):
+
+- **Form \(QK^\top\):** \(O(T^2 d_k)\) multiply–accumulates (each of \(T^2\) scores needs \(d_k\) ops).
+- **Softmax:** \(O(T^2)\).
+- **Multiply by \(V\):** \(O(T^2 d_v)\).
+
+**Dominant** term is often \(O(T^2 \cdot \max(d_k, d_v))\). **Memory** for full scores: \(O(T^2)\)—the **KV cache** and **FlashAttention** story for long contexts.
+
+!!! example "Plug in Numbers: \(T=2048\), \(d_k=64\)"
+    - Rough MACs for \(QK^\top\): \(T^2 d_k = 2048^2 \times 64 = 4{,}194{,}304 \times 64 \approx 2.68 \times 10^8\) MACs **per head per layer** (order-of-magnitude; constants omitted).
+    - This quadratic **\(T^2\)** term is why **long-context** inference stresses **memory bandwidth** and why **subquadratic** alternatives (linear attention, state-space models, sliding windows) matter.
+
+---
+
+## Code (existing implementation, with inline comments)
 
 ```python
 """
@@ -140,12 +250,14 @@ def scaled_dot_product_attention(
         weights: (B, ..., n, m)
     """
     d_k = Q.size(-1)
+    # Raw affinities: each query row vs all key rows
     scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(d_k)  # (B,...,n,m)
 
     if mask is not None:
+        # Set masked positions to -inf so softmax -> 0 there
         scores = scores.masked_fill(~mask, float("-inf"))
 
-    weights = F.softmax(scores, dim=-1)  # (B,...,n,m)
+    weights = F.softmax(scores, dim=-1)  # (B,...,n,m) — convex combo per query row
     output = torch.matmul(weights, V)    # (B,...,n,d_v)
     return output, weights
 
@@ -179,6 +291,7 @@ class MultiHeadAttention(nn.Module):
         B, n, _ = Q.shape
         m = K.size(1)
 
+        # Split last dim into heads: (B, n, H, d_k) -> (B, H, n, d_k) for batched matmuls
         q = self.W_q(Q).view(B, n, self.n_heads, self.d_k).transpose(1, 2)
         k = self.W_k(K).view(B, m, self.n_heads, self.d_k).transpose(1, 2)
         v = self.W_v(V).view(B, m, self.n_heads, self.d_k).transpose(1, 2)
@@ -186,7 +299,7 @@ class MultiHeadAttention(nn.Module):
         if mask is not None and mask.dim() == 2:
             mask = mask.unsqueeze(0).unsqueeze(0)  # (1, 1, n, m)
 
-        out, weights = scaled_dot_product_attention(q, k, v, mask)
+        out, weights = scaled_dot_product_attention(q, k, v, mask=mask)
         out = out.transpose(1, 2).contiguous().view(B, n, -1)
         return self.W_o(out), weights
 
@@ -245,7 +358,7 @@ if __name__ == "__main__":
     # 4) Visualize head 0
     plot_attention(mha_w[0, 0], tokens)
 
-    # 5) Show scaling effect
+    # 5) Show scaling effect: unscaled vs scaled dot products -> softmax saturation
     d_k_large = 512
     q = torch.randn(1, 1, d_k_large)
     k = torch.randn(1, 5, d_k_large)
@@ -259,15 +372,39 @@ if __name__ == "__main__":
 
 ---
 
-## Interview takeaways
+## Deep Dive
 
-1. **The attention equation** — be ready to write \(\text{softmax}(QK^T / \sqrt{d_k}) \, V\) on a whiteboard and explain each term: queries select, keys are compared, values are retrieved, scaling prevents saturation.
-2. **Why \(\sqrt{d_k}\)?** — dot-product variance grows linearly with \(d_k\). Without scaling, softmax saturates and gradients vanish. This is the single most-asked "why" question about attention.
-3. **Softmax temperature** — same math as decoding temperature. Low temp → sharper attention → more like hard lookup. High temp → uniform → more like averaging.
-4. **Causal mask** — autoregressive models (GPT) add a triangular mask so token \(i\) cannot attend to token \(j > i\). Know that this is applied *before* softmax by adding \(-\infty\).
-5. **Complexity** — standard attention is \(O(n^2 d)\) in compute and \(O(n^2)\) in memory (the score matrix). This quadratic cost is what FlashAttention, linear attention, and state-space models address.
-6. **Multi-head = multiple subspaces** — each head projects Q/K/V into a smaller subspace. Different heads learn different patterns (e.g., one head for position, another for syntax). Outputs are concatenated and projected.
-7. **Self-attention vs. cross-attention** — self: Q, K, V all come from the same sequence. Cross: Q from decoder, K/V from encoder. The Transformer uses both.
+??? deep-dive "Attention as Low-Rank Kernel Approximation (sketch)"
+    Writing \(A = \text{softmax}(QK^\top/\sqrt{d_k})\) is **not** linear, but **before softmax**, scores are **rank-\(\le d_k\)** bilinear forms. Some **linear attention** methods replace softmax with feature maps \(\phi(Q)\phi(K)^\top\) to get **subquadratic** or recurrent forms—useful context for “**alternatives to softmax attention**” questions.
+
+??? deep-dive "FlashAttention — What Problem It Solves"
+    **Standard** attention materializes \(T \times T\) scores in **HBM**; **FlashAttention** tiles computation to use **SRAM**, reducing **memory traffic**. Know: **asymptotic** \(O(T^2)\) unchanged, **wall-clock** and **memory footprint** improved—critical at **long** \(T\).
+
+---
+
+## Interview Guide
+
+!!! interview "FAANG-Level Questions"
+    1. **Write scaled dot-product attention** and identify \(Q\), \(K\), \(V\).
+    2. **Why divide by \(\sqrt{d_k}\)?** — Variance of dot products grows with \(d_k\); softmax saturates without scale.
+    3. **What is causal masking and where applied?** — Before softmax, set forbidden \(j>i\) to \(-\infty\); used in **decoder** self-attention.
+    4. **Self-attention vs. cross-attention?** — Same math; **cross** uses \(Q\) from decoder, \(K,V\) from encoder in **seq2seq** Transformers.
+    5. **Compute complexity of attention?** — \(O(T^2 d)\) dominant for \(QK^\top\) and softmax matmuls; **memory** \(O(T^2)\) for scores unless fused/blockwise.
+    6. **What does multi-head buy?** — Multiple **subspaces** / relationship types; more parameters and rank capacity.
+    7. **Temperature vs. attention sharpness?** — Same softmax family; low temperature → peaked distributions.
+    8. **Why not additive Bahdanau everywhere?** — Dot-product is **fast** on GPUs/TPUs—matrix multiply friendly.
+    9. **Gradient flow:** what happens if softmax is almost one-hot? — Small gradients to non-selected positions.
+    10. **KV cache in autoregressive decoding?** — Reuse past **keys/values** for new queries—saves recomputation; **still linear** memory in \(T\) for cache size.
+
+!!! interview "Follow-up Probes"
+    - “**Relative position** encodings—where do they enter?” — often **bias** to \(QK^\top\) or alternate RPE layers (Transformer-XL, T5 biases).
+    - “**AliBi** vs. rotary?” — both inject position info; know **high-level** tradeoffs only if you claim expertise.
+
+!!! key-phrases "Key Phrases to Use in Interviews"
+    - “**Scaled dot-product** keeps logits \(O(1)\) so **softmax** doesn’t **saturate**.”
+    - “**Causal mask** enforces **autoregressive** factorization—no **future** tokens.”
+    - “**Attention is \(O(T^2)\)** in sequence length—that’s the **long-context** bottleneck.”
+    - “**Multi-head** learns **multiple** compatibility functions in **parallel subspaces**.”
 
 ---
 
@@ -277,3 +414,4 @@ if __name__ == "__main__":
 - Luong et al. (2015), *Effective Approaches to Attention-Based NMT*
 - Bahdanau et al. (2015), *Neural Machine Translation by Jointly Learning to Align and Translate*
 - [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/) — Jay Alammar
+- Dao et al. — FlashAttention (IO-aware exact attention)

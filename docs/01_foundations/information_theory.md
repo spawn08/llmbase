@@ -150,6 +150,47 @@ Average **per-token** cross-entropy (nats): \(\hat{H} = -\frac{1}{T}\sum_{t=1}^T
     - \(\beta\) trades **helpfulness** vs. **staying on-distribution**.
     - Implementations approximate KL with **closed-form** expressions for Gaussians in some diffusion work; for discrete tokens, **Monte Carlo** or **analytic** softmax-KL pieces appear depending on algorithm (PPO, DPO, etc.).
 
+### Minimizing Cross-Entropy ≡ Minimizing Forward KL to Data
+
+\[
+\arg\min_\theta H(p, q_\theta) = \arg\min_\theta D_{\text{KL}}(p \| q_\theta)
+\]
+
+because \(H(p)\) does not depend on \(\theta\).
+
+!!! math-intuition "In Plain English"
+    **MLE** pushes \(q_\theta\) toward **covering** the data distribution—**forward KL** intuition. This is why **hallucination** is not solved by CE alone: **missing** modes in data are not heavily penalized if the model stays **sharp** elsewhere (plus many other factors).
+
+### Bits vs. Nats (Interview Hygiene)
+
+\[
+H_{\text{bits}} = -\sum_x p(x) \log_2 p(x), \qquad
+H_{\text{nats}} = -\sum_x p(x) \ln p(x), \quad H_{\text{nats}} = H_{\text{bits}} \cdot \ln 2
+\]
+
+!!! example "Worked Example: Fair Coin in Both Units"
+    Fair coin: \(H = 1\) bit \(= \ln 2 \approx 0.693\) nats. When comparing papers, **check the log base** before claiming one model has “lower entropy” than another.
+
+### Mutual Information (Bridge to Advanced Topics)
+
+\[
+I(X; Y) = D_{\text{KL}}(p(x,y) \| p(x)p(y)) = H(X) - H(X \mid Y)
+\]
+
+!!! math-intuition "In Plain English"
+    **How much** \(Y\) tells you about \(X\). Used in **information bottleneck** (“compress \(X\) into \(Z\) while keeping \(I(Z;Y)\) high”), **representation** probing, and some **interpretability** analyses of layers.
+
+### DPO and Log-Ratio Views (High-Level)
+
+**Direct Preference Optimization** rewrites Bradley–Terry-style preferences using **log-probability differences** between policy and reference—**implicitly** controlling deviation from \(\pi_{\text{ref}}\). You rarely need the full loss on a whiteboard, but you should say: **preference learning** still compares **policy vs. reference** in log-space; **KL** is the **units** of “how far we drifted” from a trusted LM.
+
+### Full-Sentence Perplexity Chain (Worked)
+
+Given token NLLs \( \ell_t = -\log q(w_t \mid w_{<t})\) in nats, **mean** \(\bar{\ell} = \frac{1}{T}\sum_t \ell_t\), then \(\text{PPL} = \exp(\bar{\ell})\).
+
+!!! example "Worked Example: Three Tokens"
+    Suppose \(\ell_1 = 0.5\), \(\ell_2 = 1.0\), \(\ell_3 = 1.5\) nats. Mean \(\bar{\ell} = 3/3 = 1.0\) nats/token. \(\text{PPL} = e^1 \approx 2.72\) — very small because these numbers were toy-low; real LMs on WikiText sit at **much** higher \(\bar{\ell}\).
+
 ---
 
 ## Code (with inline comments)
@@ -226,6 +267,16 @@ print(f"Per-token perplexity: {ppl.item():.2f}")
 ??? deep-dive "Label Smoothing vs. True Entropy"
     **Label smoothing** replaces one-hot \(p\) with \((1-\epsilon)\) on true class and \(\epsilon/(K-1)\) elsewhere. This **raises** cross-entropy vs. hard targets but **lowers** overconfidence—acts as regularization. Connect to **calibration** and **generalization**.
 
+??? deep-dive "Why KL \(\ge 0\) (Jensen Sketch)"
+    Let \(f(t) = -\log t\), **convex** on \(t>0\). For any \(q\) with full support where needed, Jensen’s inequality on \(\sum_x p(x) f(q(x)/p(x))\) yields **non-negativity** of KL. Interviewers rarely want the full proof—**“convexity of \(-\log\)”** is the **buzzphrase**.
+
+### Smoothing, Zero Masses, and Numerical Safety
+
+If \(q(x)=0\) but \(p(x)>0\), cross-entropy has an **infinite** term—**why** training uses **label smoothing**, **temperature** bounds, and **epsilon** in some Keras/PyTorch recipes. In **evaluation**, perplexity on **held-out** text avoids **exact** zeros by construction (tokens appeared in vocab), but **subword** OOV handling still matters for fair comparison.
+
+!!! example "Worked Example: Tiny Smoothing Effect"
+    True class probability under label smoothing with \(K=4\), \(\epsilon=0.1\): target vector becomes \([0.925,\, 0.025,\, 0.025,\, 0.025]\) instead of \([1,0,0,0]\). Cross-entropy **no longer** blows up if the model puts \(0\) on a non-target class—gradients stay **finite**.
+
 ---
 
 ## Interview Guide
@@ -272,6 +323,21 @@ print(f"Per-token perplexity: {ppl.item():.2f}")
     - “**KL** measures **extra bits** from using \(q\) instead of \(p\).”
     - “**Forward KL** is **inclusive**; **reverse KL** can **miss modes**.”
     - “**Perplexity** is **exp(average cross-entropy)**—geometric mean **branching factor** intuition.”
+
+### Quick Reference Card (Loss ↔ Information)
+
+| Object | Formula (discrete) | Role in LLMs |
+| --- | --- | --- |
+| Entropy | \(-\sum p \log p\) | Irreducible uncertainty of **true** data |
+| Cross-entropy | \(-\sum p \log q\) | **Training loss** (next-token) |
+| KL | \(\sum p \log(p/q)\) | Gap between **target** and **model**; **RLHF** penalty |
+| Perplexity | \(\exp(\text{avg NLL})\) | **Scalar** model comparison on fixed test |
+
+**Sanity check:** On a **finite** alphabet, **entropy** is maximized by the **uniform** distribution—so if someone says “maximize entropy of outputs,” they may mean **encourage diversity** (different from CE training, which is **data-driven**).
+
+**Compare across models only** when the **tokenizer**, **test set**, and **context length** match—otherwise perplexity is **not** comparable apples-to-apples.
+
+For **byte-level** or **BPE** models, always note whether reported PPL is **per token** or **per byte** (BPC).
 
 ---
 

@@ -37,6 +37,10 @@ The **cosine similarity** \(\cos(\mathbf{u}_a, \mathbf{u}_b) = \frac{\mathbf{u}_
 
 Co-occurrence statistics say: words that appear in similar contexts behave like synonyms, antonyms in contrastive frames, or related entities. A model forced to predict missing words from neighbors must place words that share contexts near one another in vector space so that the same weight matrices can service many tokens. **Linear structure** emerges because many linguistic relations look like offsets: gender, tense, and capital-country pairs often appear as nearly parallel vector differences. That is not mysticism; it is a consequence of bilinear objectives and shared hidden layers compressing PMI-like statistics into low rank.
 
+Frequency effects matter: high-frequency function words dominate raw counts, so training recipes downsample “the” or use negative sampling from a tempered unigram distribution. Rare content words receive fewer gradient updates, which is why skip-gram often beats CBOW on rare tokens: skip-gram emits more training pairs where the rare word is the center. Geometry therefore mixes **semantic similarity** with **distributional similarity**, and the two align often enough that vector arithmetic makes headlines.
+
+When you measure **alignment** between embedding spaces (Procrustes analysis, orthogonal mapping), you are testing whether two models trained on different corpora carved the same low-dimensional structure into different bases. That is the same mathematical instinct behind **linear probes** on Transformer layers: if a simple map recovers labels from hidden states, the information is geometrically simple in that space.
+
 !!! example "Worked Example: Cosine Similarity in Two Dimensions (Illustrative)"
     Let \(\mathbf{v}_{\text{cat}} = (1.0, 0.2)\) and \(\mathbf{v}_{\text{dog}} = (0.9, 0.3)\).  
     Dot product: \(1.0 \cdot 0.9 + 0.2 \cdot 0.3 = 0.96\).  
@@ -44,6 +48,39 @@ Co-occurrence statistics say: words that appear in similar contexts behave like 
     Cosine: \(0.96 / (1.02 \cdot 0.95) \approx 0.99\).  
     Compare \(\mathbf{v}_{\text{rocket}} = (0.1, 1.0)\): dot with \(\mathbf{v}_{\text{cat}}\) is \(1.0 \cdot 0.1 + 0.2 \cdot 1.0 = 0.3\), norms product \(\approx 1.02 \cdot 1.005\), cosine \(\approx 0.29\).  
     The small toy vectors separate **domestic animals** from **vehicles** by angle, which is how evaluators summarize embedding quality at scale.
+
+### Embedding Arithmetic
+
+The famous analogy \(\mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}\) is evaluated by nearest-neighbor search after the vector combination.
+
+\[
+\mathbf{q} = \mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}},
+\qquad
+w^\star = \arg\max_{w \in \mathcal{V} \setminus \{\text{king},\text{man},\text{woman}\}} \cos(\mathbf{q}, \mathbf{v}_w).
+\]
+
+!!! math-intuition "In Plain English"
+    You add the vector difference that encodes “royal gender offset” to the vector for `woman`. If embeddings trained on news text, the closest word to \(\mathbf{q}\) is often `queen`. The operation is heuristic: it fails when multiple relations compete or when frequencies skew neighborhoods.
+
+!!! example "Worked Example: Two-Dimensional Analogy Arithmetic"
+    Let \(\mathbf{v}_{\text{king}} = (2, 0)\), \(\mathbf{v}_{\text{man}} = (1, 0)\), \(\mathbf{v}_{\text{woman}} = (1, 1)\), \(\mathbf{v}_{\text{queen}} = (2, 1)\), \(\mathbf{v}_{\text{child}} = (0, 2)\).  
+    \(\mathbf{q} = (2,0) - (1,0) + (1,1) = (2,1)\).  
+    Cosine of \(\mathbf{q}\) with \(\mathbf{v}_{\text{queen}} = (2,1)\) is \(1\) (perfect alignment).  
+    Cosine of \(\mathbf{q}\) with \(\mathbf{v}_{\text{child}}\): dot \(= 2\), norms \(\sqrt{5}\) and \(2\), cosine \(= 2 / (2\sqrt{5}) \approx 0.447\).  
+    The argmax over \(\{\text{queen}, \text{child}\}\) picks `queen`, matching the intended analogy in this fabricated numeric setup.
+
+### Word2Vec CBOW (Continuous Bag of Words)
+
+CBOW predicts the **center** word from the **average** of embeddings of surrounding words. For window \(c\), the context representation is:
+
+\[
+\mathbf{h}_t = \frac{1}{2c} \sum_{\substack{-c \le j \le c \\ j \ne 0}} \mathbf{v}_{w_{t+j}}.
+\]
+
+The model maximizes \(\sum_t \log P(w_t \mid \mathbf{h}_t)\) with a softmax over the vocabulary using \(\mathbf{h}_t\) in place of a single \(\mathbf{v}_{w_t}\).
+
+!!! math-intuition "In Plain English"
+    CBOW **compresses** the context into one vector by averaging neighbors before prediction. Averaging smooths rare contexts: several distinct neighbor words contribute partial evidence. Skip-gram instead holds the center fixed and emits separate predictions for each neighbor, which allocates more work to low-frequency center tokens.
 
 ### Word2Vec Skip-Gram
 
@@ -75,6 +112,13 @@ P(w_O \mid w_I) = \frac{\exp({\mathbf{v}'_{w_O}}^\top \mathbf{v}_{w_I})}{\sum_{w
     \(P(\text{queen} \mid \text{king}) \approx 1.492 / 4.246 \approx 0.35\).  
     If the true context word is `queen`, the contribution to \(\mathcal{L}\) is \(\log 0.35 \approx -1.05\).  
     **Gradient intuition (conceptual):** optimization increases \(s_{\text{queen}}\) by nudging \(\mathbf{v}_{\text{king}}\) to align better with \(\mathbf{v}'_{\text{queen}}\) and by nudging all \(\mathbf{v}'_{w}\) for incorrect words downward relative to the numerator. You do not need the full Jacobian on paper; you need the story: **pull true pair together, push negatives apart under the softmax pressure**.
+
+### Hierarchical Softmax (Optional Output Layer)
+
+Hierarchical softmax places words at **leaves of a binary tree** (often Huffman tree by frequency). The probability of word \(w\) is the product of branch decisions along the path from root to leaf, each branch a sigmoid of a learned score. Complexity drops from \(O(V)\) to \(O(\log V)\) per training step because only one root-to-leaf path is updated.
+
+!!! math-intuition "In Plain English"
+    Instead of comparing the center word against all vocabulary logits at once, the model walks a tree and multiplies probabilities of left-or-right choices. Frequent words live near the root on short paths; rare words take longer paths. The math is a product of sigmoids along the path.
 
 ### Negative Sampling
 
@@ -267,6 +311,10 @@ print("Saved: word2vec_tsne.png")
        *Depth:* Single vector averages all senses; contextual models disambiguate per token position.
     8. **Describe embedding arithmetic limitations.**  
        *Depth:* Analogies fail for symmetric or multi-relation words; small corpora give noisy directions.
+    9. **How would you detect hubness in k-NN embedding spaces?**  
+       *Depth:* Some vectors appear as nearest neighbors for many queries; mention cosine versus inner product, frequency bias, and evaluation on held-out analogy sets.
+    10. **Why does averaging Word2Vec vectors of words in a sentence give a crude sentence embedding?**  
+       *Depth:* Order ignored, polysemy ignored, function words dominate unless weighted; contextual models fix these by conditioning on full sequences.
 
 !!! interview "Follow-up Probes"
     1. Why might you raise unigram frequencies to the \(\frac{3}{4}\) power when sampling negatives?
@@ -289,4 +337,15 @@ print("Saved: word2vec_tsne.png")
 - Mikolov et al. (2013), *Efficient Estimation of Word Representations in Vector Space*
 - Pennington et al. (2014), *GloVe: Global Vectors for Word Representation*
 - Bojanowski et al. (2017), *Enriching Word Vectors with Subword Information*
+- Levy and Goldberg (2014), *Neural Word Embedding as Implicit Matrix Factorization* (connects skip-gram to PMI)
 - [Stanford CS224N — Word Vectors lecture](https://web.stanford.edu/class/cs224n/)
+
+**Reading order:** Start with Mikolov for training objectives, read Pennington for global matrix intuition, read Bojanowski for subwords, then Levy and Goldberg when you want the PMI bridge formalized.
+
+**Notation note:** Papers differ on whether \(\mathbf{v}_w\) denotes input or output vectors. Word2Vec uses two sets per word; GloVe uses word and context rows. In interviews, say “input and output embeddings” explicitly when discussing softmax parameters.
+
+**Evaluation:** WordSim-353 and analogy benchmarks (Google, MSR) measure cosine-neighborhood quality. Report intrinsic scores only alongside downstream task numbers when arguing real utility.
+
+**Stability:** Fixed random seeds and multiple runs matter: negative sampling is stochastic, and small corpora yield high-variance vectors.
+
+**License of corpora:** Redistribution terms affect which pretrained embeddings you may ship inside a commercial product; keep compliance separate from the math.
