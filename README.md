@@ -17,38 +17,50 @@ The goal is a single resource you can return to for interviews, system design, o
 
 ```
 llmbase/
-├── README.md                        ← This file (project overview + roadmap)
-├── requirements.txt                 ← Python dependencies for MkDocs
-├── docs/                            ← GitHub Pages source (Jekyll or MkDocs)
+├── README.md                        ← Project overview + roadmap
+├── LICENSE                          ← MIT (content + site tooling)
+├── requirements.txt                 ← Pinned MkDocs / Material / Jupyter plugin
+├── mkdocs.yml                       ← Site config (Material for MkDocs)
+├── .github/workflows/deploy.yml     ← Build site + push to gh-pages
+├── docs/                            ← Published Markdown (MkDocs site root)
 │   ├── index.md                     ← Landing page
-│   ├── 01_foundations/              ← Part 1: Foundations
-│   ├── 02_core_architectures/       ← Part 2: Core Architectures
-│   ├── 03_training/                 ← Part 3: Training & Alignment
-│   ├── 04_inference/                ← Part 4: Inference & Serving
-│   ├── 05_advanced/                 ← Part 5: Advanced Topics
-│   ├── 06_research_papers/          ← Part 6: Top 25 Research Papers
-│   ├── 07_recent_advances/          ← Part 7: Recent Advances
+│   ├── javascripts/mathjax.js       ← MathJax 3 config (Arithmatex)
+│   ├── 01_foundations/ … 07_recent_advances/
 │   └── assets/
-│       ├── diagrams/                ← draw.io XML + exported SVGs
-│       ├── notebooks/               ← Jupyter notebooks (linked inline)
-│       └── css/                     ← Custom theme overrides
-├── notebooks/                       ← Source Jupyter notebooks
+│       ├── diagrams/                ← Exported SVGs embedded in pages
+│       ├── notebooks/               ← Notebook links / copies for the site
+│       └── css/extra.css            ← Optional theme tweaks
+├── notebooks/                       ← Authoritative Jupyter notebooks (Colab)
 │   ├── foundations/
 │   ├── architectures/
 │   └── research/
-├── diagrams/                        ← draw.io source files (.drawio)
-└── mkdocs.yml                       ← Site config (or _config.yml for Jekyll)
+└── diagrams/                        ← draw.io sources (.drawio)
 ```
 
 ---
 
-## Prerequisites
+## Reader prerequisites
 
-To get the most out of LLMBase, you should have:
+- **Python 3.11+** for running examples and building the docs locally.
+- **Calculus & linear algebra** at an engineering level (gradients, matrices).
+- **Basic PyTorch** for later code-heavy sections (tensors, `nn.Module`).
 
-- **Python Proficiency**: Comfortable with Python 3.11+, OOP, and basic functional programming.
-- **Basic Calculus & Linear Algebra**: Understanding of derivatives, matrix multiplication, and vectors.
-- **Familiarity with PyTorch**: Basic tensor operations and neural network modules (`torch.nn`).
+---
+
+## Local preview (developers)
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+mkdocs serve
+# Open http://127.0.0.1:8000 — live reload while editing docs/
+```
+
+Build a static site under `site/` (gitignored):
+
+```bash
+mkdocs build
+```
 
 ---
 
@@ -82,7 +94,6 @@ To get the most out of LLMBase, you should have:
 
 | Topic | Description | Visualizations | Code |
 |---|---|---|---|
-| 3.0 Data Preparation | Deduplication, MinHash, filtering, PII removal | Data pipeline diagram | `datatrove` pipeline |
 | 3.1 Pre-training at Scale | Data pipelines, tokenization, BPE | BPE merge tree | `tokenizers` library walkthrough |
 | 3.2 Distributed Training | Data/model/pipeline/tensor parallelism | Parallelism strategy diagram | `torch.distributed` overview |
 | 3.3 Mixed Precision & Quantization | FP16, BF16, INT8, GPTQ | Precision format comparison | BitsAndBytes quantization |
@@ -107,12 +118,10 @@ To get the most out of LLMBase, you should have:
 | Topic | Description | Visualizations | Code |
 |---|---|---|---|
 | 5.1 RAG — Retrieval-Augmented Generation | Indexing, retrieval, augmentation | RAG pipeline diagram | LangChain / LlamaIndex |
-| 5.1.5 Vector Databases | FAISS, Chroma, Pinecone, HNSW | HNSW graph diagram | FAISS index from scratch |
 | 5.2 Agents & Tool Use | ReAct, tool calling, planning | Agent loop diagram | OpenAI function calling |
 | 5.3 Long-Context Modeling | FlashAttention, sliding window, RoPE scaling | Context window diagram | FlashAttention usage |
 | 5.4 Multimodal LLMs | CLIP, vision encoders, LLaVA | Multimodal fusion diagram | LLaVA walkthrough |
 | 5.5 Emergent Capabilities | In-context learning, chain-of-thought, scaling laws | Scaling law plots | Prompting experiments |
-| 5.5.5 Prompt Engineering | Few-shot, ReAct, DSPy, optimization | Prompt flow diagram | DSPy optimization loop |
 | 5.6 Evaluation & Benchmarking | MMLU, HellaSwag, HumanEval, ELO | Leaderboard comparison chart | `lm-evaluation-harness` |
 | 5.7 Hallucination & Safety | Factuality, groundedness, red-teaming | Failure mode taxonomy | Detection heuristics |
 
@@ -212,30 +221,26 @@ Each concept page follows this layout:
 |---|---|---|
 | Static site generator | MkDocs + Material theme | Best-in-class Markdown rendering, search, code highlighting, MathJax |
 | Diagrams | draw.io → SVG | Version-controlled source, lossless web rendering |
-| Math | MathJax | LaTeX support in Markdown |
+| Math | MathJax 3 + Arithmatex | LaTeX in Markdown (`docs/javascripts/mathjax.js` + CDN runtime) |
 | Code execution | Jupyter + Colab badges | Zero-friction for readers |
 | Hosting | GitHub Pages | Free, versioned, CI-deployable |
 | CI | GitHub Actions | Auto-deploy on push to `main` |
 
 ---
 
-## Build & Deploy
+## Build & deploy
 
-```bash
-# Install dependencies
-pip install mkdocs-material mkdocs-jupyter
+**Local (see above):** `pip install -r requirements.txt` then `mkdocs serve` / `mkdocs build`.
 
-# Serve locally
-mkdocs serve
+**CI:** On every push to `main`, `.github/workflows/deploy.yml` runs `mkdocs build` and deploys the `site/` output to the **`gh-pages`** branch via [peaceiris/actions-gh-pages](https://github.com/peaceiris/actions-gh-pages).
 
-# Build static site
-mkdocs build
+**One-time GitHub setup:** In the repository **Settings → Pages**, set the site to publish from the **`gh-pages`** branch (root). The live URL defaults to:
 
-# Deploy to GitHub Pages
-mkdocs gh-deploy
-```
+`https://spawn08.github.io/llmbase/`
 
-GitHub Actions workflow (`.github/workflows/deploy.yml`) will auto-deploy on every push to `main`.
+(Adjust `site_url` in `mkdocs.yml` if you fork under a different username or use a custom domain.)
+
+Manual alternative (not used by CI): `mkdocs gh-deploy` from a machine with push access.
 
 ---
 
@@ -247,6 +252,22 @@ This repository follows a simple flow:
 2. Diagrams are `.drawio` files committed to `diagrams/` and exported SVGs committed to `docs/assets/diagrams/`.
 3. Notebooks are committed to `notebooks/` and linked inline with a Colab badge.
 4. The `07_recent_advances/` section is updated as new research lands.
+
+---
+
+## Documentation gaps addressed (Phase 1)
+
+| Gap | Resolution |
+| --- | --- |
+| No pinned doc dependencies | `requirements.txt` + CI installs from it |
+| Math rendering unspecified | Arithmatex + `docs/javascripts/mathjax.js` + MathJax 3 CDN in `mkdocs.yml` |
+| GitHub Pages deploy ambiguous | Documented `gh-pages` branch + Settings note; `site_url` set for canonical links |
+| Empty section folders untracked | `.gitkeep` under `diagrams/`, `notebooks/*`, `docs/assets/diagrams/` |
+| Build artifacts | `.gitignore` excludes `site/`, virtualenvs, caches |
+| License missing | `LICENSE` (MIT) for the repository |
+| Optional topics dropped from main tables | Advanced part mentions **vector DBs** and **prompt engineering / DSPy** as future pages |
+
+Further gaps to track in later phases: **accessibility** audit (diagram alt text), **search** tuning, **Colab** badge verification per notebook, and **strict** builds (`mkdocs build --strict`) once warnings are cleared.
 
 ---
 
@@ -267,7 +288,7 @@ Once the site is live, these sections are most valuable for interview preparatio
 
 ## Roadmap
 
-- [ ] Phase 1 — Scaffold: MkDocs setup, CI/CD, site structure, landing page
+- [x] Phase 1 — Scaffold: MkDocs setup, CI/CD, site structure, landing page, section indexes
 - [ ] Phase 2 — Foundations (Part 1): All 6 topics with diagrams and code
 - [ ] Phase 3 — Architectures (Part 2): Transformer deep-dive, GPT, BERT, T5
 - [ ] Phase 4 — Training & Alignment (Part 3): Pre-training, SFT, RLHF, LoRA
