@@ -134,14 +134,19 @@ Given a loss \(L(w)\), **gradient descent** uses:
 w \leftarrow w - \eta\,\frac{\partial L}{\partial w},
 \]
 
-where \(\eta > 0\) is the **learning rate**. **Stochastic** GD uses a **mini-batch** of examples to estimate \(\partial L/\partial w\), trading lower per-step cost for noisier updates—often helpful for generalization and essential when the full dataset does not fit in one pass.
+where \(\eta > 0\) is the **learning rate**.
+
+!!! math-intuition "In Plain English"
+    Each step nudges weights in the direction that **reduces** \(L\) fastest (steepest descent in the local linear model). The learning rate \(\eta\) sets how large that nudge is.
+
+**Stochastic** GD uses a **mini-batch** of examples to estimate \(\partial L/\partial w\), trading lower per-step cost for noisier updates—often helpful for generalization and essential when the full dataset does not fit in one pass.
 
 \[
 \nabla_w L \approx \frac{1}{B}\sum_{i \in \mathrm{batch}} \nabla_w \ell_i(w).
 \]
 
 !!! math-intuition "In Plain English"
-    Move parameters **downhill** on the loss surface, in the direction opposite the gradient. A mini-batch is a cheap, noisy compass that points roughly toward lower average loss.
+    A mini-batch gradient is an **average** of per-example gradients: cheaper than the full dataset each step, noisy but often a cheap, noisy compass that points roughly toward lower average loss.
 
 !!! example "Worked Example: one SGD update"
     Scalar weight \(w = 2.0\), learning rate \(\eta = 0.1\), batch gives \(\dfrac{\partial L}{\partial w} = 0.4\).
@@ -149,6 +154,8 @@ where \(\eta > 0\) is the **learning rate**. **Stochastic** GD uses a **mini-bat
     \[
     w_{\mathrm{new}} = 2.0 - 0.1 \times 0.4 = 2.0 - 0.04 = 1.96.
     \]
+
+    *In plain terms:* one SGD step subtracts \(\eta\) times the observed gradient from the current weight—here a positive gradient **decreases** \(w\) because we step opposite to \(\nabla L\).
 
     If the gradient were negative, the update would **increase** \(w\) (move opposite to the direction of steepest ascent).
 
@@ -183,12 +190,18 @@ Here \(\beta \in [0,1)\) (e.g., \(0.9\)) controls how long past gradients influe
 \mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2)\,\mathbf{g}_t \odot \mathbf{g}_t.
 \]
 
+!!! math-intuition "In Plain English"
+    \(\mathbf{m}\) tracks a **moving average of gradients** (direction with memory); \(\mathbf{v}\) tracks a moving average of **squared** gradients so each coordinate gets a sense of typical gradient magnitude.
+
 **Bias correction** (because \(\mathbf{m}_0=\mathbf{0}\), \(\mathbf{v}_0=\mathbf{0}\)):
 
 \[
 \widehat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1-\beta_1^t}, \qquad
 \widehat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1-\beta_2^t}.
 \]
+
+!!! math-intuition "In Plain English"
+    Early in training, EMAs are **biased toward zero** because they start at zero; dividing by \(1-\beta^t\) inflates them so the first steps are not artificially timid.
 
 **Update:**
 
@@ -248,6 +261,9 @@ LLM **pre-training** often combines **linear warmup** with **cosine decay**. War
 \eta(t) = \frac{t}{T_{\mathrm{warm}}}\,\eta_{\max}.
 \]
 
+!!! math-intuition "In Plain English"
+    Linear warmup **ramps** the learning rate from zero (or a small floor) to \(\eta_{\max}\) over \(T_{\mathrm{warm}}\) steps so early updates stay small while the network and optimizer statistics stabilize.
+
 **Cosine decay** from peak \(\eta_{\max}\) to \(\eta_{\min}\) over steps \(t \in [T_{\mathrm{warm}}, T]\):
 
 \[
@@ -256,7 +272,7 @@ LLM **pre-training** often combines **linear warmup** with **cosine decay**. War
 \]
 
 !!! math-intuition "In Plain English"
-    Warmup avoids huge updates while weights and optimizer moments are still poorly calibrated at initialization. Cosine decay gives a smooth, well-behaved anneal that is easy to reason about and widely reported in LLM training recipes.
+    The cosine term starts near \(1\) (so \(\eta \approx \eta_{\max}\) right after warmup) and ends near \(-1\) (so \(\eta \approx \eta_{\min}\)), giving a **smooth** decay without sudden jumps—common in published LLM schedules.
 
 !!! example "Worked Example: warmup then cosine"
     Let \(T_{\mathrm{warm}} = 100\), \(T = 1000\), \(\eta_{\max} = 3\times 10^{-4}\), \(\eta_{\min} = 3\times 10^{-5}\).

@@ -91,6 +91,15 @@ In practice, \(\hat{\mathbf{y}}\) comes from a **softmax** on logits \(\mathbf{z
 
 **This is THE LLM training loss** when targets are one-hot tokens: you maximize the log-probability of the observed next token (equivalently minimize its negative log).
 
+For a length-\(T\) sequence with logits \(\mathbf{z}_{t}\) and integer targets \(y_t\), a typical **token-averaged** training loss is:
+
+\[
+L = \frac{1}{T}\sum_{t=1}^{T} \Big[-\log \mathrm{softmax}(\mathbf{z}_{t})_{y_t}\Big].
+\]
+
+!!! math-intuition "In Plain English"
+    This is the same per-position categorical NLL, just **summed across time** and normalized by sequence length so shorter and longer sequences contribute comparably when you average over examples.
+
 !!! example "Worked Example: vocabulary size \(K=4\)"
     True token is class 3 (one-hot \(\mathbf{y}=[0,0,1,0]\)). Suppose predicted probabilities are:
 
@@ -202,16 +211,14 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
 ??? note "Expand: RMSNorm, pre/post-norm, AdamW, label smoothing"
     ### RMSNorm (used in LLaMA) vs LayerNorm
 
-    **LayerNorm** subtracts mean and divides by standard deviation across features, then applies affine \(\gamma,\beta\). **RMSNorm** often removes mean-centering and scales by the root-mean-square (RMS) of features:
+    **LayerNorm** subtracts mean and divides by standard deviation across features, then applies affine \(\gamma,\beta\). **RMSNorm** often removes mean-centering and scales by the root-mean-square (RMS) of features, then applies a learned gain (and sometimes bias):
 
     \[
     \mathrm{RMS}(\mathbf{x}) = \sqrt{\frac{1}{d}\sum_{j=1}^{d} x_j^2 + \varepsilon}, \qquad \tilde{x}_j = \frac{x_j}{\mathrm{RMS}(\mathbf{x})},
     \]
 
     !!! math-intuition "In Plain English"
-        RMSNorm keeps a **scale-stabilizing** normalization (divide by a scalar RMS) without subtracting the mean across features. In practice this can be slightly cheaper and still controls activation scale in deep residual stacks.
-
-    followed by a learned gain (and sometimes bias). RMSNorm slightly reduces compute and can perform comparably in large LMs—LLaMA-style models popularized it.
+        RMSNorm keeps a **scale-stabilizing** normalization (divide by a scalar RMS) without subtracting the mean across features. In practice this can be slightly cheaper and still controls activation scale in deep residual stacks; LLaMA-class models popularized it.
 
     ### Pre-norm vs post-norm Transformer (and why pre-norm won)
 
@@ -223,7 +230,8 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
     \mathbf{x}_{\ell+1} = \mathbf{x}_\ell + \mathrm{Sublayer}(\mathrm{LayerNorm}(\mathbf{x}_\ell)),
     \]
 
-    placing normalization **before** each sublayer (attention/FFN). Pre-norm tends to make **very deep** stacks train more reliably (better gradient behavior), at some cost to representation sharpness—empirically it became the default in many modern LLM stacks.
+    !!! math-intuition "In Plain English"
+        The residual stream \(\mathbf{x}_\ell\) is fed through LayerNorm **before** each sublayer (attention/FFN), so gradients through the residual path behave more like “identity + small perturbation” deep in the network—often easier to optimize than post-norm placements at large depth. Empirically, pre-norm became the default in many modern LLM stacks.
 
     ### Weight decay vs L2 in Adam (they differ!)
 
@@ -234,9 +242,7 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
     \]
 
     !!! math-intuition "In Plain English"
-        Weight decay is applied **additively in the update**, not as if it were another gradient term that also gets divided by \(\sqrt{\hat{\mathbf{v}}}\). That matters because Adam’s adaptive scaling would otherwise **weaken or distort** L2-style penalties in a way that does not match classical weight decay.
-
-    rather than treating L2 as part of the gradient inside the adaptive denominator in a way that unintentionally changes regularization strength. For Transformers, **AdamW + weight decay** is the common baseline.
+        Weight decay is applied **additively in the update**, not as if it were another gradient term that also gets divided by \(\sqrt{\hat{\mathbf{v}}}\). That matters because Adam’s adaptive scaling would otherwise **weaken or distort** L2-style penalties in a way that does not match classical weight decay—so **AdamW** is the standard fix. For Transformers, **AdamW + weight decay** is the common baseline.
 
     ### Label smoothing in LLM training
 
@@ -246,7 +252,8 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
     p'_i = (1-\varepsilon)\,p_i + \frac{\varepsilon}{K},
     \]
 
-    which spreads a small mass uniformly across classes. This **softens** overconfident logits, often improving calibration and sometimes generalization. It changes the effective objective from hard KL to a smoother target distribution—useful, but not a free lunch if \(\varepsilon\) is chosen poorly.
+    !!! math-intuition "In Plain English"
+        You are training against a **slightly blurred** target: still mostly the true token, but with a little probability smeared across the whole vocabulary. That discourages the model from pushing logits to absurd extremes just to drive training loss to zero on memorized patterns. It changes the effective objective from hard KL to a smoother target distribution—useful, but not a free lunch if \(\varepsilon\) is chosen poorly.
 
 ## Code
 
@@ -293,6 +300,8 @@ def compare_with_pytorch() -> None:
     ce = nn.CrossEntropyLoss()
     ref = ce(logits, targets)
 
+    assert torch.allclose(manual, ref, atol=1e-6, rtol=1e-5)
+
     print("=== Cross-entropy: manual vs nn.CrossEntropyLoss ===")
     print(f"manual: {manual.item():.8f}")
     print(f"pytorch: {ref.item():.8f}")
@@ -327,17 +336,19 @@ def demo_layer_norm_vs_batch_norm() -> None:
     bn = nn.BatchNorm1d(3)
 
     ln.eval()
-    bn.eval()
+    # Use training mode for BatchNorm so statistics come **from this batch**
+    # (in eval mode, running means/vars from training would be used instead).
+    bn.train()
 
     with torch.no_grad():
         y_ln = ln(x)
         # BatchNorm1d expects (N, C) for 2D input in PyTorch
         y_bn = bn(x)
 
-    print("\n=== LayerNorm vs BatchNorm (eval, running stats default for BN) ===")
+    print("\n=== LayerNorm vs BatchNorm (BN in train mode: batch stats) ===")
     print("x:\n", x)
     print("LayerNorm(x) (per-row normalize across features):\n", y_ln)
-    print("BatchNorm1d(x) (normalize per column across batch):\n", y_bn)
+    print("BatchNorm1d(x) (normalize per feature across batch rows):\n", y_bn)
 
 
 if __name__ == "__main__":
@@ -347,6 +358,8 @@ if __name__ == "__main__":
 ```
 
 Running the script should print near-zero difference between manual CE and `nn.CrossEntropyLoss`, show dropout stochasticity in train mode versus identity in eval mode, and contrast LayerNorm’s row-wise normalization with BatchNorm’s column-wise normalization on the same tensor.
+
+**Implementation note (LLM training):** frameworks typically report a **mean** NLL over tokens (and possibly batch), sometimes with **masked** positions excluded from the denominator. Whether you sum or mean is a constant scale shift for fixed sequence length, but it matters when comparing reported losses across codebases—always check reduction (`mean` vs `sum`) and masking.
 
 ## Interview Guide
 
@@ -380,10 +393,13 @@ Running the script should print near-zero difference between manual CE and `nn.C
 
 ## References
 
-- Goodfellow, Bengio, and Courville, *Deep Learning* — maximum likelihood, cross-entropy, and regularization chapters.
+- Goodfellow, Bengio, and Courville, *Deep Learning* (MIT Press) — Part II on regularization; maximum likelihood and cross-entropy as the standard classification objective.
+- Murphy, *Probabilistic Machine Learning: An Introduction* — exponential families, NLL, and generative vs discriminative framing.
 - Srivastava et al., “Dropout: A Simple Way to Prevent Neural Networks from Overfitting,” *JMLR* (2014).
-- Ioffe and Szegedy, “Batch Normalization,” *ICML* (2015).
-- Ba, Kiros, and Hinton, “Layer Normalization,” *arXiv* (2016).
+- Ioffe and Szegedy, “Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift,” *ICML* (2015).
+- Ba, Kiros, and Hinton, “Layer Normalization,” *arXiv:1607.06450* (2016).
+- Vaswani et al., “Attention Is All You Need,” *NeurIPS* (2017) — original Transformer; compare LayerNorm placement variants in follow-on work.
 - Loshchilov and Hutter, “Decoupled Weight Decay Regularization,” *ICLR* (2019) — AdamW.
 - Zhang and Sennrich, “Root Mean Square Layer Normalization,” *NeurIPS* (2019) — RMSNorm.
-- Szegedy et al., “Rethinking the Inception Architecture,” *CVPR* (2016) — label smoothing (popularized widely beyond vision).
+- Szegedy et al., “Rethinking the Inception Architecture for Computer Vision,” *CVPR* (2016) — label smoothing (widely reused in LM training recipes).
+- Müller et al., “When Does Label Smoothing Help?” *NeurIPS* (2019) — calibration and teacher-student effects.
