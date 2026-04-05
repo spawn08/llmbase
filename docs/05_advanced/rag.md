@@ -196,9 +196,6 @@ Requires: pip install sentence-transformers chromadb numpy
 """
 from __future__ import annotations
 
-import hashlib
-import math
-import re
 from dataclasses import dataclass
 from typing import List, Sequence, Tuple
 
@@ -213,12 +210,6 @@ except ImportError as e:
     raise SystemExit(
         "Install dependencies: pip install sentence-transformers chromadb numpy\n" f"({e})"
     ) from e
-
-
-def token_len_estimate(text: str) -> int:
-    """Rough token proxy: word count * 1.3 (English heuristic)."""
-    words = re.findall(r"\S+", text)
-    return max(1, int(len(words) * 1.3))
 
 
 def chunk_fixed_tokens(
@@ -238,17 +229,6 @@ def chunk_fixed_tokens(
             break
         start += stride
     return chunks
-
-
-def stable_hash_embed(text: str, dim: int = 256) -> np.ndarray:
-    """Deterministic fallback if you comment out SentenceTransformer (tests only)."""
-    vec = np.zeros(dim, dtype=np.float64)
-    for tok in re.findall(r"\w+|\S", text.lower()):
-        h = int(hashlib.sha256(tok.encode("utf-8")).hexdigest(), 16)
-        idx = h % dim
-        vec[idx] += 1.0 if (h >> 8) % 2 == 0 else -1.0
-    n = np.linalg.norm(vec) or 1.0
-    return vec / n
 
 
 @dataclass

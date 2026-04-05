@@ -26,6 +26,9 @@ Dual encoders \(f_I\) (image) and \(f_T\) (text) produce embeddings. With L2 nor
 s_{ij} = \langle \hat{f}_I(x_i), \hat{f}_T(t_j) \rangle
 \]
 
+!!! math-intuition "In Plain English"
+    After L2 normalization, each \(s_{ij}\) is a **cosine** in \([-1,1]\): **high** when image \(i\) and text \(j\) **align** in the joint space. The **diagonal** \(s_{ii}\) is what training pushes up versus all off-diagonal \(j\) in the same row.
+
 For batch size \(N\), the **symmetric** contrastive loss uses temperature \(\tau\):
 
 \[

@@ -255,11 +255,11 @@ class GuardrailResult:
 
 
 def toxicity_guard(text: str, clf) -> GuardrailResult:
-    """Block when toxic label beats non-toxic (unitary/toxic-bert)."""
+    """Block when toxic label beats non-toxic (unitary/toxic-bert: LABEL_0 ~ non-toxic)."""
     raw = clf(text)[0]
-    scores = {str(x["label"]).upper(): float(x["score"]) for x in raw}
-    toxic = scores.get("TOXIC", scores.get("LABEL_1", 0.0))
-    nontoxic = scores.get("NONTOXIC", scores.get("NOT_TOXIC", scores.get("LABEL_0", 0.0)))
+    by_lab = {str(x["label"]): float(x["score"]) for x in raw}
+    toxic = by_lab.get("toxic", by_lab.get("LABEL_1", 0.0))
+    nontoxic = by_lab.get("non-toxic", by_lab.get("non_toxic", by_lab.get("LABEL_0", 0.0)))
     if toxic > 0.55 and toxic >= nontoxic:
         return GuardrailResult(True, f"toxic={toxic:.3f}, nontoxic={nontoxic:.3f}")
     return GuardrailResult(False, "ok")
