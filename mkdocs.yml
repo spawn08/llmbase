@@ -139,5 +139,30 @@ nav:
     - Hallucination and Safety: 05_advanced/hallucination_safety.md
   - Top 25 Papers:
     - 06_research_papers/index.md
+    - "1. Transformer": 06_research_papers/01_attention_is_all_you_need.md
+    - "2. BERT": 06_research_papers/02_bert.md
+    - "3. GPT-2": 06_research_papers/03_gpt2.md
+    - "4. GPT-3": 06_research_papers/04_gpt3.md
+    - "5. T5": 06_research_papers/05_t5.md
+    - "6. XLNet": 06_research_papers/06_xlnet.md
+    - "7. RoBERTa": 06_research_papers/07_roberta.md
+    - "8. ELECTRA": 06_research_papers/08_electra.md
+    - "9. InstructGPT": 06_research_papers/09_instructgpt.md
+    - "10. PaLM": 06_research_papers/10_palm.md
+    - "11. Chinchilla": 06_research_papers/11_chinchilla.md
+    - "12. LLaMA": 06_research_papers/12_llama.md
+    - "13. LoRA": 06_research_papers/13_lora.md
+    - "14. FlashAttention": 06_research_papers/14_flash_attention.md
+    - "15. Mistral 7B": 06_research_papers/15_mistral.md
+    - "16. Mixtral": 06_research_papers/16_mixtral.md
+    - "17. FLAN": 06_research_papers/17_flan.md
+    - "18. Chain-of-Thought": 06_research_papers/18_chain_of_thought.md
+    - "19. ReAct": 06_research_papers/19_react.md
+    - "20. Toolformer": 06_research_papers/20_toolformer.md
+    - "21. Constitutional AI": 06_research_papers/21_constitutional_ai.md
+    - "22. CLIP": 06_research_papers/22_clip.md
+    - "23. Codex": 06_research_papers/23_codex.md
+    - "24. Mamba": 06_research_papers/24_mamba.md
+    - "25. Gemini": 06_research_papers/25_gemini.md
   - Recent Advances:
     - 07_recent_advances/index.md
