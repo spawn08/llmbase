@@ -1,33 +1,104 @@
 # LLMBase
 
-> A living reference for engineers entering the world of Large Language Models. From first principles to cutting-edge research — with visualizations, code, and interview-ready depth.
+A comprehensive, engineer-focused guide to Large Language Models — built from the ground up for deep understanding and interview readiness.
 
-Welcome to **LLMBase**. This guide is designed to take you from the fundamental mathematics of language modeling to building, serving, and understanding state-of-the-art Large Language Models.
+---
 
-**Live site:** [spawn08.github.io/llmbase](https://spawn08.github.io/llmbase/) (after GitHub Pages is enabled for the `gh-pages` branch).
+## What is LLMBase?
+
+LLMBase is an open knowledge base that takes you from the foundational mathematics of language modeling through modern Transformer architectures, training pipelines, and frontier research. Every concept includes plain-English explanations, step-by-step math walkthroughs, runnable code with full imports, and the specific questions that top tech companies ask in interviews.
+
+This is not a surface-level overview. Each page is written to give you the depth needed to **explain concepts from first principles** — the standard expected at companies like Google, Meta, OpenAI, and Anthropic.
+
+---
 
 ## Who is this for?
 
-- **Software engineers** moving into AI/ML or applied LLM roles.
-- **Interview candidates** preparing for ML fundamentals, LLM internals, and GenAI system design.
-- **Readers who want runnable code** alongside diagrams and math (formulas use MathJax, e.g. \(\mathrm{Attention}(Q,K,V) = \mathrm{softmax}\bigl(\frac{QK^\top}{\sqrt{d_k}}\bigr)V\)).
+- **Software engineers** transitioning into AI/ML or applied LLM roles who need to build real understanding, not just API familiarity.
+- **Interview candidates** preparing for ML fundamentals, LLM system design, and GenAI-focused rounds at top tech companies.
+- **Practitioners** who want a single reference they can return to — with code they can run and math they can trace by hand.
 
-## Prerequisites
+---
 
-- **Python:** Comfortable with Python 3.11+, basic OOP, and reading small PyTorch modules.
-- **Math:** Derivatives, matrix multiplication, and probability at an engineering level.
-- **PyTorch (later parts):** Tensors and `torch.nn` — introduced where needed.
+## What you need before starting
 
-## How to use this guide
+- **Python 3.11+** — all code examples are self-contained and runnable.
+- **Calculus and linear algebra** at an engineering level — gradients, matrix multiplication, eigenvalues.
+- **Basic PyTorch** — tensors and `torch.nn` modules. Introduced gradually where needed.
 
-LLMBase is split into **seven progressive parts**. Each part has an index with planned topics; individual concept pages will link diagrams (SVG), math, and self-contained Python snippets.
+---
 
-1. **[Foundations](01_foundations/index.md)** — Probability, embeddings, RNNs, seq2seq, information theory, attention math.
-2. **[Core architectures](02_core_architectures/index.md)** — Transformer, GPT, BERT, T5, MoE, state-space models.
-3. **[Training & alignment](03_training/index.md)** — Pre-training, distributed training, quantization, SFT, RLHF, PEFT.
-4. **[Inference & serving](04_inference/index.md)** — Decoding, KV cache, speculative decoding, batching, quantization at serve time.
-5. **[Advanced topics](05_advanced/index.md)** — RAG, agents, long context, multimodal, eval, safety.
-6. **[Top 25 research papers](06_research_papers/index.md)** — Landmark papers with TL;DR, figures, and interview takeaways.
-7. **[Recent advances](07_recent_advances/index.md)** — A rolling log of frontier work and links to code.
+## The learning path
 
-Use the tabs and search in the header to move between parts. Let's dive in.
+LLMBase is organized into seven progressive parts. Start at Part 1 and work forward — each section builds on the previous one.
+
+### [Foundations](01_foundations/index.md)
+
+The math and theory that existed before the Transformer. Probability, embeddings, RNNs, sequence-to-sequence models, information theory, and the derivation of scaled dot-product attention. Every equation is walked through with real numbers.
+
+### [Core Architectures](02_core_architectures/index.md)
+
+How Transformers work at the tensor level. The full block (MHA, FFN, residual stream), positional encodings (sinusoidal, RoPE, ALiBi), and the three architecture families (GPT, BERT, T5). Plus Mixture of Experts and state-space models (Mamba).
+
+### [Training and Alignment](03_training/index.md)
+
+Pre-training pipelines, distributed training, quantization, instruction tuning (SFT), RLHF, DPO, and parameter-efficient fine-tuning (LoRA, QLoRA). How models go from raw text to following instructions.
+
+### [Inference and Serving](04_inference/index.md)
+
+Decoding strategies, KV cache mechanics, speculative decoding, continuous batching, and serving systems (vLLM, TGI, Ollama). The engineering that determines latency, throughput, and cost.
+
+### [Advanced Topics](05_advanced/index.md)
+
+RAG pipelines, agents and tool use, long-context modeling, multimodal LLMs, evaluation benchmarks, and hallucination/safety. Where LLMs meet production.
+
+### [Top 25 Research Papers](06_research_papers/index.md)
+
+Landmark papers from "Attention Is All You Need" through Mamba and Gemini. Each with a one-minute summary, key figure, reproduced code snippet, and what interviewers expect you to know about it.
+
+### [Recent Advances](07_recent_advances/index.md)
+
+A rolling log of frontier research — reasoning models, test-time compute scaling, efficient inference, and new open-weight releases.
+
+---
+
+## Interview preparation
+
+Every page in LLMBase includes a structured **Interview Guide** section with:
+
+- Specific questions asked at FAANG-tier companies, with expected answer depth
+- Common follow-up probes that test whether you truly understand or just memorized
+- Key phrases that signal expertise to interviewers
+- Red-flag answers that suggest shallow understanding
+
+For a consolidated view, see the **[Interview Question Bank](interview_questions.md)** — 85+ questions organized by topic and difficulty.
+
+---
+
+## How each page is structured
+
+```
+Why This Matters for LLMs
+   → Why interviewers ask about this topic
+
+Core Concepts
+   → Plain-English explanation (no jargon)
+   → The math (in a styled callout)
+   → "In plain English, this says..." (after every equation)
+   → Worked example with real numbers (step by step)
+
+Deep Dive
+   → Extended treatment for advanced understanding
+
+Code
+   → Complete, runnable Python with all imports
+
+Interview Guide
+   → FAANG-level questions with expected depth
+   → Follow-up probes
+   → Key phrases to use
+```
+
+---
+
+*Built for engineers who want to understand LLMs deeply, not just use them.*
