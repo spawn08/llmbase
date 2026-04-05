@@ -249,6 +249,34 @@ Where **objective** checks exist (unit tests, **compiler** success), **reward** 
 
 Store **hashed** prompts and **policy** decisions for **regulatory** review—**avoid** raw **PII** retention without **consent**.
 
+### Watermarking and Provenance (Text)
+
+**Watermarking** schemes for **generated** text remain **adversarially** **fragile**—treat as **soft** signals, not **proof**.
+
+### Crisis and Self-Harm Protocols
+
+Products should **surface** **crisis** hotline **resources** for **self-harm** queries—**model** refusals alone are **insufficient** **UX**.
+
+### Third-Party Plugins
+
+**Plugins** expand **blast** **radius**—**sandbox** **network** access and **scope** **OAuth** tokens narrowly.
+
+### Continuous Red-Teaming
+
+**Model** updates can **regress** **safety**—**automated** **probes** on every **release** **candidate** reduce **incidents**.
+
+### Safety vs Helpfulness Tensions
+
+**Over-refusal** harms **utility**; **under-refusal** harms **users**. **Tune** thresholds on **validation** sets that include **both** **benign** edge cases and **policy** **violations**.
+
+### Legal Disclaimers
+
+**Disclaimers** are **not** **safety** **engineering**—they **mitigate** **liability** **somewhat** but **do not** **prevent** **harm** **without** **technical** **controls**.
+
+### Closing Loop: Feedback to Training
+
+**Production** **incidents** should feed **preference** **data**, **policy** updates, and **eval** **set** **expansion**—**safety** **improves** when **systems** **learn** from **reality**, not only **offline** **tests**.
+
 ---
 
 ## Interview Takeaways

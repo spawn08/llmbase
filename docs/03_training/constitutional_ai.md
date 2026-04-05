@@ -272,6 +272,27 @@ A: **Jailbreaks** exploit **mismatches** between training and deployment prompts
 
 ---
 
+## Benchmarks and Safety Suites (Context)
+
+**Holistic** evaluation stacks (HELM-style) include **accuracy**, **calibration**, **robustness**, **fairness**, and **toxicity**. **Harm-specific** suites (e.g., adversarial prompts, toxicity classifiers on outputs) complement **general** knowledge benchmarks. Constitutional training should improve **harm** metrics without **catastrophically** dropping **capability** metrics—**Pareto** thinking matters in interviews.
+
+---
+
+## Extended Takeaway: When to Recommend CAI-Style Pipelines
+
+Recommend **constitution + critique** when:
+
+- You need **scalable** harmlessness labels **without** proportional human labeling.
+- You want **auditable** rules for **policy** iteration.
+- You can invest in **strong** automated **critics** and **human spot checks**.
+
+Be cautious when:
+
+- The **base** model cannot **understand** principles reliably (critiques become **noise**).
+- **Stakeholders** cannot agree on **written** rules—**ambiguity** transfers into **training noise**.
+
+---
+
 ## Interview Takeaways
 
 - **Constitutional AI**: train using **explicit principles** + **scalable** oversight (critiques, AI labels).
@@ -293,24 +314,3 @@ A: **Jailbreaks** exploit **mismatches** between training and deployment prompts
 - Irving et al., *AI Safety via Debate* — [arXiv:1805.00899](https://arxiv.org/abs/1805.00899) — related oversight framing
 - Ziegler et al., *Fine-Tuning Language Models from Human Preferences* — precursor to large-scale preference learning
 - Ouyang et al., *InstructGPT* — human baseline RLHF pipeline for comparison
-
----
-
-## Benchmarks and Safety Suites (Context)
-
-**Holistic** evaluation stacks (HELM-style) include **accuracy**, **calibration**, **robustness**, **fairness**, and **toxicity**. **Harm-specific** suites (e.g., adversarial prompts, toxicity classifiers on outputs) complement **general** knowledge benchmarks. Constitutional training should improve **harm** metrics without **catastrophically** dropping **capability** metrics—**Pareto** thinking matters in interviews.
-
----
-
-## Extended Takeaway: When to Recommend CAI-Style Pipelines
-
-Recommend **constitution + critique** when:
-
-- You need **scalable** harmlessness labels **without** proportional human labeling.
-- You want **auditable** rules for **policy** iteration.
-- You can invest in **strong** automated **critics** and **human spot checks**.
-
-Be cautious when:
-
-- The **base** model cannot **understand** principles reliably (critiques become **noise**).
-- **Stakeholders** cannot agree on **written** rules—**ambiguity** transfers into **training noise**.

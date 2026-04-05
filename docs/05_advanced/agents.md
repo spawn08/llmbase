@@ -316,6 +316,14 @@ Irreversible actions (payments, **deletes**) should require **explicit** human *
 
 **Unit-test** tool **routers** with **mock** environments; **integration-test** with **staging** APIs. **Record/replay** traces for **regression** when **prompts** change.
 
+### Session Isolation
+
+**Multi-tenant** agents must **scope** **memory** and **tools** per **tenant**—**cross-tenant** **leaks** are **severity-1** **incidents**.
+
+### Idempotency for Tools
+
+**POST-like** tools should support **idempotency** **keys** so **retries** do not **double-charge** **users**.
+
 ---
 
 ## Interview Takeaways

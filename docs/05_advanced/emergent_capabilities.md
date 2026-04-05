@@ -245,6 +245,42 @@ At sufficient scale, models **reliably** emit **valid** JSON tool calls—**emer
 
 **Data quality** filters, **synthetic** augmentations, and **curriculum** ordering can shift **effective** \(D\) without raw token count changes—**data work** is often higher ROI than **blind** scaling.
 
+### Practical Checklist: Scaling Experiments
+
+1. **Fix** tokenizer and **data** mixture version IDs.
+2. **Log** **loss**, **grad norm**, and **throughput** every **step**.
+3. **Evaluate** **downstream** tasks on a **fixed** harness cadence (not only **loss**).
+4. **Sweep** **width** and **depth** jointly when budget allows—**IsoFLOP** cuts waste.
+5. **Report** **variance** across **seeds**—large runs can **differ** materially.
+
+### Small-Scale Proxy Tasks
+
+Before **exascale** runs, use **proxy** tasks (e.g., **smaller** vocab, **shorter** sequences) to **debug** infrastructure—**scaling** assumes **correct** optimization and **data** hygiene.
+
+### Open Problems
+
+- **Predicting** **emergent** skills **a priori** from **loss** alone.
+- **Unified** laws spanning **MoE**, **long context**, and **multimodal** training.
+- **Alignment** metrics that **co-scale** with **capabilities** without **gaming**.
+
+### Reading the Original Plots
+
+When reading **Kaplan**/**Chinchilla** figures, note **axes** (**log** scale), **held-out** sets, and **whether** **embedding** parameters count toward \(N\). **Inconsistent** definitions **invalidate** cross-paper comparisons.
+
+### Glossary (Quick)
+
+- **IsoFLOP**: Curves of **constant** approximate **training** FLOPs in \((N,D)\) space.
+- **Irreducible loss** \(L_\infty\): **Bayes** + **data noise** floor under the **given** tokenizer and task.
+- **Compute-optimal**: Operating point minimizing **loss** for a **fixed** **budget** \(C\).
+
+### Replication Notes for Practitioners
+
+When scaling **your** models, **log** **optimizer** state, **data** order, and **checkpoint** hashes—**small** **differences** **compound** over **trillions** of **tokens**.
+
+### Final Perspective
+
+Scaling laws are **descriptive**, not **prescriptive** **laws of nature**: they summarize **empirical** trends under **specific** stacks. Treat them as **guides** for **budgeting** and **ablations**, not **guarantees** about **downstream** **behavior**.
+
 ---
 
 ## Interview Takeaways
@@ -258,6 +294,7 @@ At sufficient scale, models **reliably** emit **valid** JSON tool calls—**emer
 
 ## References
 
+- Schaeffer et al., *Are Emergent Abilities of Large Language Models a Mirage?* (2023): [arXiv:2304.15004](https://arxiv.org/abs/2304.15004)
 - Kaplan et al., *Scaling Laws for Neural Language Models* (2020): [arXiv:2001.08361](https://arxiv.org/abs/2001.08361)
 - Hoffmann et al., *Training Compute-Optimal Large Language Models* (Chinchilla, 2022): [arXiv:2203.15556](https://arxiv.org/abs/2203.15556)
 - Wei et al., *Emergent Abilities of Large Language Models* (2022): [arXiv:2206.07682](https://arxiv.org/abs/2206.07682)

@@ -281,6 +281,18 @@ Attention **kernels** are sensitive to **head** dimensions and **sequence** mult
 - **KV cache size** (rough): \(O(L \cdot B \cdot T \cdot d_{\text{kv}})\)
 - **RoPE** encodes **relative** position via **rotations** in **2D** subspaces
 
+### FlashAttention-3 and Hardware Generations
+
+Newer **FlashAttention** iterations target **Hopper/Blackwell** features (FP8, **warp** specialization). Always **benchmark** on **your** **GPU** generation—**kernel** winners **shift**.
+
+### Variable-Length Batching
+
+**Padding** wastes **compute** on **short** sequences in a **batch**—**variable-length** kernels and **cuDNN** **FlashAttention** paths reduce **waste**.
+
+### Context Parallelism vs Data Parallelism
+
+**Context** parallelism **splits** **sequence**; **data** parallelism **splits** **batch**. They address **different** bottlenecks—**profile** before **choosing**.
+
 ---
 
 ## Interview Takeaways

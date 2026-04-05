@@ -316,6 +316,14 @@ Hard **negatives** are **high-scoring** wrong passages (often BM25 neighbors wit
 - **Empty retrieval** → model **hallucinates** without evidence—surface “no sources found.”
 - **Conflicting** chunks → instruct the model to **compare** sources or **defer**.
 
+### Normalization and Tokenization Alignment
+
+**Retrieval** and **generation** should share **compatible** **normalization** (Unicode, **casing**) where possible—**mismatches** hurt **exact** **match** **recall**.
+
+### Cold-Start Corpus
+
+New **products** lack **click** **logs** for **relevance**—use **weak** **supervision** (BM25 **positives**) until **human** labels arrive.
+
 ---
 
 ## Interview Takeaways

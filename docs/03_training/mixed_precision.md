@@ -272,6 +272,23 @@ if __name__ == "__main__":
 
 Autoregressive decoding stores **KV activations** per layer; **INT8 KV** reduces memory bandwidth. **Weight-only INT4** (e.g., loaded from disk) keeps activations FP16—different kernels, different bottlenecks.
 
+### Group-wise Quantization (GPTQ/AWQ)
+
+Split weight matrix into **groups** of \(g\) consecutive weights (along input or output dimension). Each group \(k\) has **own** scale \(s_k\) (and optional zero-point):
+
+\[
+\hat{w}_{i} = s_{\lfloor i/g \rfloor} \cdot q_i
+\]
+
+Smaller groups \(\Rightarrow\) **lower** quantization error, **more** metadata overhead.
+
+!!! math-intuition "In Plain English"
+    One global scale **wastes** integer buckets where weights are tiny and **clips** outliers. **Group** scales adapt to **local** weight statistics—critical for **INT4** quality.
+
+### Dynamic Quantization (Activations)
+
+**Dynamic** activation scales per **tensor per forward** adjust to runtime ranges—**no** calibration set but **variable** overhead. **Static** calibration uses **representative** batches to fix scales—faster kernel fusion, risk of **out-of-distribution** drift.
+
 ---
 
 ## Interview Takeaways

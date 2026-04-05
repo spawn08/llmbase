@@ -258,6 +258,38 @@ Public leaderboards **change** as **test** sets **leak** or **prompts** **standa
 
 Academic **benchmarks** are **sanitized** and **static**; **production** traffic is **long-tailed** and **adversarial**. **Offline** scores are **necessary** but not **sufficient**.
 
+### Aggregation: Macro vs Micro
+
+**Macro** averaging treats each **task** equally; **micro** averaging weights by **example** count. **STEM-heavy** micro averages can **dominate** if **not** reported—**disaggregate**.
+
+### Error Analysis Protocol
+
+Sample **failure** buckets: **off-by-one** math, **wrong** option letter, **timeout**, **empty** output. **Different** bugs imply **different** fixes (prompting vs **tooling** vs **model**).
+
+### Versioning Benchmarks
+
+Benchmarks **evolve** (MMLU **fixes**, HumanEval **typing** tweaks). **Pin** **commit** hashes in **papers** and **internal** dashboards.
+
+### Synthetic Data Contamination Checks
+
+For **code**, scan **GitHub** overlap with **training** corpora using **n-gram** or **AST** hashes—**especially** for **recent** libraries.
+
+### Final Exam Analogy
+
+Treat **benchmarks** like **practice tests**—**overfitting** to them yields **inflated** **scores** and **brittle** products.
+
+### Documentation Checklist for Eval Reports
+
+- **Model** ID, **revision**, **tokenizer**.
+- **Prompt** template (**exact** **string**).
+- **Decoding** parameters and **seed** policy.
+- **Hardware** and **software** **versions**.
+- **Per-task** **scores** + **confidence** **intervals**.
+
+### When Benchmarks Disagree
+
+If **MMLU** rises but **HumanEval** falls, suspect **mixture** **shifts** or **catastrophic** **forgetting** during **instruction** **tuning**—**not** **omniscient** **improvement**.
+
 ---
 
 ## Interview Takeaways

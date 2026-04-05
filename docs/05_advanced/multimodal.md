@@ -287,6 +287,18 @@ Open releases (LLaVA, Qwen-VL, InternVL) differ in **connector** design, **resol
 
 Images can **fabricate** evidence (fake screenshots). **Policies** should discourage **high-stakes** decisions from **unverified** visuals—**metadata** and **provenance** APIs help.
 
+### Spatial Reasoning Limits
+
+VLMs can **struggle** with **precise** spatial relations (“left of”, “smaller than”)—**explicit** measurement tools or **structured** outputs help.
+
+### Audio and Speech (Pointer)
+
+**Speech** models often use **Conformer**/**Whisper** encoders feeding **text** LMs—modalities compose similarly: **encode** → **project** → **decode**.
+
+### Benchmarks: MMMU, MathVista
+
+**Multimodal** reasoning benchmarks combine **images** with **knowledge** and **math**—better proxies for **assistant** quality than ImageNet-style metrics.
+
 ---
 
 ## Interview Takeaways

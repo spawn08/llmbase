@@ -1,5 +1,7 @@
 # Continuous Batching & PagedAttention
 
+This page connects **iteration-level scheduling** with **paged KV memory**—the two pillars of modern high-throughput LLM serving.
+
 ## Why This Matters for LLMs
 
 Serving an LLM is not “run `forward` on a tensor” once—it is a **multi-tenant queue** of requests with **different** prompt lengths, **different** output lengths, and **different** arrival times. **Static batching** waits until \(N\) requests arrive, pads them to **\(L_{\max}\)**, runs one **fat** forward, and wastes **compute** on **padding** tokens while **blocking** short jobs behind long ones. **Continuous batching** (iteration-level batching, popularized by **Orca**) **adds** and **removes** sequences **between** decoding steps so the GPU **always** processes a **full** micro-batch of **real** tokens, improving **throughput** under variable load.
@@ -345,3 +347,4 @@ Let **\(N_{\text{tok}}\)** be **total** **live** tokens **this** iteration acros
 - Aminabadi et al., *DeepSpeed-FastGen* — chunked prefill + speculative decode
 - Zheng et al. (2024), *SGLang: Efficient Execution of Structured Language Model Programs* — [arXiv:2312.07104](https://arxiv.org/abs/2312.07104) — radix attention + scheduling
 - NVIDIA Triton Inference Server documentation — [https://docs.nvidia.com/deeplearning/triton-inference-server/](https://docs.nvidia.com/deeplearning/triton-inference-server/) — model orchestration patterns
+- Hugging Face Text Generation Inference (TGI) — [https://huggingface.co/docs/text-generation-inference](https://huggingface.co/docs/text-generation-inference) — continuous batching in Rust servers
