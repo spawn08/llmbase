@@ -262,6 +262,8 @@ For **system-design** interviews, use this paper when discussing **why** you mig
 | **DeepSeek-V3 (base model)** | R1 builds on a **strong base**; capability floor and **pretraining quality** matter for RL sample efficiency. |
 | **Kimi k1.5 (and related RL reasoning work)** | Alternative **RL stacks** and data recipes; compare **reward design**, **rollout budgets**, and **stability** tradeoffs. |
 | **Constitutional AI / preference optimization** | Overlaps in **KL-to-reference** and **safety** framing; R1 highlights **objective verifiable** rewards for **math/code** versus **principle-based** preference training. |
+| **[GLM-5](32_glm5.md) (Slime async RL)** | Extends RL-for-reasoning to **agentic coding**; Slime's async architecture solves GPU idle-time problems that synchronous GRPO shares when rollouts involve tool calls. |
+| **[Kimi K2.5](33_kimi_k2_5.md) (PARL)** | Multi-agent RL with speedup rewards; contrasts with R1's single-agent reasoning — both use RL but optimize different capability profiles. |
 
 ## Key Takeaways for Quick Review
 

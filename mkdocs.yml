@@ -31,20 +31,20 @@ theme:
     logo: material/brain
     repo: fontawesome/brands/github
   font:
-    text: Inter
+    text: Source Sans 3
     code: JetBrains Mono
   palette:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: amber
+      primary: blue grey
+      accent: teal
       toggle:
         icon: material/weather-night
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: amber
+      primary: blue grey
+      accent: teal
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode

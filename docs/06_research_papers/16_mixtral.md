@@ -291,6 +291,9 @@ This product is minimized when both are uniform (\(1/n\)). The coefficient is ty
 - **PaLM** → GShard and Switch Transformer introduced MoE at Google scale
 - **LLaMA** → Dense alternative at similar quality levels
 - **Chinchilla** → Scaling laws apply differently to sparse models
+- **[DeepSeek-V2](26_deepseek_v2.md) / [DeepSeek-V3](27_deepseek_v3.md)** → Next-generation MoE with auxiliary-loss-free load balancing and MLA, directly compared to Mixtral's top-2 routing
+- **[GLM-5](32_glm5.md)** → 744B MoE at scale with async RL for agentic tasks
+- **[Kimi K2.5](33_kimi_k2_5.md)** → 1T MoE with 384 experts and multi-agent coordination
 
 ---
 

@@ -527,4 +527,22 @@ Each question includes the **expected answer depth**, **common follow-ups**, and
 
 ---
 
+---
+
+## Cross-Paper Interview Scenarios
+
+For advanced interview preparation, see the [Cross-Paper Interview Scenarios](06_research_papers/index.md#cross-paper-interview-scenarios) section in the Research Papers guide. These scenarios test your ability to connect ideas across multiple papers — a hallmark of strong candidates.
+
+Topics covered:
+
+1. **MoE Serving Under Load** — memory vs. compute trade-offs at scale ([Mixtral](06_research_papers/16_mixtral.md), [DeepSeek-V3](06_research_papers/27_deepseek_v3.md), [GLM-5](06_research_papers/32_glm5.md))
+2. **Async RL for Tool-Heavy Tasks** — keeping GPUs utilized during slow rollouts ([DeepSeek-R1](06_research_papers/28_deepseek_r1.md), [GLM-5](06_research_papers/32_glm5.md))
+3. **KV Cache Efficiency Stack** — composing MLA + FlashAttention + continuous batching ([DeepSeek-V2](06_research_papers/26_deepseek_v2.md), [FlashAttention](06_research_papers/14_flash_attention.md))
+4. **Single Agent vs. Multi-Agent** — when to use a swarm vs. a single powerful agent ([GLM-5](06_research_papers/32_glm5.md), [Kimi K2.5](06_research_papers/33_kimi_k2_5.md), [ReAct](06_research_papers/19_react.md))
+5. **Distillation vs. On-Student RL** — when to copy teacher traces vs. train from scratch ([DeepSeek-R1](06_research_papers/28_deepseek_r1.md), [Chinchilla](06_research_papers/11_chinchilla.md))
+6. **Data Quality as a Scaling Multiplier** — why 72B can match 405B ([Qwen2.5](06_research_papers/31_qwen2_5.md), [Chinchilla](06_research_papers/11_chinchilla.md))
+7. **Evaluation Hygiene** — ensuring trustworthy benchmark scores ([Qwen2.5](06_research_papers/31_qwen2_5.md), [GLM-5](06_research_papers/32_glm5.md))
+
+---
+
 *This question bank is updated as new topics are covered in LLMBase. See individual topic pages for in-depth explanations and worked examples.*

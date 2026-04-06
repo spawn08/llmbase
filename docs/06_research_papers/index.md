@@ -1,6 +1,6 @@
-# Top 25 Research Papers in Large Language Models
+# Top 33 Research Papers in Large Language Models
 
-This section provides **in-depth documentation** for the 25 landmark papers that shaped modern LLMs. Each paper page includes:
+This section provides **in-depth documentation** for the 33 landmark papers that shaped modern LLMs. Each paper page includes:
 
 - **Simple math explanations** — every equation broken down step by step
 - **Python implementations** — runnable code demonstrating the core ideas
@@ -159,6 +159,68 @@ If you have limited time, focus on these papers first (highest interview frequen
 13. **Kimi k1.5** — long-context RL as an alternative to MCTS
 14. **GLM-5** — async RL for agentic coding, MoE serving
 15. **Kimi K2.5** — multi-agent RL (PARL), native multimodality
+
+---
+
+## Cross-Paper Interview Scenarios
+
+These scenarios draw on multiple papers and test your ability to connect ideas across the field. Each links to the relevant deep dives.
+
+### Scenario 1: MoE Serving Under Load
+
+> "You're serving a 671B MoE model. Walk me through memory vs. compute trade-offs and when expert parallelism breaks down."
+
+Draws on: [Mixtral](16_mixtral.md) (top-2 routing basics), [DeepSeek-V3](27_deepseek_v3.md) (auxiliary-loss-free balancing, FP8), [GLM-5](32_glm5.md) (744B MoE serving), [Kimi K2.5](33_kimi_k2_5.md) (384 experts, 8 active).
+
+Key points: total vs. active parameters determine memory vs. compute; expert parallelism requires all-to-all communication; load imbalance wastes GPU cycles; bias-based routing (V3) vs. auxiliary loss (Mixtral) have different stability profiles.
+
+### Scenario 2: Async RL for Tool-Heavy Tasks
+
+> "Your RL training loop is bottlenecked by slow compiler/test-runner calls. How do you keep GPUs utilized?"
+
+Draws on: [DeepSeek-R1](28_deepseek_r1.md) (synchronous GRPO), [GLM-5](32_glm5.md) (Slime async RL, V-trace correction).
+
+Key points: synchronous RL idles GPUs waiting for slowest rollout; Slime decouples rollout workers from policy updates; V-trace importance weighting corrects for stale policies; trade-off is bias from staleness vs. throughput gain.
+
+### Scenario 3: KV Cache Efficiency Stack
+
+> "Design the inference stack for a 128K-context model. Which optimizations compose and which conflict?"
+
+Draws on: [DeepSeek-V2](26_deepseek_v2.md) (MLA, 93% cache reduction), [FlashAttention](14_flash_attention.md) (IO-aware tiling), [Inference: KV Cache](../04_inference/kv_cache.md), [Inference: Continuous Batching](../04_inference/continuous_batching.md).
+
+Key points: MLA compresses KV into low-rank latent; FlashAttention tiles computation in SRAM; continuous batching maximizes throughput; PagedAttention manages fragmented memory; all three compose — MLA reduces what's cached, FlashAttention speeds the compute, batching fills GPU utilization.
+
+### Scenario 4: Single Agent vs. Multi-Agent Systems
+
+> "When should you use a single powerful agent with tools vs. a multi-agent swarm?"
+
+Draws on: [GLM-5](32_glm5.md) (single agent, SWE-bench), [Kimi K2.5](33_kimi_k2_5.md) (Agent Swarm, PARL), [ReAct](19_react.md) (thought-action loop), [Toolformer](20_toolformer.md) (self-supervised tool use).
+
+Key points: single agents are simpler and have full context; multi-agent parallelizes independent subtasks; PARL rewards both quality and speedup; coordination overhead can negate parallelism gains for tightly coupled tasks; DAG dependency analysis determines decomposability.
+
+### Scenario 5: Distillation vs. On-Student RL
+
+> "You have a strong reasoning teacher. When do you distill vs. run RL directly on the student?"
+
+Draws on: [DeepSeek-R1](28_deepseek_r1.md) (R1-Distill vs. GRPO), [GLM-5](32_glm5.md) (distillation for coding agents), [Chinchilla](11_chinchilla.md) (compute-optimal trade-offs).
+
+Key points: distillation (SFT on teacher traces) is cheaper and transfers style; RL on student handles distribution shift and new domains; distillation may not transfer robustness without diverse/hard-negative data; compute budget determines which is feasible.
+
+### Scenario 6: Data Quality as a Scaling Multiplier
+
+> "Qwen2.5-72B matches a 405B model. What does this say about compute-optimal training?"
+
+Draws on: [Qwen2.5](31_qwen2_5.md) (18T tokens, data quality), [Chinchilla](11_chinchilla.md) (compute-optimal formula), [LLaMA](12_llama.md) (open training recipe).
+
+Key points: Chinchilla formula assumes fixed data quality; effective data \(D_{\text{eff}} = \text{quality}(D) \cdot |D|\); curated 18T tokens > raw 100T tokens; specialized post-training (Math, Coder) further leverages the base investment.
+
+### Scenario 7: Evaluation Hygiene and Benchmark Leakage
+
+> "How do you ensure your model's benchmark scores are trustworthy?"
+
+Draws on: [Qwen2.5](31_qwen2_5.md) (evaluation methodology), [GLM-5](32_glm5.md) (SWE-bench Verified), [Kimi K2.5](33_kimi_k2_5.md) (multi-benchmark evaluation).
+
+Key points: API vs. open-weight reproducibility; version-pinned benchmarks; contamination detection; held-out private test sets; human evaluation as ground truth calibration; SWE-bench Verified uses real GitHub PRs with test suites.
 
 ---
 
