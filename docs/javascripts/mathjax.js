@@ -1,14 +1,18 @@
-/* MathJax 3 + pymdownx.arithmatex (generic). See Material for MkDocs docs. */
 window.MathJax = {
   tex: {
     inlineMath: [["\\(", "\\)"]],
     displayMath: [["\\[", "\\]"]],
     processEscapes: true,
     processEnvironments: true,
+    tags: "ams",
+    packages: { "[+]": ["ams", "noerrors", "noundefined"] },
   },
   options: {
     ignoreHtmlClass: ".*|",
     processHtmlClass: "arithmatex",
+  },
+  loader: {
+    load: ["[tex]/ams", "[tex]/noerrors", "[tex]/noundefined"],
   },
 };
 

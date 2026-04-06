@@ -13,6 +13,7 @@ theme:
     - navigation.indexes
     - navigation.top
     - navigation.path
+    - navigation.footer
     - toc.follow
     - search.suggest
     - search.highlight
@@ -177,8 +178,11 @@ nav:
     - GPT-4.5 (Feb 2025): 07_recent_advances/03_gpt4_5.md
     - Gemini 2.5 Pro (Mar 2025): 07_recent_advances/04_gemini_2_5_pro.md
     - Llama 4 (Apr 2025): 07_recent_advances/05_llama_4.md
+    - Qwen 3 (Apr 2025): 07_recent_advances/13_qwen3.md
     - GPT-5 (Aug 2025): 07_recent_advances/06_gpt5.md
-    - Claude Opus 4.5 (Nov 2025): 07_recent_advances/07_claude_opus_4_5.md
-    - Gemini 3.1 Pro (Feb 2026): 07_recent_advances/08_gemini_3_1_pro.md
-    - GPT-5.4 Family (Mar 2026): 07_recent_advances/09_gpt5_4.md
     - GLM-4.6 (Sep 2025): 07_recent_advances/10_glm4_6.md
+    - Claude Opus 4.5 (Nov 2025): 07_recent_advances/07_claude_opus_4_5.md
+    - Kimi K2.5 (Jan 2026): 07_recent_advances/12_kimi_k2_5.md
+    - Gemini 3.1 Pro (Feb 2026): 07_recent_advances/08_gemini_3_1_pro.md
+    - GLM-5 (Feb 2026): 07_recent_advances/11_glm5.md
+    - GPT-5.4 Family (Mar 2026): 07_recent_advances/09_gpt5_4.md

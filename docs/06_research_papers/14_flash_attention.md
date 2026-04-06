@@ -1,18 +1,29 @@
 # FlashAttention: Fast and Memory-Efficient Exact Attention
 
-**Authors:** Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré  
-**Year:** 2022 &nbsp;|&nbsp; **Venue:** NeurIPS  
-**Link:** [arXiv:2205.14135](https://arxiv.org/abs/2205.14135)
+**Original Authors:** Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré  
+**Timeline:** FlashAttention (2022) → FlashAttention-2 (2023) → FlashAttention-3 (2024) → FlashAttention-4 (2026)  
+**Links:** [FA-1 arXiv:2205.14135](https://arxiv.org/abs/2205.14135) &nbsp;|&nbsp; [FA-2 arXiv:2307.08691](https://arxiv.org/abs/2307.08691) &nbsp;|&nbsp; [FA-3 arXiv:2407.08608](https://arxiv.org/abs/2407.08608)
 
 ---
 
 ## TL;DR
 
-FlashAttention computes **exact** self-attention while avoiding materializing the full \(N \times N\) attention matrix in GPU high-bandwidth memory (HBM). It uses **tiling** and **kernel fusion** to keep intermediate results in fast SRAM, reducing memory reads/writes by orders of magnitude. The result: faster training, longer sequences, and lower memory usage — all without approximating the attention output.
+FlashAttention computes **exact** self-attention while avoiding materializing the full \(N \times N\) attention matrix in GPU high-bandwidth memory (HBM). It uses **tiling** and **kernel fusion** to keep intermediate results in fast SRAM, reducing memory reads/writes by orders of magnitude. The result: faster training, longer sequences, and lower memory usage — all without approximating the attention output. Four generations of improvements have pushed utilization from ~25% (FA-1) to **71% on B200** (FA-4).
 
 ---
 
-## Why This Paper Matters
+## Evolution at a Glance
+
+| Version | Year | GPU Target | Peak Throughput | Key Innovation |
+|---------|------|-----------|----------------|----------------|
+| FlashAttention | 2022 (NeurIPS) | A100 | ~25–40% utilization | IO-aware tiling + online softmax |
+| FlashAttention-2 | Jul 2023 | A100 | 50–73% utilization (~230 TFLOPs/s) | Better parallelism + fewer non-matmul FLOPs |
+| FlashAttention-3 | Jul 2024 | H100 (Hopper) | 75% utilization (~740 TFLOPs/s) | Asynchronous pipelining + FP8 support |
+| FlashAttention-4 | Mar 2026 | B200 (Blackwell) | 71% utilization (~1605 TFLOPs/s) | Algorithm-kernel co-design for asymmetric HW |
+
+---
+
+## Why This Paper Series Matters
 
 FlashAttention is now the **default attention implementation** in PyTorch 2, vLLM, and virtually every LLM serving framework:
 
@@ -21,6 +32,7 @@ FlashAttention is now the **default attention implementation** in PyTorch 2, vLL
 3. **Exact, not approximate:** Unlike sparse or linear attention, output is mathematically identical
 4. **IO-awareness:** Introduced the concept of designing algorithms around GPU memory hierarchy
 5. **Universal adoption:** Used by every major model and framework
+6. **Hardware co-evolution:** Each generation tracks new GPU architectures (Ampere → Hopper → Blackwell)
 
 ---
 
@@ -87,14 +99,17 @@ The output \(O\) is exact — FlashAttention produces the **same** result.
 For blocks \(B_1, B_2\) of the key dimension:
 
 **Block 1:**
+
 \[
 m_1 = \max(S_{B_1}), \quad l_1 = \sum \exp(S_{B_1} - m_1), \quad O_1 = \frac{\exp(S_{B_1} - m_1)}{l_1} V_{B_1}
 \]
 
 **After Block 2:**
+
 \[
 m = \max(m_1, m_2), \quad l = l_1 e^{m_1 - m} + l_2 e^{m_2 - m}
 \]
+
 \[
 O = \frac{l_1 e^{m_1 - m}}{l} O_1 + \frac{l_2 e^{m_2 - m}}{l} O_2
 \]
@@ -241,6 +256,63 @@ if __name__ == "__main__":
 
 ---
 
+## FlashAttention-2 (July 2023): Better Parallelism
+
+FlashAttention-1 achieved only 25–40% of theoretical peak FLOPs on A100. FlashAttention-2 closes this gap with three algorithmic changes:
+
+### What Changed
+
+1. **Fewer non-matmul FLOPs.** GPU Tensor Cores execute matmul at 16× the throughput of other operations. FA-2 restructures the online softmax to minimize scalar rescaling, moving work into matmul form.
+
+2. **Parallelism across sequence length.** FA-1 parallelized over batch and heads only. FA-2 additionally parallelizes over the **sequence-length dimension** (outer loop over Q blocks), increasing occupancy on modern GPUs with 108+ SMs.
+
+3. **Better warp-level work partitioning.** Within each thread block, FA-2 splits work across warps to avoid redundant shared memory reads/writes, reducing the "4-warp → shared-memory → 4-warp" synchronization pattern from FA-1.
+
+### Result
+
+~2× speedup over FA-1, reaching **230 TFLOPs/s** (73% utilization) on A100. End-to-end GPT training is 2.2× faster than a baseline without FlashAttention.
+
+---
+
+## FlashAttention-3 (July 2024): Hopper Asynchrony + FP8
+
+The H100 (Hopper) introduced hardware features — **TMA** (Tensor Memory Accelerator) and **warp-group MMA** — that FA-2's kernel structure couldn't exploit.
+
+### Key Techniques
+
+1. **Warp-specialization with producer–consumer overlap.** Dedicated warp groups issue TMA loads (producer) while other warp groups run Tensor Core matmuls (consumer). Data movement and compute are **fully overlapped**.
+
+2. **Ping-pong scheduling.** Two warp groups alternate: while one computes softmax + rescaling on block \(j\), the other runs matmul on block \(j+1\). This hides the softmax latency.
+
+3. **FP8 with block quantization.** Leverages Hopper's native FP8 Tensor Cores. Per-block dynamic quantization + **incoherent processing** (random orthogonal rotation of Q/K) reduces quantization error by 2.6× vs. naive FP8.
+
+### Result
+
+- **FP16:** Up to 740 TFLOPs/s (75% utilization on H100) — 1.5–2× faster than FA-2.
+- **FP8:** Close to 1.2 PFLOPs/s with 2.6× lower error than baseline FP8.
+
+---
+
+## FlashAttention-4 (March 2026): Blackwell Co-Design
+
+Blackwell GPUs (B200/GB200) have **4× more Tensor Core throughput** than Hopper, but shared memory bandwidth and special function units (SFUs) grew only ~1.5×. This **asymmetric scaling** means the exponential function in softmax becomes the new bottleneck.
+
+### Key Innovations
+
+1. **Exponential function emulation.** Instead of calling the hardware SFU `exp()`, FA-4 approximates \(\exp(x)\) with a polynomial computed entirely on Tensor Cores — converting a serial SFU bottleneck into a parallel matmul.
+
+2. **Forward pass pipeline.** New 5-stage software pipeline exploits Blackwell's fully asynchronous MMA instructions and larger tile sizes. The pipeline interleaves: TMA load → matmul (QK) → exp emulation → matmul (PV) → writeback.
+
+3. **Backward pass: tensor memory + 2-CTA MMA.** Intermediate results are cached in Blackwell's new **tensor memory** (per-SM scratchpad separate from shared memory), relieving shared-memory bandwidth. Uses 2-CTA cooperative MMA for larger tiles.
+
+4. **Deterministic execution.** Full support for reproducible forward and backward passes — critical for debugging and compliance.
+
+### Result
+
+Up to **1605 TFLOPs/s** (71% utilization on B200), 1.3× faster than cuDNN 9.13, and 2.7× faster than Triton. FlexAttention integration enables custom attention variants (causal, sliding window, etc.) with FA-4 as the backend.
+
+---
+
 ## Interview Importance
 
 FlashAttention is a **top-5 systems topic** in LLM interviews. It tests whether you understand GPU architecture and the distinction between compute-bound and memory-bound operations.
@@ -284,6 +356,8 @@ FlashAttention is preferred because you get the speed benefit without sacrificin
 - **Mistral** → Uses FlashAttention-2 with sliding window attention
 - **Mamba/SSMs** → Alternative approach: avoid quadratic attention entirely
 - **LLaMA** → Training and inference use FlashAttention
+- **DeepSeek-V3** → Uses FlashAttention-3 FP8 for cost-efficient training
+- **FlexAttention** → PyTorch API that now uses FA-4 as backend for custom attention masks
 
 ---
 
@@ -296,6 +370,9 @@ FlashAttention is preferred because you get the speed benefit without sacrificin
 | Key trick | Online softmax — composable running max + sum statistics |
 | Standard memory | \(O(N^2)\) for attention matrix |
 | Flash memory | \(O(N)\) — never materializes full matrix |
-| Speedup | 2-4× on training, enables 4-16× longer sequences |
+| FA-1 (2022) | IO-aware tiling; 25–40% A100 utilization |
+| FA-2 (2023) | Sequence-parallel + warp partitioning; 73% A100 utilization |
+| FA-3 (2024) | Hopper async pipelining + FP8; 75% H100 utilization |
+| FA-4 (2026) | Blackwell co-design, exp emulation on Tensor Cores; 71% B200, 1605 TFLOPs/s |
 | Adoption | Default in PyTorch 2, vLLM, every major framework |
-| GPU insight | Attention is memory-bound, not compute-bound |
+| GPU insight | Each generation tracks the hardware bottleneck: HBM bandwidth → occupancy → async overlap → SFU throughput |

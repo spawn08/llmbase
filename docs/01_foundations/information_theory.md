@@ -111,7 +111,7 @@ D_{\text{KL}}(p \| q) = \sum_x p(x) \log \frac{p(x)}{q(x)} = H(p, q) - H(p)
 
 - **Forward KL** \(D_{\text{KL}}(p \| q)\): **expectation under \(p\)**. Wherever \(p\) has mass, \(q\) must place mass or pay \(\log(p/q)\) **huge** penalty—**mode-covering** behavior. **MLE / cross-entropy** aligns with this direction when \(p\) is data and \(q\) is the model.
 
-- **Reverse KL** \(D_{\text{KL}}(q \| p)\): **expectation under \(q\)**. Penalty emphasizes regions **\(q\) thinks likely**. If \(q\) is narrow, it can **ignore** a secondary mode of \(p\)**—**mode-seeking**. Used in some **variational** objectives and in **KL-to-reference** penalties where \(p\) is a **frozen** reference LM and \(q\) is the policy.
+- **Reverse KL** \(D_{\text{KL}}(q \| p)\): **expectation under \(q\)**. Penalty emphasizes regions **\(q\) thinks likely**. If \(q\) is narrow, it can **ignore** a secondary mode of \(p\) — **mode-seeking**. Used in some **variational** objectives and in **KL-to-reference** penalties where \(p\) is a **frozen** reference LM and \(q\) is the policy.
 
 !!! example "Bimodal Target in Text (no plot needed)"
     Suppose **true** \(p\) places 0.5 mass on “**The answer is 42.**” and 0.5 on “**The answer is π.**”
@@ -121,7 +121,7 @@ D_{\text{KL}}(p \| q) = \sum_x p(x) \log \frac{p(x)}{q(x)} = H(p, q) - H(p)
 
     **RLHF intuition:** a **KL penalty** \(\beta D_{\text{KL}}(\pi \| \pi_{\text{ref}})\) discourages the tuned policy \(\pi\) from straying from \(\pi_{\text{ref}}\)—often implemented with a **reverse-KL-like** form on sequences or approximations (see Schulman’s notes / PPO-KL variants).
 
-### Perplexity = \(\exp(\)cross-entropy\()\)
+### Perplexity = exp(cross-entropy)
 
 Average **per-token** cross-entropy (nats): \(\hat{H} = -\frac{1}{T}\sum_{t=1}^T \log q(w_t \mid w_{<t})\).
 

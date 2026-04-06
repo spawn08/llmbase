@@ -194,3 +194,24 @@
 .md-footer {
   margin-top: 3em;
 }
+
+/* ── Footer navigation (prev / next topic) ───────────────────────── */
+.md-footer__inner {
+  padding: 1em 0;
+}
+.md-footer__link {
+  transition: opacity 0.2s ease;
+}
+.md-footer__link:hover {
+  opacity: 0.85;
+}
+.md-footer__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.md-footer__direction {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
