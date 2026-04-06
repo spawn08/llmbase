@@ -72,9 +72,9 @@ This section provides **in-depth documentation** for the 25 landmark papers that
 | 23 | [Codex](23_codex.md) | 2021 | Code generation, HumanEval benchmark, pass@k metric |
 | 25 | [Gemini](25_gemini.md) | 2023 | Native multimodal — text, images, audio, video |
 
-### Chinese Lab Contributions (2024–2025)
+### Chinese Lab Contributions (2024–2026)
 
-The Chinese research ecosystem produced several landmark papers in 2024–2025 that fundamentally changed how the field thinks about reasoning, KV cache efficiency, and MoE training. These are essential reading for any LLM interview in 2025–2026.
+The Chinese research ecosystem produced several landmark papers in 2024–2026 that fundamentally changed how the field thinks about reasoning, KV cache efficiency, MoE training, agentic systems, and multi-agent coordination. These are essential reading for any LLM interview in 2025–2026.
 
 | # | Paper | Lab | Year | Key Contribution |
 |---|---|---|---|---|
@@ -84,6 +84,8 @@ The Chinese research ecosystem produced several landmark papers in 2024–2025 t
 | 29 | [ChatGLM / GLM-4](29_glm4.md) | Zhipu AI / THU | 2024 | GLM pretraining unifies MLM+CLM; bilingual at scale |
 | 30 | [Kimi k1.5](30_kimi_k1_5.md) | Moonshot AI | 2025 | Long-context RL scaling; partial rollouts; online mirror descent |
 | 31 | [Qwen2.5](31_qwen2_5.md) | Alibaba | 2024 | 18T tokens, 72B matches 405B Llama; Qwen2.5-Math/Coder family |
+| 32 | [GLM-5](32_glm5.md) | Zhipu AI / THU | 2026 | 744B MoE, Slime async RL, SotA open-weight agentic coding |
+| 33 | [Kimi K2.5](33_kimi_k2_5.md) | Moonshot AI | 2026 | 1T MoE, Agent Swarm (PARL), native multimodality with MoonViT |
 
 ---
 
@@ -100,6 +102,7 @@ The Chinese research ecosystem produced several landmark papers in 2024–2025 t
 | 2023 | LLaMA, Mistral 7B, ReAct, Toolformer, Mamba, Gemini |
 | 2024 | Mixtral, DeepSeek-V2, DeepSeek-V3, ChatGLM/GLM-4, Qwen2.5 |
 | 2025 | DeepSeek-R1, Kimi k1.5 |
+| 2026 | GLM-5, Kimi K2.5 |
 
 ## Paper Interconnections
 
@@ -118,7 +121,10 @@ flowchart LR
     LLaMA --> DSV2[DeepSeek-V2] --> DSV3[DeepSeek-V3] --> DSR1[DeepSeek-R1]
     Mixtral --> DSV3
     DSR1 --> KimiK15[Kimi k1.5]
+    KimiK15 --> KimiK25[Kimi K2.5]
     BERT --> GLM4[GLM-4]
+    GLM4 --> GLM5[GLM-5]
+    DSR1 --> GLM5
     GPT3 --> Qwen25[Qwen2.5]
     Inst --> DSR1
     CoT --> DSR1
@@ -131,8 +137,8 @@ flowchart LR
 - **Alignment:** InstructGPT → Constitutional AI / FLAN
 - **Tools & Agents:** Chain-of-Thought → ReAct → Toolformer
 - **Multimodal:** CLIP → Gemini
-- **Chinese lab thread:** LLaMA → DeepSeek-V2 (MLA) → DeepSeek-V3 (MoE+FP8) → DeepSeek-R1 (GRPO) → Kimi k1.5 (long-context RL)
-- **Bilingual/GLM thread:** BERT → GLM-4 → GLM-Z1
+- **Chinese lab thread:** LLaMA → DeepSeek-V2 (MLA) → DeepSeek-V3 (MoE+FP8) → DeepSeek-R1 (GRPO) → Kimi k1.5 (long-context RL) → Kimi K2.5 (Agent Swarm)
+- **Bilingual/GLM thread:** BERT → GLM-4 → GLM-5 (async RL, agentic coding)
 
 ## Interview Priority Guide
 
@@ -151,6 +157,8 @@ If you have limited time, focus on these papers first (highest interview frequen
 11. **DeepSeek-R1** — now essential; GRPO, RL-only reasoning, distillation
 12. **DeepSeek-V2/V3** — MLA for KV cache, MoE load balancing
 13. **Kimi k1.5** — long-context RL as an alternative to MCTS
+14. **GLM-5** — async RL for agentic coding, MoE serving
+15. **Kimi K2.5** — multi-agent RL (PARL), native multimodality
 
 ---
 
@@ -285,3 +293,47 @@ where \(D_{\text{eff}} = \text{quality}(D) \cdot |D|\) — effective data depend
 1. Qwen2.5-72B matches a 405B model. What does this say about the Chinchilla compute-optimal hypothesis, and how does data quality modify it?
 2. How does the strategy of training specialized variants (Math, Coder) from a single base compare to training separate models from scratch?
 3. What does Alibaba's model portfolio (open-weight base + API MoE variants + specialized) tell you about the economics of LLM deployment?
+
+---
+
+### GLM-5 (Zhipu AI / Tsinghua, 2026) — Agentic Engineering with Async RL
+
+**Why it matters**: GLM-5 (744B MoE, 40B active) achieves **77.8 on SWE-bench Verified** — the strongest open-weight result for autonomous code repair, approaching Claude Opus 4.5. The key innovation is **Slime**, an asynchronous RL framework that decouples rollout generation from policy updates, keeping GPUs utilized even when agentic rollouts involve slow tool execution (compilers, test runners).
+
+**Slime async RL**: synchronous RL wastes GPU cycles waiting for the slowest tool-interaction rollout. Slime uses rollout workers with slightly stale policy copies, buffering completed episodes. V-trace importance weighting corrects for the staleness gap:
+
+\[
+\rho_t = \min\left(\bar{\rho},\, \frac{\pi_\theta(a_t \mid s_t)}{\mu(a_t \mid s_t)}\right)
+\]
+
+!!! math-intuition "In Plain English"
+    Slime is like a kitchen where chefs work independently instead of waiting for the slowest dish. A quality controller (importance weights) ensures slightly stale preparations are still usable for the next course.
+
+**Interview questions**:
+
+1. How does **Slime's asynchronous RL** differ from synchronous PPO/GRPO, and when is async preferable?
+2. With 744B total but only 40B active parameters, what determines **serving cost** — total or active parameters?
+3. Compare the **GLM pretraining objective** (blank infilling) with standard CLM for agentic code repair tasks — why might bidirectional context help?
+
+---
+
+### Kimi K2.5 (Moonshot AI, 2026) — Multi-Agent Coordination with PARL
+
+**Why it matters**: Kimi K2.5 (1T MoE, 32B active, 384 experts) introduces **Agent Swarm** — a system that orchestrates up to 100 parallel sub-agents with 1,500 tool calls per workflow. The coordinator is trained with **Parallel-Agent Reinforcement Learning (PARL)**, which rewards both task-completion quality and parallelism speedup. Native multimodality via **MoonViT 400M** enables visual-to-code generation from UI screenshots.
+
+**PARL reward**:
+
+\[
+R(D, y) = R_{\text{quality}}(y, q) + \beta \cdot \frac{T_{\text{sequential}}}{T_{\text{parallel}}(D)}
+\]
+
+The speedup ratio rewards decompositions that achieve genuine parallelism — the coordinator learns which tasks can be parallelized vs which have sequential dependencies.
+
+!!! math-intuition "In Plain English"
+    PARL is MapReduce for LLM tasks — the coordinator learns to map work to parallel sub-agents and reduce results into a final output. The RL reward incentivizes both getting the right answer AND doing it faster via parallelism.
+
+**Interview questions**:
+
+1. How does PARL differ from prompt-based multi-agent frameworks (AutoGen, CrewAI)?
+2. What are the trade-offs between **native multimodal pretraining** (K2.5) vs **bolt-on** vision encoders (LLaVA)?
+3. With 384 experts and 8 active per token, what is the memory footprint and what are the load balancing challenges?
