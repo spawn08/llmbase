@@ -287,7 +287,7 @@ where \(b_i\) is updated by \(\pm\gamma\) depending on whether expert \(i\) is o
 
 **Why it matters**: R1-Zero proved that reasoning capability is **latent in pre-trained weights** and can be elicited purely through RL — no labeled CoT data required. This changed how the field thinks about the relationship between pretraining, SFT, and alignment.
 
-See [Recent Advances §1](../07_recent_advances/index.md#1-deepseek-r1-and-r1-zero-january-2025) for the full GRPO derivation and worked example.
+See the [DeepSeek-R1 deep dive](28_deepseek_r1.md) for the full GRPO derivation and worked example, or the [Recent Advances entry](../07_recent_advances/01_deepseek_r1.md) for a frontier summary.
 
 **Interview questions**:
 
@@ -326,7 +326,7 @@ where \(\mathcal{S}\) is a set of sampled spans and \(\mathbf{x}_{\text{corrupt}
 
 **Why it matters**: Kimi k1.5 matched o1 on AIME and MATH 500 **without MCTS, value functions, or process reward models** — a simpler RL recipe than most expected to reach frontier reasoning quality. The key insight: a 128K-token context window lets the model reason, reflect, and self-correct within a single trajectory.
 
-See [Recent Advances §2](../07_recent_advances/index.md#2-kimi-k15-january-2025) for the mirror descent formulation.
+See the [Kimi k1.5 deep dive](30_kimi_k1_5.md) for the mirror descent formulation, or the [Recent Advances entry](../07_recent_advances/02_kimi_k1_5.md) for a frontier summary.
 
 **Interview questions**:
 
