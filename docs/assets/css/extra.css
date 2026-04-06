@@ -476,6 +476,75 @@
   background: linear-gradient(90deg, #5E7A8C, #6FA3B8) !important;
 }
 
+/* ── Light mode — Tables ─────────────────────────────────────── */
+[data-md-color-scheme="default"] .md-typeset table:not([class]) {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+[data-md-color-scheme="default"] .md-typeset table:not([class]) th {
+  background: rgba(61, 122, 146, 0.05);
+  color: #2A6F88;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-md-color-scheme="default"] .md-typeset table:not([class]) td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-md-color-scheme="default"] .md-typeset table:not([class]) tbody tr:hover td {
+  background: rgba(61, 122, 146, 0.03);
+}
+
+/* ── Light mode — Code ───────────────────────────────────────── */
+[data-md-color-scheme="default"] .md-typeset pre {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+[data-md-color-scheme="default"] .md-typeset :not(pre) > code {
+  background: rgba(61, 122, 146, 0.06);
+  color: #2A6F88;
+  border: 1px solid rgba(61, 122, 146, 0.1);
+}
+
+/* ── Light mode — Sidebar ────────────────────────────────────── */
+[data-md-color-scheme="default"] .md-sidebar {
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-md-color-scheme="default"] .md-nav__link--active {
+  background: rgba(61, 122, 146, 0.06);
+  border-left: 2px solid var(--md-accent-fg-color);
+}
+
+/* ── Light mode — Admonitions ────────────────────────────────── */
+[data-md-color-scheme="default"] .md-typeset .admonition,
+[data-md-color-scheme="default"] .md-typeset details {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* ── Light mode — Search ─────────────────────────────────────── */
+[data-md-color-scheme="default"] .md-search__form {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--llm-radius);
+}
+
+/* ── Light mode — Footer ─────────────────────────────────────── */
+[data-md-color-scheme="default"] .md-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* ── Light mode — h2 underline ───────────────────────────────── */
+[data-md-color-scheme="default"] .md-typeset h2 {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-md-color-scheme="default"] .md-typeset h2::after {
+  background: var(--md-accent-fg-color);
+}
+
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .md-typeset h1 {
