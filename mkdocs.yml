@@ -171,6 +171,8 @@ nav:
     - "29. GLM-4": 06_research_papers/29_glm4.md
     - "30. Kimi k1.5": 06_research_papers/30_kimi_k1_5.md
     - "31. Qwen2.5": 06_research_papers/31_qwen2_5.md
+    - "32. GLM-5": 06_research_papers/32_glm5.md
+    - "33. Kimi K2.5": 06_research_papers/33_kimi_k2_5.md
   - Recent Advances:
     - 07_recent_advances/index.md
     - DeepSeek-R1 (Jan 2025): 07_recent_advances/01_deepseek_r1.md
