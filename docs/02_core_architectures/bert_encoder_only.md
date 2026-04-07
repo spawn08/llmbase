@@ -352,15 +352,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. **What is masked language modeling, and why does BERT use the 80/10/10 replacement strategy?**
+    *Answer:* MLM trains the model to predict **original** tokens at masked positions using **bidirectional** context. **80%** `[MASK]`, **10%** random token, **10%** unchanged prevents the model from relying only on the literal `[MASK]` surface form (train–test mismatch at fine-tune time) and forces use of **contextual** representations.
     2. **Explain the difference between bidirectional encoder attention and causal decoder attention using one sentence each for what information a position may use.**
+    *Answer:* **Encoder:** position \(i\) may attend to **all** tokens in the segment (past and future). **Decoder:** position \(i\) may attend only to tokens **at indices \(\le i\)** (past and self), never future.
     3. **Why is BERT unsuitable for standard autoregressive text generation the way GPT is trained?**
+    *Answer:* BERT is trained for **joint** fill-in-the-blank with full context, not the product \(\prod_t P(w_t\mid w_{<t})\). It does not define a coherent **left-to-right** conditional for sampling the next token without misusing the training distribution (unless you use iterative masking heuristics, not standard GPT decoding).
     4. **What was Next Sentence Prediction, why was it used originally, and what did RoBERTa conclude?**
+    *Answer:* NSP binary-predicted whether segment B **followed** segment A—intended to teach **inter-sentence** relations. **RoBERTa** found NSP often **unnecessary or harmful** when other training improvements (more data, dynamic masking, longer sequences) were applied; many modern recipes **drop** NSP.
     5. **How does fine-tuning add a classification head on top of `[CLS]`, and roughly how many parameters does that head contribute for BERT-base with two labels?**
+    *Answer:* Final \(\mathbf{h}_{\texttt{[CLS]}}\in\mathbb{R}^{768}\) is passed through a linear layer to \(C\) logits (often with dropout). For **two** labels: \(W\in\mathbb{R}^{2\times768}\), \(b\in\mathbb{R}^2\) → **1,538** parameters—negligible vs ~110M in the encoder body.
     6. **Compare `[CLS]` pooling versus mean token pooling for sentence embeddings. When might each be preferred?**
+    *Answer:* **`[CLS]`** is a single learned aggregate slot—strong when **fine-tuned** for classification with that objective. **Mean pooling** averages real token vectors—often better **off-the-shelf** similarity without task-specific `[CLS]` training. Always **L2-normalize** for cosine similarity.
     7. **What problem does Sentence-BERT solve that raw BERT mean pooling does not directly optimize?**
+    *Answer:* Standard BERT + mean pool is trained for **MLM**, not **metric geometry**. SBERT uses **siamese/contrastive** objectives so cosine distance aligns with **semantic similarity**—critical for retrieval and clustering.
     8. **Name three BERT variants and one distinctive idea for each (RoBERTa, ALBERT, DistilBERT, DeBERTa).**
+    *Answer:* **RoBERTa**: no NSP, dynamic masking, more/better training. **ALBERT**: factorized embeddings + **cross-layer weight sharing** for fewer params. **DistilBERT**: **distillation** from BERT teacher. **DeBERTa**: **disentangled** content vs relative-position in attention.
     9. **How would you use BERT hidden states in a retrieval pipeline, and what metric would you use between query and document vectors?**
+    *Answer:* Encode query and documents to fixed vectors (e.g. mean-pool last layer, or dedicated retriever checkpoints), index with **ANN** (FAISS, ScaNN). **Cosine similarity** (or dot product on L2-normalized vectors) is standard for ranking.
     10. **If validation accuracy plateaus during fine-tuning while training loss keeps dropping, what steps would you take to diagnose overfitting or data issues?**
+    *Answer:* Suspect **overfitting**: check gap train/val, early stopping, smaller LR, more data/augmentation, **class balance** on val. Verify **val leakage** or **label noise**; plot per-class metrics; try stronger **regularization** (dropout, weight decay).
 
 !!! interview "Follow-up Probes"
     - **Why might max pooling over tokens be risky compared to mean pooling for variable-length sentences?**

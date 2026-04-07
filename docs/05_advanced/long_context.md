@@ -312,15 +312,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Why is standard attention \(O(T^2)\), and what exactly does FlashAttention change vs approximate sparse attention?
+    *Answer:* Each of \(T\) queries attends to \(T\) keys, so per-layer attention FLOPs and naive materialization scale **\(O(T^2)\)** (times heads and batch). **FlashAttention** keeps the **same** softmax attention math but tiles computation to reduce **HBM traffic**—exact attention, faster in practice when memory-bound. **Sparse/window** attention changes the **math** by zeroing distant pairs—subquadratic work but approximate long-range mixing unless you add globals or deep stacks.
     2. Explain sliding-window attention and how depth increases receptive field.
+    *Answer:* Each position only attends to a **local neighborhood** of width \(w\), cutting per-layer cost to \(O(Tw)\). Information still flows “along the chain” over layers—roughly, effective reach grows with **layer depth × window** (plus any global tokens). Very deep local stacks can cover long ranges, but early layers see only local context; hybrid models often add periodic full or global attention.
     3. What breaks when you extrapolate RoPE from 4K to 128K training lengths?
+    *Answer:* RoPE phases were fit for trained positions; at much longer spans **relative** angles for far tokens leave the training manifold—attention degrades (“wobbly” position sensitivity) and perplexity/NIAH scores suffer. Naive linear scaling squeezes indices but can blur fine local distinctions; **NTK/YaRN** re-tune frequency bases to stretch long wavelengths without trashing short-range behavior.
     4. Compare linear RoPE scaling vs NTK-aware scaling in one sentence each.
+    *Answer:* **Linear scaling** divides position indices by a factor so longer spans map into the trained range—simple but can over-compress distant positions and hurt local resolution. **NTK-aware scaling** adjusts RoPE frequency bases (not just positions) so high-frequency components still encode nearby detail while low frequencies extrapolate—usually better perplexity on long docs at the cost of more hyperparameters.
     5. How does KV cache memory scale with \(T\), and what reduces it at inference?
+    *Answer:* KV cache size grows **linearly** with sequence length \(T\) (per layer, per batch, per KV head dimension). **GQA/MQA** shrink KV head count; **KV quantization** (INT8/FP8), **paged KV** (vLLM), and smaller batch/long-context serving configs cut RAM. Long prompts dominate **prefill** compute; long generation dominates **KV** footprint.
     6. What is the “lost in the middle” phenomenon, and how might you mitigate it?
+    *Answer:* Models often **underweight** evidence placed in the **middle** of long prompts—retrieval and needle tests show U-shaped attention bias. Mitigate by **reranking** to put key facts at the start or end, **structured** sections, repeating critical constraints, or **chunking+RAG** instead of one giant dump. Measure with needle-in-haystack tasks for your actual model and template.
     7. Describe ring attention or context parallelism at a high level.
+    *Answer:* **Ring attention** (and similar context-parallel schemes) **shard the sequence** across devices: each GPU holds a **block** of tokens and passes \(K,V\) blocks around a ring so attention can be computed without one GPU owning the full \(T\times T\) for all tokens. It trades **network bandwidth** for **memory** savings—essential for million-token training or very long prefills when model parallel alone is insufficient.
     8. When would you prefer RAG over stuffing an enormous context?
+    *Answer:* Prefer **RAG** when the corpus is **larger than the usable window**, updates frequently, or needs **ACL/filtered** retrieval—RAG pins cost to relevant slices. Stuffing helps when you need **global** reasoning over a single artifact that fits (e.g., one repo) and chunk boundaries would break coreference—but it burns prefill FLOPs and may still “lose” middle content. Hybrid: retrieve candidates, then selectively expand.
     9. What does YaRN modify compared to vanilla RoPE extrapolation?
+    *Answer:* **YaRN** **interpolates** between scaled and unscaled RoPE across **frequency dimensions** with a ramp—low-frequency (long-wavelength) components extrapolate more, preserving stability on long documents, while higher frequencies keep local behavior. It targets perplexity gains when extending context versus only linearly rescaling positions.
     10. How does grouped-query attention differ from multi-head attention for serving?
+    *Answer:* **MHA** stores separate \(K,V\) per head—maximum expressivity, largest KV cache. **GQA** shares one \(K,V\) across a **group** of query heads, shrinking cache and memory bandwidth with minor quality impact in many architectures. Serving teams pick GQA to scale concurrent long chats; training must co-design attention patterns.
 
 !!! interview "Follow-up Probes"
     - “At what \(T\) does your workload become memory-bound vs compute-bound?”

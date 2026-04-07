@@ -377,15 +377,25 @@ The matrices printed in the narrative for \(T = 4\) are:
 
 !!! interview "FAANG-Level Questions"
     1. Derive the attention output as softmax-weighted values and explain numerical scaling by \(\sqrt{d_k}\).
+    *Answer:* \(\mathrm{Attention}(Q,K,V)=\mathrm{softmax}(QK^\top/\sqrt{d_k})V\): row \(i\) of the softmax matrix is weights over keys, and multiplying by \(V\) mixes value vectors. Scaling by \(\sqrt{d_k}\) keeps dot-product variance near \(O(1)\) when components of \(q,k\) are \(O(1)\), since \(\mathrm{Var}(q\cdot k)\) grows with \(d_k\); without it softmax saturates and gradients vanish.
     2. Contrast self-attention with cross-attention with concrete tensor shapes.
+    *Answer:* Self-attention: \(Q,K,V\) all from the same tensor `(B, T, d)` → scores `(B, H, T, T)`. Cross-attention: \(Q\) from decoder `(B, T_dec, d)`, \(K,V\) from encoder `(B, T_enc, d)` → scores `(B, H, T_dec, T_enc)`; each decoder step attends over **source** positions only.
     3. Explain why multi-head attention helps optimization compared with one head of full width.
+    *Answer:* Splitting \(d_{\text{model}}\) into \(h\) heads gives \(h\) separate low-rank attention maps in parallel (`d_k = d_{\text{model}}/h`), which factorizes different relation types (syntax, coreference, etc.) and typically optimizes better than one monolithic head—empirically heads **specialize**, improving both loss and interpretability.
     4. Compute KV-cache memory implications when moving from 32 KV heads to 8 KV heads at fixed sequence length.
+    *Answer:* KV cache stores two tensors proportional to `n_kv_heads × T × d_head` per layer (times batch, layers, bytes). Going from 32 to 8 KV heads at fixed \(T\) and \(d_{\text{head}}\) cuts KV **fourfold** (e.g. ~16.8M vs ~4.2M floats per layer in a toy 32-head vs 8-head count at \(T=2048\), \(d_{\text{head}}=128\)).
     5. Describe causal masking and how parallel teacher forcing still respects autoregressive constraints.
+    *Answer:* Causal mask zeros (or \(-\infty\) before softmax) attention from position \(i\) to keys \(j>i\). In training, **all** positions’ targets are known, but each position’s representation only sees the **past** keys, so the model never “cheats” with future tokens while you still batch parallel matmuls over the triangle—this is teacher forcing with a lower-triangular mask.
     6. Combine padding and causal masks: which logical operation combines them?
+    *Answer:* Both are boolean “allowed” masks; you combine with **elementwise AND** (logical intersection): a key must be both **not future** (causal) and **not padding** to receive nonzero attention mass.
     7. Explain induction heads at a high level and how attention enables copying.
+    *Answer:* Induction heads (from mechanistic interpretability) attend to **previous occurrences** of a pattern and promote **continuation**—supporting in-context copying like `[A][B] … [A] → [B]`. Attention implements this by high weights from the query position to earlier matching keys, pulling associated values forward.
     8. State the asymptotic complexity of attention in sequence length and when sparse approximations matter.
+    *Answer:* Dense attention is \(O(T^2 d)\) per layer (dominant term: \(QK^\top\)). When \(T\) exceeds a few thousand to tens of thousands, quadratic cost and memory push toward **sparse** patterns (local windows, block-sparse), **linear** attention approximations, or alternative layers (SSMs) for long sequences.
     9. Describe how grouped-query attention repeats KV heads to match query head count.
+    *Answer:* You compute `n_kv_heads` distinct \(K,V\) projections, then **repeat** each KV head `n_heads / n_kv_heads` times along the head axis so every query head sees a consistent key-value pair (same as MHA grouping). Queries stay fully per-head; only KV is shared within groups.
     10. Give a deployment scenario where MQA is attractive and a scenario where full MHA is still used.
+    *Answer:* **MQA** (one KV for all heads): maximum KV-cache savings and bandwidth wins for **long-context, high-throughput inference** (serving chat at scale). **Full MHA** is still preferred when **quality** and flexible head specialization matter most and KV memory is not the bottleneck (e.g. short-context training or research baselines).
 
 !!! interview "Follow-up Probes"
     - “What happens if you apply a causal mask in the encoder?” Expect discussion of information leakage and training–inference mismatch.

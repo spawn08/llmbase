@@ -323,15 +323,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Write the affine quant map and explain the role of scale vs zero-point for activations vs weights.
+        *Answer:* \(q = \mathrm{clip}(\mathrm{round}(x/s)+z)\) and \(\hat{x}=s\cdot(q-z)\): **scale** \(s\) sets the size of one quant step in float space; **zero-point** \(z\) maps integer zero to a real value for asymmetric ranges (common for activations). Weights often use symmetric INT8 with \(z=0\); activations can be asymmetric after ReLU-like clipping—zero-point avoids wasting codes on impossible negative values.
     2. Why does GPTQ optimize \(\|XW - X\hat{W}\|\) rather than \(\|W-\hat{W}\|\)?
+        *Answer:* The deployment metric is **layer output** error on realistic inputs: small weight changes in directions that **don’t** move \(XW\) much are cheap, while changes aligned with high-variance input directions hurt logits. Minimizing \(\|XW-X\hat{W}\|_2^2\) ties quantization to the **Fisher/Hessian**-weighted sensitivity (via calibration \(X\)), not raw parameter MSE which can ignore which errors propagate to the loss.
     3. What activation behavior makes AWQ’s salience heuristic effective?
+        *Answer:* A small fraction of **channels** carry large-magnitude activations on real prompts; quantization noise on weights that multiply those large activations dominates output error. AWQ scales salient weights up before rounding so they get finer effective resolution—protecting **weight–activation product** error where it is amplified (often 1–5% of channels drive most L2 error).
     4. Compare **GPTQ** vs **GGUF** deployment: when is CPU-first inference preferable?
+        *Answer:* **GPTQ** (Safetensors + GPU kernels like ExLlama/Marlin) targets datacenter NVIDIA cards with Tensor Core INT4 GEMM. **GGUF** + **llama.cpp** optimizes for broad CPU backends (AVX, ARM), Apple Silicon, and low VRAM—prefer when you need laptop/edge deployment, no CUDA, or single-file portability over peak tokens/sec on A100s.
     5. Why might INT4 weights not speed up inference if kernels are unfused?
+        *Answer:* If the runtime dequantizes to FP16 before each matmul, you pay extra memory traffic (read INT4 + write FP16) and lose Tensor Core packing—wall-clock can be **slower** than FP16 fused GEMM despite 4× smaller weights on disk. Speedup requires **fused** dequant+GEMM kernels matching GPU tensor core layouts (e.g. Marlin, TRT-LLM).
     6. How does **perplexity** track quantization quality, and where does it fail?
+        *Answer:* PPL aggregates next-token negative log-likelihood on held-out text—if quant noise barely moves average NLL, PPL stays near baseline (e.g. FP16 5.5 vs INT4 5.7). It misses **tail** failures: reasoning benchmarks (GSM8K), tool-use JSON validity, or long-context retrieval can collapse while WikiText PPL looks fine—always pair PPL with task-specific evals.
     7. Explain **outlier** channels in activations and how SmoothQuant mitigates them at a high level.
+        *Answer:* A few hidden dimensions spike to large magnitude on certain tokens, blowing INT8 dynamic range for activations. SmoothQuant **migrates** quantization difficulty: divide activations by scale \(s_X\) and absorb \(s_X\) into weights so both tensors fit INT8 without clipping salient activation mass—mathematically \(XW \approx (X/s_X)(s_X W_{\mathrm{int}})\) with fused kernels.
     8. What is **W4A16** vs **W8A8**, and which is more common for open LLMs on consumer GPUs?
+        *Answer:* **W4A16** keeps activations in FP16/BF16 and quantizes weights to 4-bit—simpler kernels and often default for GPTQ/AWQ on 24GB consumer cards. **W8A8** quantizes both sides (SmoothQuant-style)—needs activation quant support and careful calibration; more common in datacenter W8A8 stacks (TRT-LLM) than hobbyist GGUF, though FP8 is emerging on H100+.
     9. How would you validate a quantized model for **safety** regressions, not just PPL?
+        *Answer:* Run the same **red-team** / policy eval suites (harmlessness, refusal rates, jailbreak success) on FP16 vs quantized at identical decoding settings; check logit shifts on sensitive tokens and tool-call injection tests. Regression acceptable only if attack success rate and policy violations stay within SLO—PPL alone does not measure alignment drift.
     10. Why does **KV cache quantization** help long-context decode independently of weight PTQ?
+        *Answer:* Long-context decode is often **bandwidth**-bound reading \(K,V\) every step; halving KV bytes (FP16→INT8) cuts HBM traffic for attention ~2× for the cache tensors even if weights stay W4A16. Weight PTQ shrinks parameter traffic; KV quant targets the **growing** per-sequence state—orthogonal levers with separate accuracy risks (attention score error vs matmul error).
 
 !!! interview "Follow-up Probes"
     - “We quantized to INT4 and latency improved 0%—what diagnostics would you run?” (kernel packing, batch size, memory bound vs compute bound, dequant overhead.)

@@ -321,15 +321,25 @@ if __name__ == "__main__" and __import__("os").environ.get("RUN_LAVA"):
 
 !!! interview "FAANG-Level Questions"
     1. How does CLIP training differ from image captioning (generative) training?
+    *Answer:* **CLIP** is **contrastive**: push matched image–text pairs together and negatives apart in embedding space—great for retrieval and zero-shot, no autoregressive image modeling. **Captioning** optimizes \(P(\text{text}\mid\text{image})\) with a decoder—fluent descriptions and dense supervision, but not inherently aligned for symmetric retrieval. VLMs often combine pieces: contrastive encoders plus LM fine-tuning for chat.
     2. Why are L2-normalized embeddings paired with cosine similarity in CLIP?
+    *Answer:* L2 normalization maps vectors to the **unit sphere**, so dot product **equals** cosine similarity and removes magnitude effects from patch brightness or caption length. Training with a **temperature** or learned scale then sharpens the softmax distribution. Without normalization, norm drift can dominate similarity and destabilize contrastive learning.
     3. Describe LLaVA-style fusion: what is frozen, what is trained?
+    *Answer:* Typical LLaVA recipes **freeze** a pretrained **ViT** (or partially unfreeze later), **train** a lightweight **projector** (MLP) mapping vision tokens into the LLM embedding space, and **LoRA/SFT** the LLM on instruction data. Vision provides features; language reasoning stays in the decoder—data-efficient but projector quality gates multimodal fidelity.
     4. How does ViT patch count scale when you double image resolution?
+    *Answer:* With fixed patch size \(P\), patches per side scale with \(H/P\) and \(W/P\), so **doubling** each spatial dimension **quadruples** patch count (\(2\times\) per axis \(\Rightarrow 4\times\) tokens). Prefill FLOPs and memory grow accordingly—why dynamic resolution, pooling, or Q-Former bottlenecks matter for high-res inputs.
     5. What is the difference between early fusion and cross-attention fusion (Flamingo)?
+    *Answer:* **Early fusion** (LLaVA-style) concatenates **projected image tokens** with text tokens in one decoder sequence—simple, but vision tokens consume context budget upfront. **Flamingo cross-attention** injects visual features via **gated cross-attention layers** at multiple depths—richer interaction and variable visual compression (e.g., perceiver), often heavier to train/serve but flexible fusion.
     6. Why might SigLIP help when batch size is small?
+    *Answer:* Softmax CLIP **competes** each image against all captions in-batch—small batches mean **fewer negatives**, noisier gradients, and unstable training. **SigLIP** uses **sigmoid** losses over pairs, behaving more like independent binary decisions—often more stable and data-efficient when you cannot afford huge batches. Trade-off: different calibration and engineering compared to classic CLIP.
     7. How do multimodal LLMs hallucinate objects that are not in the image?
+    *Answer:* The LM prior is **strong**: it can complete plausible scenes (e.g., “stop sign”) from weak evidence or language cues alone—**visual grounding** is imperfect. Low resolution, occlusion, or ambiguous patches let the decoder **confabulate** details to satisfy the instruction. Mitigations: grounding boxes, detection tools, “point to evidence,” and refusal when attention/segmentation is uncertain.
     8. What is the Q-Former bottleneck solving in BLIP-2?
+    *Answer:* Feeding **all** ViT patches into a large LLM explodes **tokens and FLOPs**. The **Q-Former** learns a small set of **query tokens** that cross-attend to image features, producing a **fixed-length** visual summary for the LM—compressing vision to a budget without hand-tuned pooling. Quality depends on query count and training stage alignment.
     9. How would you budget latency for vision encoder + LLM prefill?
+    *Answer:* Profile end-to-end: **vision forward** (often large at high resolution), **projector**, then **LLM prefill** on image+text tokens—vision can dominate short text. Reduce image tokens (cropping, lower res, pooling), batch vision across requests, use faster encoders or INT8, and cap max image side. Product SLA drives whether you **async** thumbnail-first responses or stream partial UI.
     10. What are shortcut behaviors in VQA benchmarks?
+    *Answer:* Models exploit **language priors** and dataset biases—answering “yes/no” from question wording or frequent object co-occurrences **without** using pixels. This inflates VQA accuracy while failing on counterfactual or adversarial images. Mitigations: balanced splits, **compositionality** tests, visual perturbations, and **open-ended** evaluation with human or tool verification.
 
 !!! interview "Follow-up Probes"
     - “How do you evaluate chart understanding separately from OCR?”

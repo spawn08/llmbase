@@ -347,15 +347,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Explain T5’s text-to-text framing and give three tasks expressed as input strings and output strings.
+    *Answer:* Every task is **string → string**: e.g. `translate English to French: …` → `Le chat`; `summarize: <article>` → short summary; `sentiment: …` → `positive`/`negative`. One tokenizer, one **generate** path—task type is indicated by a **prefix** on the input.
     2. How does span corruption differ from BERT-style masked language modeling at the objective level?
+    *Answer:* BERT predicts **individual** masked tokens in place with bidirectional context. T5 **deletes contiguous spans**, replaces them with **sentinels** in the encoder input, and trains the **decoder** to emit the removed text (often shorter target than full reconstruction)—a **seq2seq denoising** objective, not token-wise MLM in situ.
     3. What is the role of sentinel tokens in span corruption, and why use unique sentinels per span?
+    *Answer:* Sentinels mark **where** content was removed and **order** multiple holes in the input. **Unique** sentinels per span disambiguate which decoded span belongs to which gap when several spans are missing.
     4. Compare encoder self-attention, decoder self-attention, and cross-attention in one sentence each.
+    *Answer:* **Encoder self-attention:** bidirectional over the **source** sequence. **Decoder self-attention:** **causal** over **generated** target tokens. **Cross-attention:** decoder **queries** attend over **encoder keys/values** (source memory).
     5. Why might encoder-decoder models be favorable for summarization versus a decoder-only model with a long prompt?
+    *Answer:* The encoder can **encode the full document once** with bidirectional context; the decoder focuses on **compressive generation** with cross-attention—clean separation of “read all” vs “write summary.” Decoder-only must pack article+instructions in one causal stream, which can waste capacity and context on long inputs.
     6. What did T5’s ablations suggest about corruption rate and mean span length?
+    *Answer:* Roughly **15%** of tokens corrupted (similar spirit to BERT’s mask rate) and **mean span length ~3** were strong in their sweeps—balancing noise level and target sequence length for efficient seq2seq training.
     7. Describe Flan-T5 and how it relates to instruction tuning in modern LLMs.
+    *Answer:* **Flan-T5** instruction-tunes T5 on **many** tasks/templates (QA, reasoning, translation, etc.) with supervised **next-token** loss on outputs—same idea as modern **instruction-tuned** LMs: broaden task coverage and prompt robustness, though the backbone remains encoder–decoder.
     8. How does relative position bias differ conceptually from sinusoidal absolute positions?
+    *Answer:* Sinusoidal (additive) encodes **absolute** index \(i\) in the embedding. **Relative bias** adds a term to attention logits based on **\(i-j\)** (often bucketed)—distance drives inductive bias **without** a full \(L_{\max}\) position table and often helps length generalization in some setups.
     9. What are deployment considerations for caching encoder representations in a seq2seq service?
+    *Answer:* For a **fixed source** (e.g. document to summarize), run the **encoder once**, cache `H_enc`, and reuse across decoder steps/beams—saves compute vs re-encoding each step. Watch **memory** for long \(T_x\), batching, and **TTL** if source changes; align with beam search and streaming decoder APIs.
     10. When would you still choose a decoder-only stack for a product despite T5-style advantages on paper?
+    *Answer:* **One** model class for chat, tools, and long **interleaved** dialog; simpler **training and inference** stacks; stronger **ecosystem** (kernels, RLHF, ICL). Many products prioritize **decoder-only** operational simplicity over encoder–decoder gains on narrow benchmarks.
 
 !!! interview "Follow-up Probes"
     - "Walk me through the cross-attention tensors: what are queries, keys, and values tied to?"

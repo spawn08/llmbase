@@ -214,15 +214,25 @@ Public Mixtral-style models illustrate the **total versus active** split. A comm
 
 !!! interview "FAANG-Level Questions"
     1. Define MoE at the layer level and contrast dense FFN with sparse expert FFN.
+    *Answer:* MoE replaces one dense FFN with **\(E\)** expert FFNs and a **router**; each token activates only **top-\(k\)** experts (often 1–2). **Dense** runs all FFN weights every time; **sparse** runs a **subset**, so **active FLOPs** stay small while **total** capacity (parameters on disk) is large.
     2. Write the softmax gate equation and explain top-\(k\) sparsification.
+    *Answer:* \(g_i=\exp(z_i)/\sum_j\exp(z_j)\) over expert logits \(z=W_g x\). **Top-\(k\)** keeps only the \(k\) largest \(g_i\), **zeroing** the rest, then **renormalizes** the surviving weights—sparse mixture before expert FFN evaluation.
     3. Why does load balancing matter, and what does an auxiliary loss penalize?
+    *Answer:* If routing collapses to a few experts, **others idle**—wasted capacity and **poor GPU utilization**. Auxiliary losses (e.g. Switch-style \( \propto \sum_i f_i P_i\)) penalize mismatch between **actual token counts** \(f_i\) and **average router mass** \(P_i\), encouraging **uniform** load.
     4. Compare token-choice and expert-choice routing at a systems level.
+    *Answer:* **Token-choice:** each token picks experts—popular experts get **hotspots** and imbalance. **Expert-choice:** each expert picks a **quota** of tokens—**balance by construction**, but scheduling/sorting and gradient patterns differ; implementation is more like **assignment** than per-token gather.
     5. Given total parameters and active parameters, how do you reason about inference cost?
+    *Answer:* **Latency/FLOPs** track **active** experts per token (e.g. 2 of 8) plus shared attention—not the sum of all experts. **Throughput** is bounded by **executing** only those FFNs; total params inflate **memory** for storing all experts, not per-token multiply count.
     6. What causes all-to-all communication in distributed MoE training?
+    *Answer:* Experts are **sharded across devices**; after routing, each token’s activations must be **sent to the devices owning the selected experts** and results **gathered** back—**all-to-all** (or grouped) communication across the expert mesh.
     7. Why might MoE fine-tuning behave differently from dense fine-tuning?
+    *Answer:* Only **routed** experts receive strong gradients for a given batch—**sparse updates** can overfit subsets, cause **router instability**, or need lower LR / auxiliary losses. Small domain datasets may **activate** a narrow expert subset unless regularized.
     8. How would you detect expert collapse in telemetry (histograms of expert indices)?
+    *Answer:* Track **histograms** of `argmax` or top-\(k\) expert IDs per step: collapse shows **few bars** dominating mass. Alert when entropy of the routing distribution drops or min/max load ratio exceeds thresholds across experts.
     9. Why is VRAM pressure often worse than FLOPs for MoE deployment?
+    *Answer:* **All** expert weights usually **reside in device memory** (or slow offload) even if inactive per token—checkpoint size scales with \(E\). FLOPs are low per token, but **fitting** dozens of expert shards in VRAM and **bandwidth** for routing dominate serving.
     10. Explain why Mixtral can approach larger dense quality with smaller active compute.
+    *Answer:* **Total** parameters (~47B in 8×7B style) increase **capacity** and specialization; **top-2** routing activates only ~**13B**-scale FFN work per token. Quality tracks **total knowledge** while inference FLOPs track **active** experts—similar to a large ensemble with sparse execution.
 
 !!! interview "Follow-up Probes"
     - "What happens if one expert is overloaded beyond its capacity cap?"

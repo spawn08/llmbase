@@ -355,15 +355,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Explain permutation equivariance of attention and how positional encodings break it.
+    *Answer:* Without position, if you permute input rows and apply the same permutation to outputs, attention computes the same pairwise relationships—order is invisible. **Additive** or **multiplicative** position info (sinusoidal, learned, RoPE on Q/K) makes each index carry a distinct vector or rotation so “first token” is not equivalent to “last token.”
     2. Write the sinusoidal formula and interpret wavelength progression across dimensions.
+    *Answer:* \(\mathrm{PE}(pos,2i)=\sin(pos/10000^{2i/d})\), \(\mathrm{PE}(pos,2i+1)=\cos(\cdots)\). Small \(i\) uses **long** wavelengths (slow change with \(pos\), coarse position); large \(i\) uses **short** wavelengths (fine-grained distinctions)—a multi-scale code over the same \(d_{\text{model}}\) channels.
     3. Contrast learned absolute positions with RoPE regarding length extrapolation.
+    *Answer:* Learned rows \(P[0..L_{\max}-1]\) have **no** parameters for \(pos \ge L_{\max}\) unless you interpolate or continue training. RoPE uses fixed functions of \((m,n)\) through rotations on Q/K, so relative geometry often **generalizes** better to longer sequences (especially with scaling tricks like NTK-aware or YaRN).
     4. Show how RoPE relates dot products to relative offsets \(m - n\) at a conceptual level.
+    *Answer:* Rotating \(q\) by angle \(m\theta\) and \(k\) by \(n\theta\) in each 2D subspace turns \(\langle R_m q, R_n k\rangle\) into a function where **relative** phase \(m-n\) appears in the inner product—so attention scores depend on distance \(m-n\), not only absolute \(m\).
     5. Write ALiBi’s bias and explain the linear distance penalty intuition.
+    *Answer:* \(\mathrm{score}_{ij} = (q_i\cdot k_j)/\sqrt{d_k} - m_h |i-j|\) with slope \(m_h>0\) per head. Farther keys pay a larger linear penalty, biasing heads toward **local** context while still allowing small-slope heads to attend broadly.
     6. Describe where sinusoidal and learned encodings attach versus where RoPE attaches.
+    *Answer:* Sinusoidal and learned PE are **added to embeddings** at the input to the stack (residual stream carries position from the start). **RoPE** applies **after** Q/K projections inside attention—it rotates query and key vectors per position, not the value stream.
     7. Explain why values are typically not rotated in RoPE implementations.
+    *Answer:* Attention scores need position only in \(q_i^\top k_j\); rotating both \(q\) and \(k\) encodes relative position there. **Values** are mixed **after** weights are fixed; rotating \(V\) would not change the softmax weights and would complicate the semantics of “what content is blended” without helping the positional term.
     8. Name two practical methods for extending RoPE-trained models beyond initial context.
+    *Answer:* **Position interpolation** (compress positions into the trained range—e.g. scale positions down), and **NTK-aware** or **YaRN**-style frequency rescaling that adjusts RoPE base/wavelength schedules so large indices stay in-distribution.
     9. Give one strength of ALiBi in extrapolation and one reason modern stacks might still pick RoPE.
+    *Answer:* ALiBi adds only a **distance-based** logit bias—no learned position table—often **train short, test long** friendly. RoPE still dominates in open LMs because it pairs well with **GQA**, fused kernels, and extensive **ecosystem** tuning (scaling laws, long-context recipes).
     10. Compute a single sinusoidal pair for a toy \(pos\) and \(i\) to demonstrate you can turn formulas into numbers.
+    *Answer:* Example: \(d_{\text{model}}=8\), \(i=1\): divisor \(=10000^{2/8}=10\), angle \(=pos/10\). For \(pos=3\): \(\sin(0.3)\approx 0.296\), \(\cos(0.3)\approx 0.955\)—one pair of PE dimensions at that position; other \(i\) repeat with different divisors (1, 100, 1000…).
 
 !!! interview "Follow-up Probes"
     - “What breaks if you double the sequence length without changing any positional hyperparameters?” Expect discussion of unseen learned rows or out-of-distribution rotations.

@@ -416,15 +416,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. **What is the difference between decoder-only, encoder-only, and encoder–decoder Transformers, and which tasks favor each?**
+    *Answer:* **Encoder-only**: bidirectional attention, good for embeddings/classification/NER (**BERT**). **Decoder-only**: causal LM, one stack for pretraining and generation (**GPT**, assistants). **Encoder–decoder**: encoder reads source fully, decoder generates with cross-attention (**T5**, translation/summarization with clear input–output split).
     2. **Write or describe the next-token cross-entropy loss and explain what would happen if you removed the causal mask during training.**
+    *Answer:* \(\mathcal{L}=-\frac{1}{T}\sum_t \log p_\theta(w_t\mid w_{<t})\). Without causal masking, position \(t\) could attend to future tokens, so the hidden state used to predict \(w_t\) would **leak** information from the future—training would not match autoregressive inference and next-token prediction would be ill-posed (trivial if full sequence visible).
     3. **Explain weight tying between the embedding matrix and the LM head: why is it reasonable and how many parameters does it save?**
+    *Answer:* Input embedding \(E\in\mathbb{R}^{V\times d}\) maps token IDs to vectors; the LM head often uses \(E^\top\) to map hidden states back to logits over \(V\). It is reasonable because the same linear structure links “word as input” and “word as output”; it saves **\(V\cdot d_{\text{model}}\)** parameters (e.g. 50k×4k ≈ 200M weights) and can act as regularization.
     4. **Walk through autoregressive inference step by step. Why is it not fully parallelizable along the generated sequence?**
+    *Answer:* Forward pass on prompt → read logits at last position → sample/argmax one token → **append** → repeat. Step \(t+1\) **depends** on the token chosen at \(t\), so you cannot compute the whole future sequence in one parallel forward without speculative tricks; only **within** a single forward (KV reuse for prefix) is heavily parallel.
     5. **What is a KV cache, what tensors does it store, and how does memory scale with batch size, layers, heads, head dimension, and context length?**
+    *Answer:* Stores per-layer **key and value** activations for all **past** positions so new tokens only compute new Q,K,V for the latest index. Roughly: memory \(\propto B \cdot L \cdot n_{\text{kv\_heads}} \cdot T \cdot d_{\text{head}}\) (×2 for K and V, × bytes per element)—linear in batch, layers, KV heads, sequence length, head dim.
     6. **What is in-context learning, and why is it different from fine-tuning?**
+    *Answer:* The model conditions on **demonstrations in the prompt** and changes its output distribution **without gradient updates**—implemented by attention over prior tokens. Fine-tuning **updates weights** on a dataset; ICL is purely **inference-time** conditioning.
     7. **What did GPT-2 change compared to the original Transformer decoder block (Pre-Norm, initialization, activations)?**
+    *Answer:* **Pre-Norm** (LN before sublayers), **GELU** MLP (vs ReLU in the original), **weight tying**, larger BPE vocab, and GPT-2-style residual projection scaling—together improving trainability and parameter efficiency at depth.
     8. **How does temperature affect sampling, and what failure modes appear when temperature is too high or too low?**
+    *Answer:* Sample from \(\mathrm{softmax}(\ell/\tau)\): \(\tau<1\) **sharpens** (more greedy, repetitive, less diversity); \(\tau>1\) **flattens** (more randomness, risk of incoherence/hallucination). \(\tau\to 0\) approaches argmax.
     9. **Why do scaling laws matter for budgeting a pre-training run, and what did Chinchilla emphasize about data versus parameters?**
+    *Answer:* Scaling laws relate loss to model size \(N\), data size \(D\), and compute \(C\)—they guide whether to spend budget on **wider** models or **more tokens**. **Chinchilla** argued many models were **undertrained**: at fixed compute, smaller models on **more tokens** often beat larger models on fewer tokens—**data and params must scale together**, not params alone.
     10. **How would you debug a sudden increase in validation perplexity mid-training: what hypotheses and what measurements would you list first?**
+    *Answer:* Check **data pipeline** (shuffle bug, duplicate/corrupt shard, tokenizer mismatch), **optimizer** (LR spike, NaNs), **numerics** (loss scale, fp16 overflow), and **evaluation** drift (val set contamination or distribution shift). Measure: train vs val curves, gradient norms, token-level loss histograms, recent checkpoint diffs, and learning rate schedule.
 
 !!! interview "Follow-up Probes"
     - **If the model attends to future positions during training, which positions become ill-posed for next-token prediction?**

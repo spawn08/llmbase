@@ -327,15 +327,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Why is perplexity not comparable across different tokenizers?
+    *Answer:* Perplexity is \(\exp\) of average **negative log-likelihood per token**—different tokenizers **segment text differently**, changing \(T\) and how probability mass is split (multi-token words vs single-token). A model with a larger vocabulary may assign higher per-token probabilities on different boundaries, making PPL **not portable** across tokenizers or even model families. Compare only with **identical** preprocessing and tokenizer.
     2. Define pass@\(k\) and explain why the naive \(1-(1-p)^k\) formula can be wrong for code benchmarks.
+    *Answer:* **pass@\(k\)** is the probability that **at least one** of \(k\) generated solutions passes tests; the **unbiased** HumanEval estimator uses samples \(n\ge k\) and counts correct \(c\) per task with combinatorics: \(1 - \binom{n-c}{k}/\binom{n}{k}\). The naive \(1-(1-p)^k\) assumes a known **i.i.d.** \(p\) per draw and ignores **finite** \(n\), **empirical** \(c\), and **per-problem** difficulty—underestimating variance and double-counting easy tasks if misapplied.
     3. What is benchmark contamination and how would you detect it?
+    *Answer:* **Contamination** is train/test overlap—benchmark strings or paraphrases appeared in pretraining, inflating scores via **memorization**. Detect with **n-gram** overlap scans, **embedding** nearest-neighbor checks against training corpora, **canary** strings, and **held-out dynamic** items. No detector is perfect; treat static benchmarks as **lower bounds** on leakage concern.
     4. Compare macro versus micro averaging over tasks—when does each matter?
+    *Answer:* **Macro** averages each task’s score equally—fair when every **task family** matters equally (avoid letting huge MMLU subjects dominate). **Micro** pools all items—reflects **user frequency** if tasks mirror traffic. Reporting both plus **worst-group** slices prevents hiding regressions on rare but critical tasks.
     5. Name two failure modes of BLEU/ROUGE for chat evaluation.
+    *Answer:* They reward **lexical overlap**, so correct paraphrases and varied helpful styles score **low** while verbose, repetitive outputs can score **high**. They ignore **factuality**, **safety**, and **multi-turn** coherence—fine for regression **sanity** in narrow settings, misleading as a sole chat KPI.
     6. How does Chatbot Arena estimate model strength, and what is a limitation of Elo here?
+    *Answer:* Arena aggregates **blind pairwise** user preferences and updates **Elo** ratings from wins/losses/ties—good for **relative** model ordering on open-ended chat. Limitations: **non-transitive** user tastes, **prompt** and **demographic** skew, **position** and **length** biases, and mismatch to **enterprise** tasks not sampled in the arena.
     7. What is position bias in LLM-as-judge, and how do you mitigate it?
+    *Answer:* Judges may favor the **first** or **second** answer independent of quality—ordering effects in pairwise comparisons. Mitigate by **swapping** A/B positions and averaging, using **single** consolidated prompts with clear rubrics, **calibrating** judges on gold items, and mixing **human** spot checks—never trust one-shot absolute scores without controls.
     8. When would you trust human evaluation over automatic metrics for a release decision?
+    *Answer:* For **subjective** qualities (helpfulness, tone), **high-stakes** harm (safety, legal), or tasks where automatic metrics **misfire** (tool use success), humans (experts or representative users) remain the ground truth. Automates are for **scale** and **CI**; ship decisions need **targeted** human review, especially on **slices** and new capabilities—automatic gains can be hollow if misaligned with user goals.
     9. What is Krippendorff’s alpha used for in evaluation pipelines?
+    *Answer:* **Krippendorff’s \(\alpha\)** generalizes inter-rater agreement beyond simple accuracy—handles **missing** ratings, **multiple** coders, and **nominal/ordinal** scales. Use it to ensure **label quality** before trusting human eval metrics; low \(\alpha\) means instructions or rubrics need refinement. It complements per-item disagreement analysis.
     10. Sketch an end-to-end regression gate for a coding assistant (metrics + cadence).
+    *Answer:* Nightly **HumanEval**/RepoBench-style **pass@k** with fixed \(n\), **static analysis** + unit tests on an internal golden repo, **latency** p95 on codegen paths, and **security** scans (secrets, unsafe code). Weekly add **LLM-judge** pairwise on a frozen dialog set with position swaps; **block** release on regressions beyond CI bands. Tie to **online** canary metrics (accept rate, bug reopen) when available.
 
 !!! interview "Follow-up Probes"
     - “Your MMLU went up but users complain—what do you check first?”

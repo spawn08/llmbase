@@ -438,15 +438,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Why is naive self-attention \(O(T^2)\), and what bottleneck does that create?
+    *Answer:* Full attention materializes **pairwise** scores for all \((i,j)\), giving \(O(T^2)\) work and memory per layer/head. For long \(T\), this hits **HBM bandwidth** and **latency** limits— the “quadratic wall” motivating subquadratic layers.
     2. Write the continuous-time SSM and explain each of \(A\), \(B\), \(C\), and \(D\).
+    *Answer:* \(\dot{x}=Ax+Bu\), \(y=Cx+Du\). **\(A\)**: autonomous dynamics (how state decays/mixes). **\(B\)**: input injection. **\(C\)**: readout from state. **\(D\)**: **direct** feedthrough from current input to output (skip).
     3. What changes when you discretize with step \(\Delta\)?
+    *Answer:* Continuous \((A,B)\) map to discrete **\(\bar{A}_\Delta\approx \exp(\Delta A)\)** and **\(\bar{B}_\Delta\)** (input over one step), giving **\(x_k=\bar{A}_k x_{k-1}+\bar{B}_k u_k\)** at token times. \(\Delta\) can be **global, learned, or input-dependent** (Mamba).
     4. Explain recurrence versus convolution for time-invariant linear SSMs.
+    *Answer:* **Time-invariant** linear SSMs are **LTI**: outputs equal **convolution** of inputs with a fixed impulse response—train with **FFT** in \(O(T\log T)\). **Recurrence** is \(O(T)\) sequential but **online** with **O(1)** state per step—preferred for **streaming** inference.
     5. What problem does HiPPO initialization aim to solve?
+    *Answer:* Random recurrent dynamics often **forget** or **explode**. HiPPO structures **\(A\)** so the state approximates a **compressed memory** of past inputs (polynomial/exponential bases)—better **long-range** behavior before large-scale training.
     6. What does Mamba change versus time-invariant S4-style models?
+    *Answer:* Mamba makes **\(B_k, C_k, \Delta_k\)** **input-dependent** (functions of \(x_k\)): **selective** memory—what to write, read, and how fast to integrate—vs S4’s fixed dynamics per layer where the same kernel applies at every position.
     7. Why does selectivity break the simplest fixed-kernel FFT training picture?
+    *Answer:* When \(\Delta_k,B_k,C_k\) **vary with \(k\)**, the map is **not** a single LTI convolution—there is **one kernel per step** or a **varying** recurrence. You cannot use **one** global FFT multiply; you use **scans** or sequential steps (though parallel scan algorithms still help).
     8. Compare inference memory for Transformer KV cache versus fixed-size SSM state.
+    *Answer:* Transformer **KV** grows **linearly with \(T\)** (per layer, per head). SSM recurrence keeps a **fixed-size** state \(x_k\in\mathbb{R}^{N}\) (per layer/channel)—**\(O(1)\)** extra memory in \(T\) for the recurrence itself, attractive for **long** streams (attention may still be added in hybrids).
     9. Name a hybrid architecture pattern and justify why teams use it.
+    *Answer:* **Jamba**-style: **interleave** Transformer **attention** blocks with **Mamba/SSM** blocks—attention gives **sharp content-based** routing and local precision; SSM **cheaply propagates** information over long spans—balancing quality vs cost.
     10. How does Mamba-2 connect SSMs and attention at a high level?
+    *Answer:* **Mamba-2** (SSM duality) shows structured SSMs and **linear attention**-like mechanisms can be **unified** in one framework with **fast algorithms** (chunkwise states)—conceptually bridging **recurrent** updates and **attention-like** tensor programs.
 
 !!! interview "Follow-up Probes"
     - "What kinds of tasks stress associative recall versus long-horizon compression?"

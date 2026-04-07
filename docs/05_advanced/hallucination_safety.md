@@ -327,15 +327,25 @@ if __name__ == "__main__":
 
 !!! interview "FAANG-Level Questions"
     1. Define intrinsic versus extrinsic hallucination and give a RAG example of each.
+    *Answer:* **Intrinsic** hallucination contradicts **provided** context (e.g., KB says “2024 policy” but the model answers “2023”). **Extrinsic** hallucination invents facts **not supported** by any supplied source—e.g., fabricated citation IDs or numbers when retrieval was empty. In RAG, intrinsic failures break **faithfulness** to passages; extrinsic failures often mean the model’s **parametric** prior overrode or filled gaps without evidence.
     2. Why does minimizing cross-entropy not guarantee factual correctness?
+    *Answer:* Training maximizes likelihood of **next tokens** in web-scale text where **false** and **true** sentences share fluent patterns—objective rewards **plausibility**, not **truth**. The model also memorizes **stale** or **biased** statistics. Without retrieval, tools, or RLHF/verification objectives, low loss can coexist with confident fabrication on rare facts.
     3. How does self-consistency help detect hallucinations, and when does it fail?
+    *Answer:* Sampling \(K\) answers and measuring **agreement** flags **instability** on facts—if the model gives different dates, distrust. It fails when errors are **systematic** (same wrong prior every sample), on tasks where **diversity** is legitimate (creative writing), or when samples are **too correlated** (low temperature)—then agreement is misleadingly high.
     4. Explain NLI-based grounding and one limitation on numerical claims.
+    *Answer:* Split the answer into **claims** and run an NLI model between each claim and **evidence** passages—entailment supports grounding; contradiction flags hallucination. **Limitation:** NLI is **fuzzy** on numbers (“99.9%” vs “99.99%”)—treat digits with **structured** compare or regex extraction, not prose entailment alone.
     5. What is prompt injection, and how does it differ from a classic jailbreak?
+    *Answer:* **Prompt injection** hides **instructions inside untrusted content** (email, webpage, retrieved doc) that the model **obeys**, hijacking app behavior—an **integrity** attack on the system boundary. **Jailbreaks** elicit **policy-violating** outputs from the model itself (roleplay, encoding tricks)—often about **safety** bypass, not necessarily untrusted third-party data channels. Defenses differ: channel separation and output sandboxing for injection; robust alignment and monitors for jailbreaks.
     6. Name three layers of a defense-in-depth guardrail stack for a customer chatbot.
+    *Answer:* (1) **Input** filters: PII/toxicity/injection scanners; (2) **Runtime** controls: RAG with ACLs, schema-constrained tools, citation requirements; (3) **Output** filters: policy classifiers, blocklists, escalation to human on high-risk topics. Add **monitoring** and **kill switches** as operational layers—no single gate suffices.
     7. What is the alignment tax, and how might over-refusal show up in metrics?
+    *Answer:* The **alignment tax** is the **helpfulness** you sacrifice to meet **safety** constraints—stricter refusals shrink valid task coverage. **Over-refusal** appears as rising **false refusal rate** on benign prompts, lower **task completion**, user frustration signals, and **disparate** impact on dialects or domains flagged incorrectly. Track slice metrics—not just aggregate harm rate.
     8. How would you combine RAG with citation verification?
+    *Answer:* Require **inline citations** to chunk ids, then **post-check** that cited spans **support** each sentence (NLI or entailment model) and that chunk ids exist in the retrieved set. Reject or regenerate when citations are missing or mismatched—**structure** (numbered passages) makes automated verification feasible. Log verification failures for index tuning.
     9. What privacy risks arise from memorization, and one mitigation?
+    *Answer:* Models can **verbatim-extract** training data—emails, phone numbers, secrets—especially for **high-exposure** rare sequences (**memorization** / extraction attacks). **Mitigation:** **deduplication**, **canary** monitoring, **minimize** sensitive data in fine-tunes, **output** filters for PII patterns, and **DP** training when budgets allow—operational retention limits matter too.
     10. Describe red-teaming: who participates, what artifacts are produced, and how outputs feed the next training cycle?
+    *Answer:* **Participants:** safety researchers, domain experts (legal/medical), and adversarial testers simulating creative misuse. **Artifacts:** structured **failure reports**, severity-ranked **risk register**, reproduction prompts, and suggested mitigations. **Feedback loop:** curate **RLHF/DPO** preference data and **SFT** corrections from confirmed issues, update **filters** and **policies**, and **regress** with expanded attack suites—closing the loop without only one-off fixes.
 
 !!! interview "Follow-up Probes"
     - “Users want **creative** writing—how do you avoid false positives from consistency checks?”
