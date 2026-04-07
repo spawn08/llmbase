@@ -180,6 +180,8 @@ nav:
     - "Qwen2.5: Data-Efficient Training": 06_research_papers/31_qwen2_5.md
     - "GLM-5: Agentic Async RL": 06_research_papers/32_glm5.md
     - "Kimi K2.5: Multi-Agent Coordination": 06_research_papers/33_kimi_k2_5.md
+    - "RoPE: Rotary Position Embedding": 06_research_papers/34_rope_roformer.md
+    - "Attention Residuals: Rethinking Depth": 06_research_papers/35_attention_residuals.md
   - Recent Advances:
     - 07_recent_advances/index.md
     - DeepSeek-R1 (Jan 2025): 07_recent_advances/01_deepseek_r1.md
