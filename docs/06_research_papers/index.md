@@ -1,6 +1,6 @@
-# Top 33 Research Papers in Large Language Models
+# Top 35 Research Papers in Large Language Models
 
-This section provides **in-depth documentation** for the 33 landmark papers that shaped modern LLMs. Each paper page includes:
+This section provides **in-depth documentation** for the 35 landmark papers that shaped modern LLMs. Each paper page includes:
 
 - **Simple math explanations** — every equation broken down step by step
 - **Python implementations** — runnable code demonstrating the core ideas
@@ -26,6 +26,7 @@ This section provides **in-depth documentation** for the 33 landmark papers that
 | 3 | [GPT-2](03_gpt2.md) | 2019 | Decoder-only LM with zero-shot task transfer |
 | 5 | [T5](05_t5.md) | 2019 | Unified text-to-text framework with span corruption |
 | 6 | [XLNet](06_xlnet.md) | 2019 | Permutation language modeling for bidirectional AR |
+| 34 | [RoPE/RoFormer](34_rope_roformer.md) | 2021 | Rotary Position Embedding — relative position via rotation |
 
 ### Training Recipes & Scaling
 
@@ -55,6 +56,7 @@ This section provides **in-depth documentation** for the 33 landmark papers that
 | 15 | [Mistral 7B](15_mistral.md) | 2023 | GQA + sliding window attention for efficient 7B |
 | 16 | [Mixtral](16_mixtral.md) | 2024 | Sparse MoE — 8 experts, top-2 routing |
 | 24 | [Mamba](24_mamba.md) | 2023 | Linear-time SSM with selective state spaces |
+| 35 | [Attention Residuals](35_attention_residuals.md) | 2026 | Replace fixed residuals with attention over layers |
 
 ### Reasoning, Tools & Agents
 
@@ -103,6 +105,8 @@ The Chinese research ecosystem produced several landmark papers in 2024–2026 t
 
 **[XLNet](06_xlnet.md) (Yang et al., 2019)** — XLNet identified a fundamental conflict: BERT's masked LM objective sees all context but introduces artificial [MASK] tokens that never appear in real text (pretrain-finetune discrepancy), while autoregressive models see no [MASK] but can only attend left-to-right. XLNet resolved this with permutation language modeling — train an autoregressive model on all possible orderings of the input, so it learns bidirectional context without masking. This required a novel two-stream attention mechanism. XLNet outperformed BERT on 18 benchmarks, though its complexity limited widespread adoption.
 
+**[RoPE/RoFormer](34_rope_roformer.md) (Su et al., 2021)** — RoPE (Rotary Position Embedding) replaced additive positional encodings with multiplicative rotations of query and key vectors. By rotating Q and K in 2D subspaces using position-dependent angles, RoPE naturally encodes relative position in the dot product without any learned parameters. The geometric frequency progression (\(\theta_i = 10000^{-2i/d}\)) creates a natural locality bias and excellent length extrapolation. RoPE became the **industry standard** for positional encoding, adopted by LLaMA, Mistral, Qwen, PaLM, and virtually every modern open-weight LLM. Extensions like NTK-aware scaling and YaRN enable 4-32× length extrapolation beyond training context.
+
 ### Training Recipes & Scaling
 
 **[GPT-3](04_gpt3.md) (Brown et al., 2020)** — OpenAI scaled to 175B parameters and discovered that sufficiently large language models can perform tasks through in-context learning: provide a few input-output examples in the prompt, and the model generalizes to new inputs without any gradient updates. This was a paradigm shift — no fine-tuning, no task-specific heads, just prompt engineering. GPT-3 also established the scaling laws suggesting that performance improves predictably with model size, data, and compute, motivating the race to ever-larger models.
@@ -137,6 +141,8 @@ The Chinese research ecosystem produced several landmark papers in 2024–2026 t
 
 **[Mamba](24_mamba.md) (Gu & Dao, 2023)** — Transformers have O(N²) attention complexity, making long sequences expensive. Mamba introduced Selective State Space Models that process sequences in O(N) time by making the state transition parameters input-dependent (selective). Unlike fixed-parameter linear RNNs, Mamba can decide what information to remember or forget at each step. It matched Transformer quality on language modeling while enabling much longer effective context windows. Mamba opened the exploration of non-attention architectures for LLMs.
 
+**[Attention Residuals](35_attention_residuals.md) (Kimi Team, 2026)** — For nearly a decade, Transformer residual connections used fixed unit-weight addition: \(x_{\ell+1} = x_\ell + f_\ell(x_\ell)\). Attention Residuals replaced this with learned, input-dependent attention over all preceding layer outputs: \(x_L = \sum_{\ell=0}^{L-1} \alpha_\ell h_\ell\). This addresses PreNorm's uncontrolled hidden-state growth and signal dilution in deep networks. Block AttnRes partitions layers into blocks for efficiency: \(O(B^2 + L^2/B)\) vs \(O(L^2)\). Integrated into Kimi Linear (48B MoE) with 1.4T token pretraining, demonstrating consistent scaling gains and more uniform gradient distributions.
+
 ### Reasoning, Tools & Agents
 
 **[Chain-of-Thought](18_chain_of_thought.md) (Wei et al., 2022)** — Large language models failed at multi-step reasoning when asked to produce answers directly. Wei et al. showed that simply adding "Let's think step by step" or providing few-shot examples with intermediate reasoning steps dramatically improved performance on math, logic, and commonsense tasks. Chain-of-Thought prompting requires no fine-tuning — it works by giving the model "thinking space" to decompose problems. This technique is now a standard component of every LLM system and inspired the entire reasoning model paradigm (o1, R1).
@@ -163,12 +169,12 @@ The Chinese research ecosystem produced several landmark papers in 2024–2026 t
 | 2018 | BERT |
 | 2019 | GPT-2, XLNet, RoBERTa, T5 |
 | 2020 | GPT-3, ELECTRA |
-| 2021 | CLIP, Codex, LoRA |
+| 2021 | CLIP, Codex, LoRA, RoPE |
 | 2022 | InstructGPT, PaLM, Chinchilla, FlashAttention, FLAN, Chain-of-Thought, Constitutional AI |
 | 2023 | LLaMA, Mistral 7B, ReAct, Toolformer, Mamba, Gemini |
 | 2024 | Mixtral, DeepSeek-V2, DeepSeek-V3, ChatGLM/GLM-4, Qwen2.5 |
 | 2025 | DeepSeek-R1, Kimi k1.5 |
-| 2026 | GLM-5, Kimi K2.5 |
+| 2026 | GLM-5, Kimi K2.5, Attention Residuals |
 
 ## Paper Interconnections
 
@@ -194,17 +200,24 @@ flowchart LR
     GPT3 --> Qwen25[Qwen2.5]
     Inst --> DSR1
     CoT --> DSR1
+    RoPE[RoPE] --> LLaMA
+    RoPE --> Mistral & Qwen25 & PaLM
+    T --> RoPE
+    DSV3 --> AttnRes[Attention Residuals]
+    KimiK25 --> AttnRes
 ```
 
 **Threads:**
 
 - **Architecture:** Transformer → BERT/GPT/T5 → FlashAttention / Mistral / Mamba
+- **Positional Encoding:** Transformer → RoPE → LLaMA/Mistral/Qwen (modern standard)
 - **Scaling:** GPT-3 → PaLM → Chinchilla → LLaMA
 - **Alignment:** InstructGPT → Constitutional AI / FLAN
 - **Tools & Agents:** Chain-of-Thought → ReAct → Toolformer
 - **Multimodal:** CLIP → Gemini
 - **Chinese lab thread:** LLaMA → DeepSeek-V2 (MLA) → DeepSeek-V3 (MoE+FP8) → DeepSeek-R1 (GRPO) → Kimi k1.5 (long-context RL) → Kimi K2.5 (Agent Swarm)
 - **Bilingual/GLM thread:** BERT → GLM-4 → GLM-5 (async RL, agentic coding)
+- **Residual connections:** Transformer → Attention Residuals (adaptive depth aggregation)
 
 ## Interview Priority Guide
 
@@ -215,16 +228,18 @@ If you have limited time, focus on these papers first (highest interview frequen
 3. **LoRA** — essential for fine-tuning and serving questions
 4. **FlashAttention** — key for systems/infrastructure roles
 5. **LLaMA** — modern architecture standard (RMSNorm, SwiGLU, RoPE)
-6. **Chinchilla** — scaling and training budget decisions
-7. **Chain-of-Thought** — reasoning and prompt engineering
-8. **BERT** — encoder vs. decoder understanding
-9. **GPT-3** — in-context learning and scaling laws
-10. **ReAct** — agent and tool-use systems
-11. **DeepSeek-R1** — now essential; GRPO, RL-only reasoning, distillation
-12. **DeepSeek-V2/V3** — MLA for KV cache, MoE load balancing
-13. **Kimi k1.5** — long-context RL as an alternative to MCTS
-14. **GLM-5** — async RL for agentic coding, MoE serving
-15. **Kimi K2.5** — multi-agent RL (PARL), native multimodality
+6. **RoPE** — essential architecture knowledge; positional encoding standard
+7. **Chinchilla** — scaling and training budget decisions
+8. **Chain-of-Thought** — reasoning and prompt engineering
+9. **BERT** — encoder vs. decoder understanding
+10. **GPT-3** — in-context learning and scaling laws
+11. **ReAct** — agent and tool-use systems
+12. **DeepSeek-R1** — now essential; GRPO, RL-only reasoning, distillation
+13. **DeepSeek-V2/V3** — MLA for KV cache, MoE load balancing
+14. **Kimi k1.5** — long-context RL as an alternative to MCTS
+15. **GLM-5** — async RL for agentic coding, MoE serving
+16. **Kimi K2.5** — multi-agent RL (PARL), native multimodality
+17. **Attention Residuals** — emerging 2026 topic; transformer depth redesign
 
 ---
 
