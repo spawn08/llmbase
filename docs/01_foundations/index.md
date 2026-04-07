@@ -1,4 +1,4 @@
-# Part 1 — Foundations
+# Foundations of Language Modeling
 
 The mathematical and conceptual bedrock that existed before the Transformer. Understanding these topics deeply is what separates candidates who can explain *why* things work from those who only know *that* they work.
 
@@ -6,7 +6,7 @@ The mathematical and conceptual bedrock that existed before the Transformer. Und
 
 ## Goals
 
-After completing Part 1 you will be able to:
+After completing this section you will be able to:
 
 - Derive the chain rule decomposition of language models and explain the Markov assumption
 - Explain how Word2Vec, GloVe, and FastText learn vector representations of meaning

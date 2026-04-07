@@ -1,4 +1,4 @@
-# Part 3 — Training and Alignment
+# Training and Alignment
 
 How models go from random weights to following instructions. Pre-training data pipelines, distributed training at scale, quantization, supervised fine-tuning, reinforcement learning from human feedback, and parameter-efficient adaptation.
 
@@ -6,7 +6,7 @@ How models go from random weights to following instructions. Pre-training data p
 
 ## Goals
 
-After completing Part 3 you will be able to:
+After completing this section you will be able to:
 
 - Design a data pipeline for pre-training including deduplication and quality filtering
 - Calculate memory budgets for distributed training and choose the right parallelism strategy

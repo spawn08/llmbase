@@ -1,4 +1,4 @@
-# Part 2 — Core Architectures
+# Core Architectures
 
 How modern sequence models work at the tensor level — from the original Transformer through GPT, BERT, T5, Mixture of Experts, and state-space models. This is the most interview-critical section of LLMBase.
 
@@ -6,7 +6,7 @@ How modern sequence models work at the tensor level — from the original Transf
 
 ## Goals
 
-After completing Part 2 you will be able to:
+After completing this section you will be able to:
 
 - Trace a token through every layer of a Transformer block and state the dimension at each step
 - Explain Multi-Head, Grouped-Query, and Multi-Query Attention with memory cost trade-offs

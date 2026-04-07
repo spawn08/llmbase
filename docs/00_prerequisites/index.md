@@ -1,4 +1,4 @@
-# Part 0 — Deep Learning Fundamentals
+# Deep Learning Fundamentals
 
 The building blocks that every neural network — including every Transformer and every LLM — is made of. This section exists so you never have to wave your hands when someone asks "but how does a neural network actually learn?"
 
@@ -35,6 +35,6 @@ After completing Part 0 you will be able to:
 
 ## How this connects to the rest of LLMBase
 
-Part 0 gives you the vocabulary and intuition that Part 1 (Foundations) assumes. Once you are comfortable with backprop, activations, and the idea that a network maps inputs to outputs through differentiable layers, Part 1 will build on that with language-specific concepts: n-grams, word embeddings, LSTM gate equations, and attention.
+This section gives you the vocabulary and intuition that the Foundations section assumes. Once you are comfortable with backprop, activations, and the idea that a network maps inputs to outputs through differentiable layers, the Foundations section will build on that with language-specific concepts: n-grams, word embeddings, LSTM gate equations, and attention.
 
 Every page follows the same structure as the rest of LLMBase: plain-English math walkthroughs, worked numerical examples, runnable Python code, and FAANG-level interview questions with expected answer depth.

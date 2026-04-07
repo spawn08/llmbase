@@ -92,7 +92,6 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Interview Questions: interview_questions.md
   - Deep Learning Fundamentals:
     - 00_prerequisites/index.md
     - The Perceptron and Feedforward Networks: 00_prerequisites/01_perceptron_and_ffn.md
@@ -102,7 +101,7 @@ nav:
     - Convolutional Neural Networks: 00_prerequisites/05_convolutional_neural_networks.md
     - Sequence Modeling and RNNs: 00_prerequisites/06_sequence_modeling_and_rnns.md
     - The Encoder-Decoder Paradigm: 00_prerequisites/07_encoder_decoder_paradigm.md
-  - Foundations:
+  - Foundations of Language Modeling:
     - 01_foundations/index.md
     - Language Modeling: 01_foundations/language_modeling_basics.md
     - Word Embeddings: 01_foundations/word_embeddings.md
@@ -146,41 +145,41 @@ nav:
     - Emergent Capabilities: 05_advanced/emergent_capabilities.md
     - Evaluation and Benchmarking: 05_advanced/evaluation.md
     - Hallucination and Safety: 05_advanced/hallucination_safety.md
-  - Research Papers:
+  - Landmark Research Papers:
     - 06_research_papers/index.md
-    - "1. Transformer": 06_research_papers/01_attention_is_all_you_need.md
-    - "2. BERT": 06_research_papers/02_bert.md
-    - "3. GPT-2": 06_research_papers/03_gpt2.md
-    - "4. GPT-3": 06_research_papers/04_gpt3.md
-    - "5. T5": 06_research_papers/05_t5.md
-    - "6. XLNet": 06_research_papers/06_xlnet.md
-    - "7. RoBERTa": 06_research_papers/07_roberta.md
-    - "8. ELECTRA": 06_research_papers/08_electra.md
-    - "9. InstructGPT": 06_research_papers/09_instructgpt.md
-    - "10. PaLM": 06_research_papers/10_palm.md
-    - "11. Chinchilla": 06_research_papers/11_chinchilla.md
-    - "12. LLaMA": 06_research_papers/12_llama.md
-    - "13. LoRA": 06_research_papers/13_lora.md
-    - "14. FlashAttention": 06_research_papers/14_flash_attention.md
-    - "15. Mistral 7B": 06_research_papers/15_mistral.md
-    - "16. Mixtral": 06_research_papers/16_mixtral.md
-    - "17. FLAN": 06_research_papers/17_flan.md
-    - "18. Chain-of-Thought": 06_research_papers/18_chain_of_thought.md
-    - "19. ReAct": 06_research_papers/19_react.md
-    - "20. Toolformer": 06_research_papers/20_toolformer.md
-    - "21. Constitutional AI": 06_research_papers/21_constitutional_ai.md
-    - "22. CLIP": 06_research_papers/22_clip.md
-    - "23. Codex": 06_research_papers/23_codex.md
-    - "24. Mamba": 06_research_papers/24_mamba.md
-    - "25. Gemini": 06_research_papers/25_gemini.md
-    - "26. DeepSeek-V2": 06_research_papers/26_deepseek_v2.md
-    - "27. DeepSeek-V3": 06_research_papers/27_deepseek_v3.md
-    - "28. DeepSeek-R1": 06_research_papers/28_deepseek_r1.md
-    - "29. GLM-4": 06_research_papers/29_glm4.md
-    - "30. Kimi k1.5": 06_research_papers/30_kimi_k1_5.md
-    - "31. Qwen2.5": 06_research_papers/31_qwen2_5.md
-    - "32. GLM-5": 06_research_papers/32_glm5.md
-    - "33. Kimi K2.5": 06_research_papers/33_kimi_k2_5.md
+    - Attention Is All You Need (Transformer): 06_research_papers/01_attention_is_all_you_need.md
+    - "BERT: Bidirectional Encoders": 06_research_papers/02_bert.md
+    - "GPT-2: Unsupervised Multitask Learning": 06_research_papers/03_gpt2.md
+    - "GPT-3: In-Context Learning at Scale": 06_research_papers/04_gpt3.md
+    - "T5: Text-to-Text Transfer": 06_research_papers/05_t5.md
+    - "XLNet: Permutation Language Modeling": 06_research_papers/06_xlnet.md
+    - "RoBERTa: Robust BERT Pretraining": 06_research_papers/07_roberta.md
+    - "ELECTRA: Efficient Pretraining": 06_research_papers/08_electra.md
+    - "InstructGPT: RLHF Pipeline": 06_research_papers/09_instructgpt.md
+    - "PaLM: Pathways at 540B": 06_research_papers/10_palm.md
+    - "Chinchilla: Compute-Optimal Training": 06_research_papers/11_chinchilla.md
+    - "LLaMA: Open Foundation Models": 06_research_papers/12_llama.md
+    - "LoRA: Low-Rank Adaptation": 06_research_papers/13_lora.md
+    - "FlashAttention: IO-Aware Attention": 06_research_papers/14_flash_attention.md
+    - "Mistral 7B: Efficient Small Models": 06_research_papers/15_mistral.md
+    - "Mixtral: Sparse Mixture of Experts": 06_research_papers/16_mixtral.md
+    - "FLAN: Instruction Tuning at Scale": 06_research_papers/17_flan.md
+    - "Chain-of-Thought Prompting": 06_research_papers/18_chain_of_thought.md
+    - "ReAct: Reasoning and Acting": 06_research_papers/19_react.md
+    - "Toolformer: Self-Supervised Tool Use": 06_research_papers/20_toolformer.md
+    - "Constitutional AI: Principled Alignment": 06_research_papers/21_constitutional_ai.md
+    - "CLIP: Contrastive Vision-Language": 06_research_papers/22_clip.md
+    - "Codex: Code Generation": 06_research_papers/23_codex.md
+    - "Mamba: Linear-Time State Spaces": 06_research_papers/24_mamba.md
+    - "Gemini: Native Multimodal": 06_research_papers/25_gemini.md
+    - "DeepSeek-V2: Multi-Head Latent Attention": 06_research_papers/26_deepseek_v2.md
+    - "DeepSeek-V3: MoE at 671B Scale": 06_research_papers/27_deepseek_v3.md
+    - "DeepSeek-R1: RL-Only Reasoning": 06_research_papers/28_deepseek_r1.md
+    - "GLM-4: Bilingual Foundation Model": 06_research_papers/29_glm4.md
+    - "Kimi k1.5: Long-Context RL Scaling": 06_research_papers/30_kimi_k1_5.md
+    - "Qwen2.5: Data-Efficient Training": 06_research_papers/31_qwen2_5.md
+    - "GLM-5: Agentic Async RL": 06_research_papers/32_glm5.md
+    - "Kimi K2.5: Multi-Agent Coordination": 06_research_papers/33_kimi_k2_5.md
   - Recent Advances:
     - 07_recent_advances/index.md
     - DeepSeek-R1 (Jan 2025): 07_recent_advances/01_deepseek_r1.md
@@ -196,3 +195,4 @@ nav:
     - Gemini 3.1 Pro (Feb 2026): 07_recent_advances/08_gemini_3_1_pro.md
     - GLM-5 (Feb 2026): 07_recent_advances/11_glm5.md
     - GPT-5.4 Family (Mar 2026): 07_recent_advances/09_gpt5_4.md
+  - Interview Question Bank: interview_questions.md

@@ -1,4 +1,4 @@
-# Part 5 — Advanced Topics
+# Advanced Topics
 
 Where LLMs meet production. Retrieval-augmented generation, agents, long-context engineering, multimodal models, scaling laws, evaluation, and safety.
 
@@ -6,7 +6,7 @@ Where LLMs meet production. Retrieval-augmented generation, agents, long-context
 
 ## Goals
 
-After completing Part 5 you will be able to:
+After completing this section you will be able to:
 
 - Design a production RAG pipeline with chunking, embedding, retrieval, re-ranking, and evaluation
 - Build an LLM agent with tool calling, memory, and a reasoning loop

@@ -30,7 +30,7 @@ This is not a surface-level overview. Each page is written to give you the depth
 
 ## The learning path
 
-LLMBase is organized into eight progressive parts. Start at Part 0 if you need to build or refresh your deep learning foundations, then continue through Part 1 and beyond — each section builds on the previous one.
+LLMBase is organized into eight progressive sections. Start with Deep Learning Fundamentals if you need to build or refresh your foundations, then continue through each section in order — each builds on the previous one.
 
 ### [Deep Learning Fundamentals](00_prerequisites/index.md)
 
@@ -56,26 +56,13 @@ Decoding strategies, KV cache mechanics, speculative decoding, continuous batchi
 
 RAG pipelines, agents and tool use, long-context modeling, multimodal LLMs, evaluation benchmarks, and hallucination/safety. Where LLMs meet production.
 
-### [Top 25 Research Papers](06_research_papers/index.md)
+### [Landmark Research Papers](06_research_papers/index.md)
 
-Landmark papers from "Attention Is All You Need" through Mamba and Gemini. Each with a one-minute summary, key figure, reproduced code snippet, and what interviewers expect you to know about it.
+The 33 most influential papers in the LLM field — from "Attention Is All You Need" through DeepSeek-R1, GLM-5, and Kimi K2.5. Each with a concise summary explaining the problem it solved, the architecture it introduced, why it was needed, and the key ideas with step-by-step math, runnable code, and interview Q&A.
 
 ### [Recent Advances](07_recent_advances/index.md)
 
 A rolling log of frontier research — reasoning models, test-time compute scaling, efficient inference, and new open-weight releases.
-
----
-
-## Interview preparation
-
-Every page in LLMBase includes a structured **Interview Guide** section with:
-
-- Specific questions asked at FAANG-tier companies, with expected answer depth
-- Common follow-up probes that test whether you truly understand or just memorized
-- Key phrases that signal expertise to interviewers
-- Red-flag answers that suggest shallow understanding
-
-For a consolidated view, see the **[Interview Question Bank](interview_questions.md)** — 85+ questions organized by topic and difficulty.
 
 ---
 
@@ -102,6 +89,21 @@ Interview Guide
    → Follow-up probes
    → Key phrases to use
 ```
+
+---
+
+---
+
+## Interview Preparation
+
+Every page in LLMBase includes a structured **Interview Guide** section with:
+
+- Specific questions asked at FAANG-tier companies, with expected answer depth
+- Common follow-up probes that test whether you truly understand or just memorized
+- Key phrases that signal expertise to interviewers
+- Red-flag answers that suggest shallow understanding
+
+For a consolidated view, see the **[Interview Question Bank](interview_questions.md)** — 85+ questions organized by topic and difficulty.
 
 ---
 

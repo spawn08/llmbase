@@ -1,4 +1,4 @@
-# Part 4 — Inference and Serving
+# Inference and Serving
 
 The engineering that determines latency, throughput, and cost when deploying LLMs in production. From decoding algorithms to KV cache optimization, speculative decoding, continuous batching, and production serving systems.
 
@@ -6,7 +6,7 @@ The engineering that determines latency, throughput, and cost when deploying LLM
 
 ## Goals
 
-After completing Part 4 you will be able to:
+After completing this section you will be able to:
 
 - Implement greedy, beam search, top-k, top-p, and temperature decoding from scratch
 - Calculate KV cache memory requirements for any model configuration
