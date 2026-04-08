@@ -78,6 +78,18 @@ This documentation is designed to be read **in two passes**:
 
 ---
 
+## Hands-On Notebooks
+
+Practice what you've learned with interactive Jupyter notebooks that combine toy examples (build from scratch) with real-world library usage (PyTorch, HuggingFace):
+
+| Notebook | Covers Topics |
+|----------|---------------|
+| [Math & Neural Network Basics](../notebooks/01_math_and_neural_network_basics.ipynb) | Math Prerequisites, Perceptron/FFN, Activation Functions |
+| [Training Mechanics](../notebooks/02_training_mechanics.ipynb) | Backpropagation, Loss Functions, Regularization |
+| [CNNs, Sequences & Encoder-Decoders](../notebooks/03_cnns_and_sequences.ipynb) | CNNs, RNNs, Encoder-Decoder |
+
+---
+
 ## How this connects to the rest of LLMBase
 
 This section gives you the vocabulary and intuition that the Foundations section assumes. Once you are comfortable with backprop, activations, and the idea that a network maps inputs to outputs through differentiable layers, the Foundations section will build on that with language-specific concepts: n-grams, word embeddings, LSTM gate equations, and attention.

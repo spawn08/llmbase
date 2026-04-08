@@ -1,0 +1,9 @@
+numpy
+matplotlib
+seaborn
+torch
+torchvision
+transformers
+datasets
+gensim
+scikit-learn

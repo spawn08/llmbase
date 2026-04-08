@@ -78,6 +78,18 @@ After completing this section you will be able to:
 
 ---
 
+## Hands-On Notebooks
+
+Practice with interactive Jupyter notebooks — each combines toy examples (build from scratch with NumPy/PyTorch) with real-world usage (HuggingFace transformers, gensim):
+
+| Notebook | Covers Topics |
+|----------|---------------|
+| [Language Modeling & Embeddings](../notebooks/04_language_modeling_and_embeddings.ipynb) | Language Modeling, Word Embeddings |
+| [Neural LM & Seq2Seq](../notebooks/05_neural_lm_and_seq2seq.ipynb) | Neural Language Models, Sequence-to-Sequence |
+| [Information Theory & Attention](../notebooks/06_information_theory_and_attention.ipynb) | Information Theory, Attention Mathematics |
+
+---
+
 Every page includes:
 
 1. **Simple analogies** — everyday comparisons to build intuition before any math
