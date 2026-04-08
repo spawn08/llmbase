@@ -2,6 +2,8 @@
 
 ## Why This Matters for LLMs
 
+Computers don't understand words — they only understand numbers. So how do we feed 'cat' into a neural network? We convert each word into a list of numbers (a 'vector'). The magic is in HOW we choose those numbers: words with similar meanings get similar number lists. This means 'cat' and 'kitten' have similar vectors, while 'cat' and 'spaceship' have very different ones.
+
 Modern LLMs do not read text as a lookup table of unrelated symbols. They map every token into a **dense vector** so that computation can blend meaning, syntax, and shallow world knowledge inside linear algebra. Static word embeddings (Word2Vec, GloVe, FastText) were the first widely successful demonstration that **geometry can track semantics**: directions between vectors mirror analogies and co-occurrence statistics. That idea survived every architecture change: Transformer layers still operate on vectors in \(\mathbb{R}^d\), and analysis of hidden states still uses cosine similarity and linear probes.
 
 Interviewers care about embeddings because they separate “I used BERT” from “I know why discrete NLP fails.” One-hot vectors have no notion of distance. Two different words are always orthogonal. Embeddings convert the **curse of dimensionality** in sparse counting into a **smooth optimization problem** where similar words share evidence. Every paper on instruction tuning, retrieval-augmented generation, or contrastive pretraining assumes you are comfortable with vector spaces and why cosine similarity appears everywhere.
@@ -20,6 +22,8 @@ Finally, embeddings are the historical bridge from **count-based n-grams** to **
 ### From One-Hot Vectors to Dense Embeddings
 
 #### The Idea
+
+The simplest approach is one-hot encoding: give each word its own slot in a long list of zeros, and put a 1 in that slot. If your vocabulary has 50,000 words, 'cat' might be a list of 50,000 numbers with a 1 in position 3,742 and zeros everywhere else. The problem? This tells us nothing about meaning — 'cat' is equally far from 'kitten' and 'spaceship.'
 
 A vocabulary of size \(V\) can represent each word type as a vector \(\mathbf{e}_w \in \mathbb{R}^V\) with a single \(1\) in position \(w\) and zeros elsewhere. That is the **one-hot** encoding. It is honest about discreteness but useless for similarity: every pair of distinct words has dot product zero, so **no gradient** pushes “cat” toward “dog” when the model sees them in interchangeable syntactic slots. A **word embedding** replaces the sparse vector with \(\mathbf{v}_w \in \mathbb{R}^d\) where \(d \ll V\). Similar words end up near each other because the training objective forces the model to share statistical evidence across neighbors in meaning or distribution.
 
@@ -56,6 +60,8 @@ When you measure **alignment** between embedding spaces (Procrustes analysis, or
 
 ### Embedding Arithmetic
 
+The most famous word embedding result: king − man + woman ≈ queen. This works because the vectors learned a 'gender direction' and a 'royalty direction' as separate dimensions. It's not perfect (it fails often), but it shows that the geometry of the vector space genuinely reflects meaning.
+
 The famous analogy \(\mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}\) is evaluated by nearest-neighbor search after the vector combination.
 
 \[
@@ -73,6 +79,8 @@ w^\star = \arg\max_{w \in \mathcal{V} \setminus \{\text{king},\text{man},\text{w
     Cosine of \(\mathbf{q}\) with \(\mathbf{v}_{\text{queen}} = (2,1)\) is \(1\) (perfect alignment).  
     Cosine of \(\mathbf{q}\) with \(\mathbf{v}_{\text{child}}\): dot \(= 2\), norms \(\sqrt{5}\) and \(2\), cosine \(= 2 / (2\sqrt{5}) \approx 0.447\).  
     The argmax over \(\{\text{queen}, \text{child}\}\) picks `queen`, matching the intended analogy in this fabricated numeric setup.
+
+Word2Vec's brilliant insight: you can learn good word vectors by playing a prediction game. Skip-gram says: 'Given the word ice, predict what words appear near it (cream, cold, rink).' CBOW does the reverse: 'Given cream, cold, rink, predict the center word (ice).' After training on billions of words, the vectors magically capture meaning!
 
 ### Word2Vec CBOW (Continuous Bag of Words)
 
@@ -146,6 +154,8 @@ Full softmax costs \(O(V)\) per training step. **Negative sampling** replaces th
 
 ### GloVe and Co-occurrence Structure
 
+GloVe takes a different approach: instead of predicting neighbors word by word, it looks at the GLOBAL co-occurrence statistics of the entire corpus at once. It asks: 'cat and purr co-occur a lot, so their vectors should be close.' The math is different from Word2Vec, but the result is similar.
+
 GloVe constructs a global word–word co-occurrence matrix \(X\) where \(X_{ij}\) counts how often word \(j\) appears in the context window of word \(i\). The model learns vectors \(\mathbf{w}_i\) and \(\tilde{\mathbf{w}}_j\) plus biases \(b_i\) and \(\tilde{b}_j\) to satisfy:
 
 \[
@@ -176,6 +186,8 @@ Ratios like \(P(j \mid i) / P(k \mid i)\) encode meaning because they cancel gen
     Row `bank` touches `river`, `water`, `money` with total co-occurrence mass \(1 + 2 + 1 = 4\) across distinct partners when you sum \(X_{\text{bank},j}\) for \(j \ne \text{bank}\) in this toy (self-loops omitted). GloVe would regress \(\log X_{ij}\) for each nonzero cell while weighting rare pairs differently in the full algorithm.
 
 ### FastText and Subwords
+
+FastText's contribution: it breaks words into character pieces (subwords). So 'unhappiness' is broken into 'un', 'happi', 'ness'. This means FastText can handle words it has never seen before — by assembling them from known pieces.
 
 FastText represents word \(w\) as the sum of embeddings of its character \(n\)-grams. For word `where` with boundary symbols `<` and `>`, 3-grams include `<wh`, `whe`, `her`, `ere`, `re>`.
 

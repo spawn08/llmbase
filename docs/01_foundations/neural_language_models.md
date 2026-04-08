@@ -2,6 +2,8 @@
 
 ## Why This Matters for LLMs
 
+Neural language models replaced 'counting words' (n-grams) with 'learning patterns' (neural networks). Instead of looking up 'how many times did X follow Y?', a neural model learns a function that takes context as input and outputs probabilities for the next word. This is the direct ancestor of GPT, LLaMA, and every modern chatbot.
+
 Neural language models replaced count tables with **differentiable functions** that map a representation of the past to a distribution over the next token. Every decoder-only Transformer in production is a descendant of that idea: parameters are tuned by gradient descent on cross-entropy, not by storing raw n-gram frequencies. Interviewers probe this lineage because **gradient flow** and **context representation** separate memorized diagrams from real understanding.
 
 The progression **feedforward window → RNN → LSTM** is the historical answer to two questions: how far can context reach, and how can error signals survive many time steps? Vanishing gradients in plain RNNs are not a footnote; they are the concrete reason gating was invented. When you explain why Transformers replaced recurrence for large-scale training, you are partly explaining **parallelism** and **path length**, but you should still articulate why LSTM gates helped the previous generation and what failure mode they addressed.
@@ -18,6 +20,8 @@ Finally, bidirectional recurrence and stacked layers (ELMo) sit between static e
 ## Core Concepts
 
 ### Feedforward Neural Language Model (Bengio, 2003)
+
+Bengio's 2003 model was groundbreaking but simple: take the last few word vectors, concatenate them into one big vector, pass through a hidden layer with tanh, and predict the next word with softmax. It's the same MLP architecture from the previous section, just applied to language!
 
 The model concatenates embeddings of the previous \(n-1\) words and feeds them through a tanh hidden layer:
 
@@ -62,6 +66,8 @@ P(w_{t+1} \mid w_{\le t}) = \text{softmax}(W_{hy} \mathbf{h}_t).
 
 Backpropagation through time multiplies Jacobian factors across steps. When the recurrent Jacobian has spectral norm below \(1\) on average, gradients shrink **exponentially** with sequence length.
 
+The vanishing gradient problem boils down to multiplying fractions repeatedly. If each step multiplies the gradient by \(0.9\), after \(100\) steps you have \(0.9^{100} \approx 0.00003\). The error signal from the end of a long sentence basically can't reach the beginning. LSTMs fix this by adding a 'direct path' for the cell state — information can flow forward without being multiplied at every step.
+
 !!! example "Worked Example: Repeated Multiplication by 0.9"
     If each step scales the gradient by a factor \(0.9\), after \(50\) steps the cumulative factor is \(0.9^{50}\). Compute \(\log(0.9^{50}) = 50 \log 0.9 \approx 50 \cdot (-0.10536) = -5.268\), so \(0.9^{50} \approx \exp(-5.268) \approx 0.00515\).  
     A gradient component that started at magnitude \(1\) ends near **0.005** after \(50\) steps: updates to early inputs nearly vanish. Learning long-range dependencies becomes impossible without architecture changes or gates.
@@ -72,6 +78,14 @@ Backpropagation through time multiplies Jacobian factors across steps. When the 
 ### LSTM: Equations Gate by Gate
 
 An LSTM maintains a **cell state** \(\mathbf{c}_t\) and **hidden state** \(\mathbf{h}_t\). Let \([\mathbf{h}_{t-1}; \mathbf{x}_t]\) denote concatenation. All gates use sigmoid \(\sigma\) or tanh as written.
+
+The LSTM has five key pieces, and they're all variations of the same pattern: multiply inputs by weights, add a bias, then squeeze through sigmoid or tanh. Here's what each gate **does**:
+
+- **FORGET gate (\(\mathbf{f}\)):** Decides what old information to throw away. \(\sigma(\text{stuff}) \to\) values between \(0\) and \(1\), where \(0\) means 'forget completely' and \(1\) means 'remember perfectly.'
+- **INPUT gate (\(\mathbf{i}\)):** Decides what new information to store. Again \(\sigma(\text{stuff}) \to 0\) to \(1\).
+- **CANDIDATE (\(\tilde{\mathbf{c}}\)):** Creates a proposal for new information to add. Uses \(\tanh \to\) values between \(-1\) and \(1\).
+- **CELL UPDATE:** \(\text{new\_memory} = (\text{forget} \times \text{old\_memory}) + (\text{input} \times \text{candidate})\). Simple addition!
+- **OUTPUT gate (\(\mathbf{o}\)):** Decides what part of the memory to expose as the hidden state.
 
 **Forget gate:**
 
@@ -174,6 +188,8 @@ GRU merges cell and hidden into one state \(\mathbf{h}_t\) with **reset** \( \ma
 A **bidirectional** RNN runs one RNN left-to-right and another right-to-left. Token \(t\) receives \(\mathbf{h}_t = \big[\overrightarrow{\mathbf{h}}_t \,\|\, \overleftarrow{\mathbf{h}}_t\big]\) when the design concatenates forward and backward hidden vectors (some papers sum them instead).
 
 **ELMo** (Embeddings from Language Models) stacks bidirectional LSTMs (actually two **independent** directions without cross-attention between them in the original formulation for language modeling constraints) and combines layer outputs into contextual embeddings. Modern reading: ELMo showed that **deep recurrent stacks** produce token representations far richer than Word2Vec.
+
+ELMo was the bridge between Word2Vec and BERT. It runs an LSTM forward **and** backward over the text, then combines all layers. The key insight: the representation of each word depends on its context — 'bank' gets a different vector in 'river bank' vs 'bank account.' This is what **contextualized embeddings** means.
 
 !!! math-intuition "In Plain English"
     Forward \(\overrightarrow{\mathbf{h}}_t\) sees left context; backward \(\overleftarrow{\mathbf{h}}_t\) sees right context. Concatenation gives each position a summary of the **whole sentence** locally available to shallow layers. This is not the same as Transformer self-attention, but it fixes the “only left context” limitation of GPT-style models for **encoding** tasks.

@@ -8,9 +8,22 @@ Understanding **computational graphs** and **gradient flow** is not optional for
 
 Finally, FAANG-style interviews often probe whether you can **derive or trace** a backward pass for a small network, explain **SGD vs momentum vs Adam** at the update-rule level, and connect **learning-rate schedules** (warmup, cosine decay) to training stability—the topics on this page.
 
+## Big Picture
+
+How a neural network learns (in 4 steps):
+
+1. **FORWARD PASS:** Feed data through the network, get a prediction
+2. **LOSS:** Measure how wrong the prediction is
+3. **BACKWARD PASS:** Figure out which weights caused the error (backpropagation)
+4. **UPDATE:** Adjust the weights to reduce the error (gradient descent)
+
+Repeat millions of times. That's it. Everything else is optimization of these 4 steps.
+
 ## Core Concepts
 
 ### The Chain Rule (Single Variable)
+
+Think of the chain rule like a game of telephone. If Alice whispers to Bob, and Bob whispers to Charlie, the total distortion is Alice's distortion × Bob's distortion. In a neural network, each layer is one person in the chain, and we need to know the total distortion from input to output.
 
 If \(y = g(x)\) and \(z = f(y)\), then \(z\) depends on \(x\) through the composition \(f(g(x))\). The chain rule states:
 
@@ -128,7 +141,9 @@ L = (z_2 - y)^2 = (0.957 - 1)^2 = 0.001849.
 
 ### Stochastic Gradient Descent (SGD)
 
-Given a loss \(L(w)\), **gradient descent** uses:
+Given a loss \(L(w)\), **gradient descent** applies the update below.
+
+Gradient descent is like walking downhill in fog. You can't see the bottom, but you can feel which direction is steepest under your feet. You take one step in that direction, feel again, step again. The learning rate \(\eta\) is your step size — too big and you overshoot, too small and you'll take forever.
 
 \[
 w \leftarrow w - \eta\,\frac{\partial L}{\partial w},
@@ -189,6 +204,17 @@ Here \(\beta \in [0,1)\) (e.g., \(0.9\)) controls how long past gradients influe
 2. **Adaptive learning rates** (each parameter gets its own step size based on recent gradient magnitudes)
 
 **The core update (intuition first):**
+
+!!! math-intuition "Think of it like..."
+    Think of Adam like a smart hiker with two pieces of information:
+    
+    - A **COMPASS** (momentum) that remembers which direction you've been going
+    - An **ALTIMETER** (adaptive rate) that notices whether the terrain is steep or flat
+    
+    On steep terrain (large gradients), Adam takes smaller steps to avoid slipping.
+    On flat terrain (small gradients), Adam takes bigger steps to keep moving.
+    
+    This is why Adam works so well — it automatically adjusts step size for each parameter.
 
 \[
 \mathbf{w}_t = \mathbf{w}_{t-1} - \eta\,\frac{\mathbf{m}_t}{\sqrt{\mathbf{v}_t} + \epsilon}
@@ -290,6 +316,8 @@ where:
         (Numerical values rounded for display; implementations keep full precision.)
 
 ### Learning Rate Schedules
+
+Think of learning rate scheduling like driving: start slow (warmup) to get on the highway safely, cruise at full speed (peak rate), then gradually slow down (cosine decay) as you approach your destination.
 
 LLM **pre-training** often combines **linear warmup** with **cosine decay**. Warmup gradually raises \(\eta\) from a small value to a peak; cosine annealing decays \(\eta\) smoothly toward a floor.
 

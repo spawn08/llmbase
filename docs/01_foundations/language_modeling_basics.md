@@ -2,6 +2,8 @@
 
 ## Why This Matters for LLMs
 
+At its core, every chatbot, translation system, and autocomplete feature is doing ONE thing: predicting the next word. Given "I love eating ice ___", what comes next? "cream" has high probability, "truck" has low probability. A language model is just a fancy probability calculator for "what word comes next?"
+
 Every large language model you read about in papers or deploy in production is, at its core, a **language model**: a system that assigns probabilities to sequences of tokens and, in the autoregressive setting, predicts the next token given everything that came before. When you prompt GPT-4 or Llama 3, the model is not “thinking” in the human sense; it is evaluating conditional distributions \(P(w_t \mid w_1, \ldots, w_{t-1})\) (or their tokenized equivalents) billions of times, sampling or greedily picking the next piece of text. Interviewers at top technology companies return to this fact constantly because it separates candidates who memorized architecture diagrams from candidates who understand **what is being optimized** and **what the objective means**.
 
 The **chain rule** is the single equation that ties classical n-gram models, recurrent neural language models, and modern Transformer decoders into one family. Whether the conditional is stored in a sparse count table, produced by an LSTM hidden state, or computed by stacked self-attention layers, the factorization of the joint probability of a sentence is the same. If you can explain that decomposition clearly, you can explain why training uses next-token cross-entropy, why perplexity is reported, and why “the model learned syntax” is shorthand for “the model assigns high probability to syntactically typical continuations.”
@@ -24,6 +26,8 @@ Finally, language modeling fundamentals are how interviewers probe **generalizat
 A **language model** is a probability machine. You feed it a prefix of text (full words, subwords, or characters depending on tokenization). It responds with a distribution over what token is allowed to come next. Good models assign high probability to fluent, factual, and contextually appropriate continuations and low probability to gibberish or contradictions. The same machinery supports autocomplete, machine translation decoders, speech recognition rescoring, and chat interfaces: anywhere you need a score or a ranked list of next units, a language model is the usual workhorse.
 
 #### The Math
+
+The chain rule in language modeling is just common sense written as math. When you read a sentence word by word, each new word's meaning depends on ALL the words before it. The probability of the whole sentence is just: probability of word 1 × probability of word 2 given word 1 × probability of word 3 given words 1–2 × ... and so on.
 
 Let \(w_1, w_2, \ldots, w_T\) denote a sequence of \(T\) tokens. A language model specifies the **joint probability**:
 
@@ -53,6 +57,8 @@ The first factor is \(P(w_1)\) (sometimes conditioned on a start symbol). Each l
     The **support** of the distribution is these four outcomes for this illustration. For a full vocabulary of size \(V\), the model defines a vector of length \(V\) where every entry is nonnegative and the entries sum to \(1\). That is the **probability simplex** constraint: one step of sampling or greedy decoding picks a single next token from this normalized distribution.
 
 ### N-gram Language Models
+
+N-grams are the "counting" approach to language modeling. Instead of a neural network, you just count how often word combinations appear in your training text. A bigram model says: "After the word ice, cream appeared 80 times and truck appeared 2 times, so cream is 40x more likely." Simple, but it breaks when you encounter a word combination you've never seen before.
 
 #### Plain English First
 
@@ -109,6 +115,8 @@ Here \(\text{count}(w_{t-1})\) is the number of times token \(w_{t-1}\) appears 
 
 ### Smoothing
 
+Smoothing solves the "never seen before" problem. Without smoothing, if the model has never seen "ice dragon" in its training data, it assigns probability ZERO — which is too harsh. Smoothing says: "even if I've never seen this combination, it's probably not literally impossible."
+
 #### Plain English
 
 **Smoothing** reallocates probability mass so that unseen n-grams do not force the entire sentence probability to zero. Raw counts lie: absence in a finite corpus does not mean impossible in the language. **Add-k (Laplace) smoothing** adds a small positive constant \(k\) to every count before normalization, pulling probability slightly away from frequent events toward rare or unseen ones.
@@ -159,6 +167,8 @@ P_{\text{interp}}(w_t \mid w_{t-2}, w_{t-1}) =
     The trigram term vanishes, but the sentence still receives nonzero probability because lower-order pieces participate.
 
 ### Perplexity
+
+Perplexity answers: "On average, how confused is the model about what comes next?" A perplexity of 10 means the model is as confused as if it were randomly choosing between 10 equally likely options. Lower perplexity = less confused = better model.
 
 #### Plain English First
 

@@ -8,12 +8,27 @@
 
 Finally, the information-theoretic bridge—**cross-entropy versus KL divergence versus entropy**—is the clean language for comparing a model distribution to a target distribution. That vocabulary shows up when you discuss alignment losses, knowledge distillation, and probabilistic interpretations of calibration. Part 1 of LLMBase leans on this background; making it automatic here saves you from hand-waving later.
 
+## Big Picture
+
+Loss functions answer **one** question: How wrong is my model's prediction?
+
+- If the model guesses "cat" and the answer was "cat" → small loss (good!)
+- If the model guesses "cat" and the answer was "dog" → big loss (bad!)
+
+Regularization answers a **different** question: Is my model memorizing instead of learning?
+
+- **Dropout:** randomly turn off neurons during training so no single neuron becomes a crutch
+- **Weight decay:** penalize giant weights to keep the model from going to extremes
+- **Normalization:** keep numbers in a reasonable range so training stays stable
+
 !!! tip "Notation Help"
     The notation \(\log\) in ML papers usually means the **natural logarithm** (base \(e\)), often written as \(\ln\) in calculus courses. The \(\sum\) symbol means "sum up." See [Math Prerequisites](00_math_prerequisites.md#4-exponentials-and-logarithms) for a refresher on logs and exponentials.
 
 ## Core Concepts
 
 ### Mean Squared Error (MSE)
+
+Think of MSE like grading with a squared penalty. If you're off by 1, you pay 1. If you're off by 10, you pay 100. Big mistakes are punished much more harshly than small ones.
 
 For targets \(y_i\) and predictions \(\hat{y}_i\) over \(n\) examples, **mean squared error** is:
 
@@ -39,6 +54,9 @@ L_{\mathrm{MSE}} &= \frac{1}{3}\Big[(0.5-1)^2 + (0.5-0)^2 + (2.5-2)^2\Big] \\
 \]
 
 ### Cross-Entropy Loss (Binary)
+
+!!! tip "Think of it like..."
+    Imagine you're a weather forecaster. If you say "there's a 90% chance of sun" and it's sunny, you look smart (low loss). If you say "there's a 1% chance of rain" and it rains, you look terrible (high loss). Cross-entropy measures exactly this — how "surprised" your model is when it sees the true answer.
 
 For a single example with label \(y \in \{0,1\}\) and predicted probability \(\hat{y} \in (0,1)\) for class 1, **binary cross-entropy** is:
 
@@ -120,6 +138,8 @@ L = -\sum_{i=1}^{4} y_i \log \hat{y}_i = -\log(0.70) \approx 0.357.
 
 ### Connection to KL Divergence
 
+KL divergence answers: How many **extra** bits of information do I need if I use my model's predictions instead of the true distribution? If my model is perfect, zero extra bits. If my model is way off, I need a lot of extra bits.
+
 Let \(p\) be the **true** label distribution (often one-hot for supervised classification) and \(q\) be the model distribution. The **cross-entropy** can be written \(H(p,q)\), and the **KL divergence** is:
 
 \[
@@ -176,6 +196,8 @@ Near zero, the penalty is **linear** rather than quadratic in \(|w_i|\), which e
 
 ### Dropout
 
+Think of dropout like studying with friends. If you always study with the same group, you all develop the same blind spots. Dropout forces the network to "study alone" randomly, so each neuron learns to be useful on its own.
+
 During training, **dropout** independently sets a fraction of activations to zero with probability \(p\) (per retained unit, the “keep probability” is \(1-p\)). At **test time**, standard dropout scales outputs to match expected magnitude—often by using **inverted dropout**: during training, surviving activations are scaled by \(1/(1-p)\) so that **evaluation can be inference without extra scaling**.
 
 !!! math-intuition "In Plain English"
@@ -195,6 +217,8 @@ where \(\mu_B\) and \(\sigma_B^2\) are the batch mean and variance, and \(\gamma
     BatchNorm re-centers and rescales activations so optimization is less sensitive to initialization and scale drift. But it introduces **batch dependence** and can behave oddly for small or non-i.i.d. batches—problematic for variable-length sequences and large distributed training.
 
 **Why LLMs prefer LayerNorm:** sequence models want stable normalization **per position** without coupling across unrelated examples in a batch. LayerNorm normalizes across features for each token independently, avoiding batch statistics for that normalization step.
+
+Think of normalization like adjusting the volume on different speakers. BatchNorm adjusts each speaker based on what **all** speakers are doing right now. LayerNorm adjusts each speaker based on its **own** channels. For language models (where each "speaker" is a word in a sentence), adjusting independently makes more sense.
 
 ### Layer Normalization
 

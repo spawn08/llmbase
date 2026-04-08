@@ -2,6 +2,8 @@
 
 ## Why This Matters for LLMs
 
+Activation functions are the "on/off switches" of neural networks. Without them, no matter how many layers you stack, the network could only learn straight lines — which is useless for complex tasks like understanding language.
+
 Activation functions are the nonlinearities that let deep networks approximate arbitrary functions. Without them, stacking linear layers would collapse to a single linear map, and a Transformer would be unable to represent the rich conditional structure of language. Modern LLMs do not all use the same choice: GPT-style models and BERT family networks typically use **GELU** in feed-forward blocks; **SiLU/Swish** appears in LLaMA and related architectures; **softmax** normalizes attention scores and produces probability distributions over vocabulary at the output layer. The specific nonlinearity affects gradient flow during training, how quickly units saturate, and how smoothly optimization landscapes behave.
 
 Interviewers often probe whether you understand **saturation** (when activations sit in flat regions where gradients vanish), **gradient flow** through many layers, and **why** ReLU dominated for years while today's LLMs favor smooth, probabilistically motivated activations like GELU. You should be able to name what each major architecture uses, sketch the shape of the curve, and connect that choice to training stability and empirical performance—not just recite definitions.
@@ -15,6 +17,8 @@ Finally, activations do not exist in isolation: they interact with normalization
 
 ### Sigmoid
 
+**What does this look like?** Imagine a dimmer switch that smoothly goes from "off" (0) to "on" (1). That's sigmoid.
+
 The sigmoid maps any real input to the open interval \( (0, 1) \):
 
 \[
@@ -23,6 +27,8 @@ The sigmoid maps any real input to the open interval \( (0, 1) \):
 
 !!! math-intuition "In Plain English"
     The sigmoid squashes large positive \( z \) toward 1 and large negative \( z \) toward 0. It is interpretable as a soft "probability" when used in a single output, but hidden layers rarely use it today because of vanishing gradients.
+
+We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.
 
 The derivative is
 
@@ -47,6 +53,8 @@ The derivative is
 
 ### Tanh
 
+**What does this look like?** Like sigmoid but the switch goes from -1 to +1, so it can represent "strongly no" as well as "strongly yes."
+
 Hyperbolic tangent maps \( \mathbb{R} \to (-1, 1) \):
 
 \[
@@ -56,7 +64,11 @@ Hyperbolic tangent maps \( \mathbb{R} \to (-1, 1) \):
 !!! math-intuition "In Plain English"
     Tanh is an S-shaped squashing function like sigmoid, but its outputs are **zero-centered** (negative inputs yield negative outputs). That often makes optimization easier than sigmoid hidden activations, which output only positive values.
 
-It can be written in terms of sigmoid as \( \tanh(z) = 2\sigma(2z) - 1 \). The derivative is
+It can be written in terms of sigmoid as \( \tanh(z) = 2\sigma(2z) - 1 \).
+
+We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.
+
+The derivative is
 
 \[
 \frac{d}{dz}\tanh(z) = 1 - \tanh^2(z).
@@ -76,6 +88,8 @@ It can be written in terms of sigmoid as \( \tanh(z) = 2\sigma(2z) - 1 \). The d
 
 ### ReLU
 
+**What does this look like?** The simplest possible rule: if the number is negative, output zero. If positive, pass it through unchanged. Like a gate that only opens one way.
+
 Rectified Linear Unit is piecewise linear:
 
 \[
@@ -84,6 +98,8 @@ Rectified Linear Unit is piecewise linear:
 
 !!! math-intuition "In Plain English"
     Negative inputs are clipped to zero; positive inputs pass through unchanged. That sparsifies activations and avoids the saturation problem on the positive side that plagues sigmoid/tanh.
+
+We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.
 
 The derivative (where it exists) is
 
@@ -132,6 +148,8 @@ f(z) = \max(\alpha z, z), \quad \alpha \text{ trainable.}
 
 ### GELU (Gaussian Error Linear Unit)
 
+**What does this look like?** A "smarter" version of ReLU that doesn't have the sharp corner — it smoothly curves near zero. Used in GPT and BERT.
+
 GELU is defined using the Gaussian cumulative distribution function \( \Phi \):
 
 \[
@@ -140,6 +158,8 @@ GELU is defined using the Gaussian cumulative distribution function \( \Phi \):
 
 !!! math-intuition "In Plain English"
     You scale the identity by the probability that a draw from a standard Gaussian is less than \( x \). Large positive \( x \) behave like identity; large negative \( x \) are softly suppressed—smoother than ReLU's hard zero.
+
+We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.
 
 A common **approximation** used in implementations (e.g., in many Transformer FFNs) is
 
@@ -180,6 +200,8 @@ SiLU/Swish is used in **LLaMA** and **PaLM** family models (often inside SwiGLU 
 
 ### Softmax
 
+**What does this look like?** Not really an on/off switch — it's more like "divide the pie". It takes a bunch of scores and converts them to percentages that add up to 100%.
+
 Given a vector \( \mathbf{x} = (x_1, \ldots, x_K)^\top \), softmax produces a probability vector:
 
 \[
@@ -208,6 +230,15 @@ In **attention**, softmax normalizes compatibility scores across keys so weights
 \]
 
     The first class dominates but does not take all mass.
+
+| Function | Output Range | Used Where? | One-Line Summary |
+|----------|-------------|-------------|------------------|
+| Sigmoid | (0, 1) | Gates in LSTMs | Smooth 0-to-1 switch |
+| Tanh | (-1, 1) | RNN hidden states | Centered version of sigmoid |
+| ReLU | [0, ∞) | Most hidden layers | Zero if negative, pass if positive |
+| GELU | ≈(-0.17, ∞) | GPT, BERT FFN layers | Smooth ReLU |
+| SiLU/Swish | ≈(-0.28, ∞) | LLaMA FFN layers | Self-gated smooth ReLU |
+| Softmax | (0, 1), sums to 1 | Output layer, attention | Converts scores to probabilities |
 
 ## Deep Dive
 

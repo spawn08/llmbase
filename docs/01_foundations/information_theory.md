@@ -4,6 +4,8 @@
 
 Information theory is the **shared vocabulary** for uncertainty, coding length, and distance between distributions. When you read "**minimize cross-entropy**," "**perplexity 12**," or "**KL penalty to the reference model**" in an RLHF paper, those are not slogans—they are precise statements about **entropy**, **expected code length**, and **distributional mismatch**. Modern LLM **pretraining** is overwhelmingly **maximum likelihood** = **cross-entropy minimization**. **Evaluation** uses perplexity (exp of average cross-entropy). **Alignment** often adds **reverse KL**-style penalties so the policy does not drift from a trusted base model. Interviewers expect you to connect **Shannon entropy → cross-entropy → KL → training loss** in one coherent chain.
 
+Information theory gives us a precise language for talking about uncertainty and surprise. When someone asks 'how good is this language model?', information theory provides the answer: perplexity, which is based on cross-entropy, which is based on entropy. Understanding these three concepts in that order is the key to this section.
+
 !!! tip "Notation Help"
     - **PMF** = **Probability Mass Function** (a function that gives probabilities for discrete outcomes)
     - \(\mathcal{X}\) is the **sample space** (set of all possible outcomes)
@@ -15,6 +17,8 @@ Information theory is the **shared vocabulary** for uncertainty, coding length, 
 ## Core Concepts
 
 ### Entropy — Expected Surprise
+
+Entropy measures how 'unpredictable' something is. A biased coin that lands heads 99% of the time has LOW entropy (boring, predictable). A fair coin has HIGH entropy (maximum uncertainty for two outcomes). For language models: easy-to-predict text like 'I went to the store to buy some ___' has low entropy; random word salad has high entropy.
 
 For discrete \(X\) with PMF \(p(x)\):
 
@@ -46,6 +50,8 @@ Convention: \(0 \log 0 = 0\). Log base 2 gives **bits**; natural log gives **nat
     **Deterministic:** \(P(H)=1\). Only term is \(-1 \cdot \log_2(1) = 0\). **Zero entropy**—no surprise.
 
 ### Cross-Entropy — Coding Under the Wrong Distribution
+
+Cross-entropy asks: 'How surprised is my MODEL by the REAL data?' If my model thinks 'the' is 50% likely and it actually appears, that's a small surprise. If my model thinks 'the' is 0.01% likely and it appears, that's a huge surprise. Cross-entropy averages these surprises — lower is better.
 
 True distribution \(p\); model \(q\) (your approximate probabilities):
 
@@ -88,6 +94,8 @@ So **“train with cross-entropy”** and **“do MLE on next-token prediction�
 
 ### KL Divergence — Extra Cost of Using \(q\) Instead of \(p\)
 
+KL divergence measures the 'information cost' of being wrong. If the true distribution is \(p\) and your model thinks it's \(q\), \(D_{\text{KL}}(p\|q)\) tells you how many extra bits you waste by using \(q\) instead of \(p\). Zero means your model is perfect.
+
 \[
 D_{\text{KL}}(p \| q) = \sum_x p(x) \log \frac{p(x)}{q(x)} = H(p, q) - H(p)
 \]
@@ -128,6 +136,8 @@ D_{\text{KL}}(p \| q) = \sum_x p(x) \log \frac{p(x)}{q(x)} = H(p, q) - H(p)
     **RLHF intuition:** a **KL penalty** \(\beta D_{\text{KL}}(\pi \| \pi_{\text{ref}})\) discourages the tuned policy \(\pi\) from straying from \(\pi_{\text{ref}}\)—often implemented with a **reverse-KL-like** form on sequences or approximations (see Schulman’s notes / PPO-KL variants).
 
 ### Perplexity = exp(cross-entropy)
+
+Perplexity = \(2^{\text{(cross-entropy)}}\), or equivalently \(e^{\text{(cross-entropy)}}\) depending on the log base. Intuition: if your language model has perplexity 50, it means the model is, on average, as confused as if it were randomly picking from 50 equally likely words at each position. GPT-4 has a perplexity around 3–5 on typical text — it narrows things down to just a few likely candidates.
 
 Average **per-token** cross-entropy (nats): \(\hat{H} = -\frac{1}{T}\sum_{t=1}^T \log q(w_t \mid w_{<t})\).
 

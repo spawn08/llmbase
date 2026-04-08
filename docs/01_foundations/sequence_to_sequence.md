@@ -4,6 +4,8 @@
 
 Modern large language models did not appear from a vacuum: **sequence-to-sequence (seq2seq)** was the dominant paradigm for translation, summarization, and conditional generation before the Transformer. Seq2seq introduced the **encoder–decoder split** that still appears in T5, BART, and encoder–decoder multimodal models. Crucially, seq2seq's main weakness—a **single-vector bottleneck**—motivated **Bahdanau attention**, which generalized into **scaled dot-product self-attention** in Transformers. Interviewers often probe seq2seq not for nostalgia, but to test whether you understand **where attention came from**, how **teacher forcing** creates **exposure bias**, and why **additive vs. multiplicative** attention foreshadows today's \(QK^\top V\) machinery.
 
+Sequence-to-sequence (seq2seq) is the idea behind machine translation: read an English sentence, compress it into a 'meaning vector', then generate the French translation word by word. It's like a person who reads a sentence in one language, understands the meaning, and then expresses that meaning in another language.
+
 !!! tip "Notation Help"
     - Superscripts \(\text{enc}\) and \(\text{dec}\) distinguish **encoder** from **decoder** states
     - Subscript \(t\) is the **time step** (position in the sequence)
@@ -80,6 +82,8 @@ Concrete failure mode: encode a **50-word** paragraph into \(\mathbf{c} \in \mat
 
 Instead of one static summary \(\mathbf{c}\), at **each** decoder step \(t\) compute a **new** context \(\mathbf{c}_t\) as a **weighted sum** of **all** encoder hidden states \(\mathbf{h}_j^{\text{enc}}\). The weights \(\alpha_{t,j}\) say: “for producing word \(t\) of the translation, how much should I look at source word \(j\)?” Intuitively, when generating a verb, the model may attend strongly to the source **verb**; when generating an adjective, to the **noun**.
 
+Attention was invented because of a simple problem: how do you squeeze a 50-word sentence into a single vector? You can't, without losing information. Attention says: 'Instead of one summary vector, let the decoder LOOK BACK at every word in the source sentence and decide which ones are relevant right now.' It's like a translator who glances back at the original text while writing each word of the translation.
+
 #### The Math
 
 **Alignment scores** (one scalar per encoder position \(j\)):
@@ -153,6 +157,8 @@ e_{t,j} = (\mathbf{h}_t^{\text{dec}})^\top \mathbf{h}_j^{\text{enc}}
     - \(W_a\): Introduces **learned mixing** of dimensions before the dot product—like a **soft alignment** in a specific subspace.
 
 ### Teacher Forcing
+
+Teacher forcing is a training trick: instead of feeding the model its own (possibly wrong) predictions as input, feed it the CORRECT previous word. It's like learning to cook from a recipe — you follow the correct steps, not your own mistakes. The downside: at test time, there's no recipe to follow, and errors can snowball.
 
 **Plain English:** During training, the decoder receives **ground-truth** \(y_{t-1}\) as input, not the model’s own prediction \(\hat{y}_{t-1}\). So the model always sees a **correct** prefix and learns one-step-ahead prediction in a **stable** regime.
 

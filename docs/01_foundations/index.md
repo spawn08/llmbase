@@ -2,6 +2,9 @@
 
 The mathematical and conceptual bedrock that existed before the Transformer. Understanding these topics deeply is what separates candidates who can explain *why* things work from those who only know *that* they work.
 
+!!! info "What Changed in This Section"
+    Every page now includes **everyday analogies**, **"Think of it like..."** callouts, and **simplified introductions** before diving into the math. The mathematical content is unchanged — we've added layers of explanation on top so that anyone with high school math can follow along. If a formula looks intimidating, read the paragraph right above it first.
+
 ---
 
 ## Before You Start
@@ -75,4 +78,13 @@ After completing this section you will be able to:
 
 ---
 
-Every page includes plain-English math walkthroughs, worked numerical examples, runnable Python code, and FAANG-level interview questions with expected answer depth.
+Every page includes:
+
+1. **Simple analogies** — everyday comparisons to build intuition before any math
+2. **"In Plain English"** — what each equation means in words
+3. **Worked examples** — step-by-step calculations with real numbers
+4. **Runnable Python code** — so you can verify the math yourself
+5. **FAANG-level interview questions** — with expected answer depth
+
+!!! tip "Reading Order for Beginners"
+    If you're encountering these topics for the first time, we recommend reading in order (1 → 6). Each page builds on concepts from the previous one. The "Think of it like..." boxes at the start of each section give you the intuition before the math arrives.

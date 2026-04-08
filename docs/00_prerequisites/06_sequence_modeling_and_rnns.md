@@ -2,6 +2,8 @@
 
 ## Why This Matters for LLMs
 
+Language is sequential — the meaning of "bank" depends on whether it comes after "river" or "money." RNNs were the first neural networks designed to handle this: they process text one word at a time, keeping a "memory" of what they've seen so far.
+
 Large language models are **sequence models**: they consume ordered tokens and produce distributions or continuations where **position and order** matter. Before the Transformer era, recurrent networks were the default tool for learning these temporal dependencies end-to-end. Even if you never ship an LSTM in production, interviewers expect you to connect three ideas: **variable-length structure**, **shared parameters across positions**, and **why gradients behave badly across long horizons**—because those same themes reappear when you discuss attention depth, residual paths, and long-context training.
 
 Understanding the sequence modeling problem also clarifies **why autoregressive generation** (predict one token at a time, condition on the past) became the dominant pretraining paradigm. RNNs implemented that recursion explicitly through a hidden state; Transformers implement it with causal masking and parallel attention over the prefix. When you explain “what problem self-attention solved,” part of the honest answer is **scalable training and direct paths between positions**, not the mere existence of long-range dependencies.
@@ -22,6 +24,8 @@ Many real inputs are **ordered sequences**: words in a sentence, samples in a ti
 - produce a **label** or **vector** for the whole sequence (classification, retrieval);
 - produce an **output sequence** aligned to the input or to a target length (translation, summarization);
 - assign a **probability** to the next element given all previous elements (**language modeling**).
+
+Think of it like reading a mystery novel. You need to remember clues from chapter 1 to understand the twist in chapter 10. A regular neural network reads every chapter independently — it has no memory. An RNN reads chapters in order and takes notes as it goes.
 
 Unlike fixed-size tabular features, sequences can have **variable length**, and permuting elements generally **changes the meaning**. A feedforward network that flattens the sequence into one vector must either use a fixed window (losing long context) or pad to a maximum length (wasting capacity and distorting short inputs).
 
@@ -45,7 +49,7 @@ At each step the model outputs a distribution over the next token given the **pr
 
 ### The Vanilla RNN
 
-A recurrent layer maintains a **hidden state** \(\mathbf{h}_t\) that summarizes information from time \(1\) through \(t\). With input embedding \(\mathbf{x}_t\), the standard update is:
+A recurrent layer maintains a **hidden state** \(\mathbf{h}_t\) that summarizes information from time \(1\) through \(t\). With input embedding \(\mathbf{x}_t\), the standard update is as follows. The RNN update is simple: take your old notes (\(\mathbf{h}_{t-1}\)), mix in the new word you just read (\(\mathbf{x}_t\)), squash the result, and that gives you your updated notes (\(\mathbf{h}_t\)). The same "mixing recipe" (weights \(W\)) is used at every step.
 
 \[
 \mathbf{h}_t = \tanh\bigl(W_{hh}\,\mathbf{h}_{t-1} + W_{xh}\,\mathbf{x}_t + \mathbf{b}\bigr).
@@ -86,6 +90,8 @@ Each box applies the **same** \(W_{hh}\), \(W_{xh}\), \(\mathbf{b}\). The unroll
 During BPTT, the derivative of a loss at time \(T\) with respect to an early state or input involves a **product** of Jacobian factors across intermediate steps. If typical magnitudes are **smaller than one**, the product **shrinks exponentially** with sequence length—early inputs receive negligible updates. Saturating \(\tanh\) regions worsen this by driving derivatives toward zero.
 
 !!! example "Why 0.9^50 Is Tiny"
+    Imagine playing a game of telephone with 50 people. Each person passes the message with 90% accuracy. After 50 people, the original message is barely recognizable — you keep only 0.5% of it! This is exactly what happens to gradients in long RNNs. The error signal from the end of a sentence almost completely forgets what happened at the beginning.
+
     If each time step scales a gradient component by a factor around \(0.9\) in magnitude, after \(50\) steps the cumulative factor is \(0.9^{50}\). Since \(\log(0.9^{50}) = 50 \log 0.9 \approx -5.27\), we get \(0.9^{50} \approx e^{-5.27} \approx 0.005\). A signal that started at unit scale is already **below half a percent** after \(50\) multiplications.
 
 !!! math-intuition "In Plain English"
@@ -97,6 +103,14 @@ During BPTT, the derivative of a loss at time \(T\) with respect to an early sta
 
 **LSTM** and **GRU** introduce **gates** (sigmoid multipliers) and often an **additive** path for memory updates. Instead of only multiplicative composition through \(\tanh\), additive updates to a cell state allow error signals to flow more directly across many steps—a **gradient highway** when gates stay open. Intuitively: gates learn **what to forget, what to write, and what to expose**.
 
+LSTMs solve the telephone problem by adding a "notebook" (cell state) that travels alongside the message. At each step, gates decide:
+
+- **FORGET** gate: Which old notes should I erase?
+- **INPUT** gate: Which new information should I write down?
+- **OUTPUT** gate: What should I share with the next person?
+
+The notebook is the key innovation — information can be passed directly without being garbled at each step.
+
 !!! math-intuition "In Plain English"
     Picture a conveyor belt (cell state) you can edit at each station. Gates decide how much old material stays, how much new evidence arrives, and what the next hidden output shows. **Part 1** walks through LSTM and GRU equations line by line—here you only need the motivation: **control flow** and **additive paths** mitigate vanishing gradients in depth-through-time.
 
@@ -105,6 +119,8 @@ During BPTT, the derivative of a loss at time \(T\) with respect to an early sta
 ### Bidirectional Processing
 
 A **bidirectional RNN** runs one recurrence left-to-right and another right-to-left, then **concatenates** or combines hidden states. For **encoding** tasks—tagging, classification of a whole sentence—seeing both contexts is often helpful.
+
+Sometimes you need to read both forward AND backward to understand a word. Think of the sentence: "He threw the ___ across the river." Is it "ball"? "stone"? Looking at what comes AFTER the blank helps too! Bidirectional RNNs read in both directions.
 
 For **autoregressive generation**, you must **not** condition on future tokens you have not generated yet. Decoder-only LLMs use **causal** attention for exactly this reason. Bidirectional encoders (BERT-style) are powerful for understanding, but they are not a drop-in for left-to-right generation without architectural changes.
 

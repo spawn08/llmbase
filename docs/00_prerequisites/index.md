@@ -2,6 +2,9 @@
 
 The building blocks that every neural network — including every Transformer and every LLM — is made of. This section exists so you never have to wave your hands when someone asks "but how does a neural network actually learn?"
 
+!!! info "Designed for Undergraduates"
+    This documentation is written for smart, curious readers who may not have taken linear algebra or probability courses yet. Every topic starts with **everyday analogies** and **"Think of it like..."** explanations before introducing any math. The math is then shown with **step-by-step worked examples** using real numbers. If an equation looks scary, read the "In Plain English" box next to it — we never leave you alone with a formula.
+
 ---
 
 ## Goals
@@ -79,4 +82,14 @@ This documentation is designed to be read **in two passes**:
 
 This section gives you the vocabulary and intuition that the Foundations section assumes. Once you are comfortable with backprop, activations, and the idea that a network maps inputs to outputs through differentiable layers, the Foundations section will build on that with language-specific concepts: n-grams, word embeddings, LSTM gate equations, and attention.
 
-Every page follows the same structure as the rest of LLMBase: plain-English math walkthroughs, worked numerical examples, runnable Python code, and FAANG-level interview questions with expected answer depth.
+Every page follows the same structure:
+
+1. **"Think of it like..."** — an everyday analogy to build intuition
+2. **"In Plain English"** — what the math means in words
+3. **The Math** — the actual equations, with every symbol explained
+4. **Worked Example** — step-by-step calculation with real numbers
+5. **Code** — runnable Python so you can verify the math
+6. **Interview Questions** — FAANG-level questions with expected answer depth
+
+!!! tip "New to Math Notation?"
+    Start with [Math Prerequisites](00_math_prerequisites.md) — it has a **"Reading Math in AI Papers — A Survival Guide"** section that decodes every symbol you'll encounter, plus a comprehensive **"Notation You'll See in AI Papers"** glossary.

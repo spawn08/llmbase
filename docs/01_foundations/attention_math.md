@@ -2,6 +2,8 @@
 
 ## Why This Matters for LLMs
 
+Attention is the single most important idea in modern AI. It answers the question: "When processing one word, which other words should I pay attention to?" In the sentence "The cat sat on the mat because it was tired", attention helps the model figure out that "it" refers to "cat" — by giving "cat" a high attention weight when processing "it".
+
 Every decoder-only LLM (GPT-class), encoder-only model (BERT-class), and encoder–decoder (T5, translation) **is** attention stacks plus MLPs plus norms. **Scaled dot-product attention** \(\text{softmax}(QK^\top/\sqrt{d_k})V\) is the **atomic** operation interviewers whiteboard first. Understanding **scaling**, **masks**, **multi-head** splitting, and **\(O(T^2)\)** cost is table stakes for systems roles (KV cache, FlashAttention) and research roles (linear attention, state-space layers). This page ties **Bahdanau → dot product → scaled softmax → Transformer** into one quantitative thread.
 
 !!! tip "Notation Help"
@@ -35,6 +37,12 @@ e_{i,j} = \mathbf{q}_i^\top \mathbf{k}_j
 
 ### Scaled Dot-Product Attention
 
+The attention formula looks intimidating but is just THREE steps:
+
+1. **SCORE:** For each word, compare its "query" (what am I looking for?) with every other word's "key" (what do I offer?) using dot products → gives a score matrix
+2. **NORMALIZE:** Turn scores into weights using softmax (so they sum to 1) and scale by \(\sqrt{d_k}\) to prevent extreme values
+3. **BLEND:** Use the weights to take a weighted average of "value" vectors → each word gets a blended representation that incorporates relevant context
+
 \[
 \text{Attention}(Q, K, V) = \text{softmax}\!\Bigl(\frac{QK^\top}{\sqrt{d_k}}\Bigr) V
 \]
@@ -47,6 +55,8 @@ Shapes: \(Q \in \mathbb{R}^{T \times d_k}\), \(K \in \mathbb{R}^{T \times d_k}\)
     - **Multiply by \(V\)**: **blend** value vectors—**differentiable** weighted sum.
 
 ### Why \(\sqrt{d_k}\)? — Numerical Stabilization
+
+Why divide by \(\sqrt{d_k}\)? Here's the intuition: imagine adding up 512 random numbers. The sum can be huge! Before softmax, huge numbers lead to outputs like \([0.999, 0.001, 0.000, 0.000]\) — almost one-hot. That means the model can only "pay attention" to ONE word, which is too rigid. Dividing by \(\sqrt{512} \approx 22.6\) brings the numbers back to a reasonable range, so softmax can spread attention across multiple words.
 
 If components of \(\mathbf{q}, \mathbf{k}\) are i.i.d. with variance 1 and mean 0, then
 
@@ -179,6 +189,8 @@ Because \(V=I\), **output row 0** \(\approx [0.366,\, 0.366,\, 0.134,\, 0.134]\)
 
 ## Causal (Autoregressive) Masking
 
+Masking prevents the model from "cheating" by looking at future words. In a causal (GPT-style) model, when predicting word 5, the model should only see words 1–4. The mask sets future positions to \(-\infty\) before softmax, which converts to 0 weight — effectively making future words invisible.
+
 For **decoder** self-attention, position \(i\) must **not** depend on \(j > i\). Take the **scaled** score matrix \(Z = S/\sqrt{d_k}\). **Causal mask** sets \(Z_{i,j} = -\infty\) for \(j > i\) **before** softmax.
 
 !!! example "Mask Walkthrough (same \(Z\) as above)"
@@ -199,6 +211,8 @@ For **decoder** self-attention, position \(i\) must **not** depend on \(j > i\).
     - **\(-\infty\)** + softmax = **0** probability—clean masking without “almost zero” numerical hacks (implementation uses large negative floats).
 
 ### Multi-Head Intuition
+
+Multi-head attention is like having multiple "perspectives". One head might focus on syntactic relationships (subject–verb), another on semantic similarity (synonyms), another on positional proximity (nearby words). Each head has its own \(Q\), \(K\), \(V\) projections, runs attention independently, and the results are concatenated and projected back. Think of it as a team of analysts, each looking at the data through a different lens.
 
 \[
 \text{head}_h = \text{softmax}\!\Bigl(\frac{Q_h K_h^\top}{\sqrt{d_k}}\Bigr) V_h, \quad Q_h = X W_h^Q,\ \ldots

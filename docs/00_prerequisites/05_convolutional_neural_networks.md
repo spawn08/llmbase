@@ -8,6 +8,8 @@ Vision Transformers have displaced pure CNNs for many large-scale image tasks, b
 
 Finally, **residual connections**—popularized in depth by **ResNet**—are the same structural idea as the **residual stream** in Transformers: a clean path for gradients and a stable place to add sub-layer outputs. Tracing CNNs through **ResNet → ViT → CLIP** is one of the shortest routes from "2010s vision" to "2020s multimodal LLMs."
 
+A CNN is inspired by how our eyes work: we don't look at an entire image at once. Instead, we scan small patches and notice patterns — edges here, curves there, a face over there. CNNs do the same thing with math.
+
 !!! tip "Notation Help"
     The double summation \(\sum_{u=0}^{K-1}\sum_{v=0}^{K-1}\) means "loop over all positions in the kernel." See [Math Prerequisites](00_math_prerequisites.md#3-summation-and-product-notation) if the \(\Sigma\) symbol is unfamiliar.
 
@@ -18,6 +20,8 @@ Finally, **residual connections**—popularized in depth by **ResNet**—are the
 ### The Convolution Operation
 
 A **2D discrete convolution** (in the **deep-learning sense**, frameworks typically implement **cross-correlation** without flipping the kernel) produces one output value by placing a **kernel** \(\mathbf{W} \in \mathbb{R}^{K \times K}\) over a \(K \times K\) patch of the input and taking the **sum of elementwise products**. For a single-channel input \(X\) and output \(Y\):
+
+Think of convolution like placing a small magnifying glass (the 'kernel' or 'filter') over every part of an image. At each spot, the magnifying glass checks: 'Does the pattern under me match what I'm looking for?' The output is a heat map of 'matches found here!'
 
 \[
 Y[i,j] = \sum_{u=0}^{K-1}\sum_{v=0}^{K-1} X[i+u,\, j+v]\, W[u,v] + b.
@@ -70,6 +74,8 @@ Y[0,0] = 1\cdot 1 + 1\cdot 0 + 1\cdot 0 + 2\cdot 0 + 2\cdot 1 + 2\cdot 0 + 3\cdo
 
 For a square input of side \(I\), square kernel of side \(K\), padding \(P\) (zeros added symmetrically), and stride \(S\), the **spatial output size** (per dimension) is:
 
+Stride is like reading every other line of a book — you cover the page faster but miss details. Padding is like adding a blank border around a photo before applying a filter, so the edges get the same treatment as the middle.
+
 \[
 O = \left\lfloor \frac{I - K + 2P}{S} \right\rfloor + 1.
 \]
@@ -85,6 +91,8 @@ O = \left\lfloor \frac{I - K + 2P}{S} \right\rfloor + 1.
 ### Multiple Channels and Filters
 
 Real inputs have **multiple channels** \(C_{\mathrm{in}}\) (e.g. RGB \(C_{\mathrm{in}}=3\); intermediate layers often have hundreds). A **single filter** produces one output channel by summing over **all input channels**:
+
+Don't panic at this formula. It just says: for each output pixel, look at the same small patch across ALL color channels (like looking at red, green, and blue separately), multiply by weights, and add everything up into one number.
 
 \[
 Y[c_{\mathrm{out}}, i, j] = \sum_{c_{\mathrm{in}}=0}^{C_{\mathrm{in}}-1}\sum_{u=0}^{K-1}\sum_{v=0}^{K-1}
@@ -113,6 +121,8 @@ The full weight tensor has shape **\((C_{\mathrm{out}},\, C_{\mathrm{in}},\, K,\
 \]
 
 ### Pooling Layers
+
+Pooling is like summarizing a paragraph into one sentence. Max pooling picks the most important detail from each small region. Average pooling takes the average. Either way, the image gets smaller but keeps the key information.
 
 **Pooling** reduces spatial resolution using a local rule over non-overlapping or overlapping windows. The most common are:
 
@@ -152,6 +162,8 @@ The full weight tensor has shape **\((C_{\mathrm{out}},\, C_{\mathrm{in}},\, K,\
 
 ### Feature Hierarchies
 
+Early layers learn to detect simple things like edges and corners. Middle layers combine edges into shapes like eyes and ears. Deep layers combine shapes into concepts like 'cat face' or 'bicycle.' This is why deep networks are powerful — they build understanding layer by layer.
+
 CNNs typically learn a **compositional hierarchy**: **early** layers respond to **edges, colors, and simple textures**; **middle** layers combine these into **parts and patterns**; **deep** layers encode **object-level** or **scene-level** abstractions (especially with global pooling or fully connected heads).
 
 !!! math-intuition "In Plain English"
@@ -167,6 +179,8 @@ This structure is **not guaranteed** by the architecture alone (data and trainin
 | **AlexNet** | 2012 | Deeper CNN on ImageNet; **ReLU**, **GPU** training at scale, **dropout**—kicked off the deep learning boom in vision. |
 | **VGGNet** | 2014 | Very **small \(3\times 3\)** filters stacked deeply; **uniform**, simple blocks; showed depth + small kernels works. |
 | **ResNet** | 2015 | **Residual (skip) connections**: layers learn **residuals** \(\mathcal{F}(\mathbf{x})\) added to identity \(\mathbf{x}\), enabling **very deep** trainable networks. |
+
+The big idea of ResNet is simple: let each layer learn just a CORRECTION to the previous layer's output, not the entire answer from scratch. It's like editing a draft instead of rewriting the whole essay. This 'shortcut connection' makes very deep networks possible.
 
 **Residual block (concept):**
 
