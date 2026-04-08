@@ -31,15 +31,15 @@ In words: each feature \(x_i\) is scaled by \(w_i\), the terms are summed, the b
 
     **Step 1 — weighted sum plus bias**
 
-    \[
-    \mathbf{w} \cdot \mathbf{x} + b = (0.5)(1) + (-1)(2) + (0.25)(3) + 1 = 0.5 - 2 + 0.75 + 1 = 0.25.
-    \]
+\[
+\mathbf{w} \cdot \mathbf{x} + b = (0.5)(1) + (-1)(2) + (0.25)(3) + 1 = 0.5 - 2 + 0.75 + 1 = 0.25.
+\]
 
     **Step 2 — activation (ReLU: \(\sigma(z)=\max(0,z)\))**
 
-    \[
-    y = \max(0,\, 0.25) = 0.25.
-    \]
+\[
+y = \max(0,\, 0.25) = 0.25.
+\]
 
     If instead \(\sigma\) were the logistic sigmoid \(\sigma(z)=1/(1+e^{-z})\), then \(y \approx 0.562\) because the sigmoid maps the pre-activation \(0.25\) into \((0,1)\).
 
@@ -61,20 +61,20 @@ In words: **one matrix multiply** replaces a loop of dot products, and the bias 
 !!! example "Worked Example: two neurons, two inputs"
     Let \(\mathbf{x} = [2,\, -1]^\top\),
 
-    \[
-    W = \begin{bmatrix} 1 & 3 \\ -2 & 0.5 \end{bmatrix}, \quad \mathbf{b} = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.
-    \]
+\[
+W = \begin{bmatrix} 1 & 3 \\ -2 & 0.5 \end{bmatrix}, \quad \mathbf{b} = \begin{bmatrix} 0 \\ 1 \end{bmatrix}.
+\]
 
     Then
 
-    \[
-    W\mathbf{x} + \mathbf{b}
-    = \begin{bmatrix} 1\cdot 2 + 3\cdot (-1) \\ -2\cdot 2 + 0.5\cdot (-1) \end{bmatrix}
-    + \begin{bmatrix} 0 \\ 1 \end{bmatrix}
-    = \begin{bmatrix} -1 \\ -4.5 \end{bmatrix}
-    + \begin{bmatrix} 0 \\ 1 \end{bmatrix}
-    = \begin{bmatrix} -1 \\ -3.5 \end{bmatrix}.
-    \]
+\[
+W\mathbf{x} + \mathbf{b}
+= \begin{bmatrix} 1\cdot 2 + 3\cdot (-1) \\ -2\cdot 2 + 0.5\cdot (-1) \end{bmatrix}
++ \begin{bmatrix} 0 \\ 1 \end{bmatrix}
+= \begin{bmatrix} -1 \\ -4.5 \end{bmatrix}
++ \begin{bmatrix} 0 \\ 1 \end{bmatrix}
+= \begin{bmatrix} -1 \\ -3.5 \end{bmatrix}.
+\]
 
     If the layer uses ReLU, the post-activation is \(\max(0, z)\) per coordinate: \([0,\, 0]\).
 
@@ -98,41 +98,41 @@ In words: the network is a **nested sequence** of affine maps and nonlinearities
 
     **Inputs**
 
-    \[
-    \mathbf{x} = \begin{bmatrix} 1 \\ 0 \end{bmatrix}.
-    \]
+\[
+\mathbf{x} = \begin{bmatrix} 1 \\ 0 \end{bmatrix}.
+\]
 
     **First layer**
 
-    \[
-    W_1 = \begin{bmatrix} 2 & -1 \\ 1 & 3 \end{bmatrix}, \quad \mathbf{b}_1 = \begin{bmatrix} 0.5 \\ -0.5 \end{bmatrix}.
-    \]
+\[
+W_1 = \begin{bmatrix} 2 & -1 \\ 1 & 3 \end{bmatrix}, \quad \mathbf{b}_1 = \begin{bmatrix} 0.5 \\ -0.5 \end{bmatrix}.
+\]
 
     Pre-activation:
 
-    \[
-    W_1 \mathbf{x} + \mathbf{b}_1
-    = \begin{bmatrix} 2\cdot 1 + (-1)\cdot 0 + 0.5 \\ 1\cdot 1 + 3\cdot 0 - 0.5 \end{bmatrix}
-    = \begin{bmatrix} 2.5 \\ 0.5 \end{bmatrix}.
-    \]
+\[
+W_1 \mathbf{x} + \mathbf{b}_1
+= \begin{bmatrix} 2\cdot 1 + (-1)\cdot 0 + 0.5 \\ 1\cdot 1 + 3\cdot 0 - 0.5 \end{bmatrix}
+= \begin{bmatrix} 2.5 \\ 0.5 \end{bmatrix}.
+\]
 
     Hidden activations:
 
-    \[
-    \mathbf{h} = f_1(W_1 \mathbf{x} + \mathbf{b}_1) = \mathrm{ReLU}\!\left(\begin{bmatrix} 2.5 \\ 0.5 \end{bmatrix}\right) = \begin{bmatrix} 2.5 \\ 0.5 \end{bmatrix}.
-    \]
+\[
+\mathbf{h} = f_1(W_1 \mathbf{x} + \mathbf{b}_1) = \mathrm{ReLU}\!\left(\begin{bmatrix} 2.5 \\ 0.5 \end{bmatrix}\right) = \begin{bmatrix} 2.5 \\ 0.5 \end{bmatrix}.
+\]
 
     **Second layer (1 output)**
 
-    \[
-    W_2 = \begin{bmatrix} 1 & 2 \end{bmatrix}, \quad b_2 = -1.
-    \]
+\[
+W_2 = \begin{bmatrix} 1 & 2 \end{bmatrix}, \quad b_2 = -1.
+\]
 
     Scalar logit:
 
-    \[
-    z = W_2 \mathbf{h} + b_2 = 1\cdot 2.5 + 2\cdot 0.5 - 1 = 2.5 + 1 - 1 = 2.5.
-    \]
+\[
+z = W_2 \mathbf{h} + b_2 = 1\cdot 2.5 + 2\cdot 0.5 - 1 = 2.5 + 1 - 1 = 2.5.
+\]
 
     With identity output, \(y = 2.5\). If this were binary classification, you might apply sigmoid to \(z\) or use cross-entropy on logits.
 
@@ -170,37 +170,37 @@ In words: after attention has mixed tokens, the FFN applies the **same MLP patte
 !!! example "Worked Example: match tensors to the equation (tiny dimensions)"
     Use row-vector layout \(\mathbf{x} \in \mathbb{R}^{1 \times d}\) multiplying \(W_1 \in \mathbb{R}^{d \times d_{\mathrm{ff}}}\), matching common frameworks. Take \(d = 2\), \(d_{\mathrm{ff}} = 2\):
 
-    \[
-    \mathbf{x} = \begin{bmatrix} 1 & -1 \end{bmatrix}, \quad
-    W_1 = \begin{bmatrix} 1 & 2 \\ 0 & -1 \end{bmatrix}, \quad \mathbf{b}_1 = \begin{bmatrix} 0 & 0 \end{bmatrix}.
-    \]
+\[
+\mathbf{x} = \begin{bmatrix} 1 & -1 \end{bmatrix}, \quad
+W_1 = \begin{bmatrix} 1 & 2 \\ 0 & -1 \end{bmatrix}, \quad \mathbf{b}_1 = \begin{bmatrix} 0 & 0 \end{bmatrix}.
+\]
 
     Inner pre-activation (before ReLU):
 
-    \[
-    \mathbf{x} W_1 + \mathbf{b}_1
-    = \begin{bmatrix} 1 & -1 \end{bmatrix}
-    \begin{bmatrix} 1 & 2 \\ 0 & -1 \end{bmatrix}
-    = \begin{bmatrix} 1 & 3 \end{bmatrix}.
-    \]
+\[
+\mathbf{x} W_1 + \mathbf{b}_1
+= \begin{bmatrix} 1 & -1 \end{bmatrix}
+\begin{bmatrix} 1 & 2 \\ 0 & -1 \end{bmatrix}
+= \begin{bmatrix} 1 & 3 \end{bmatrix}.
+\]
 
     Apply ReLU to each coordinate: \(\mathbf{h}_i = \max(0, z_i)\).
 
-    \[
-    \mathbf{h} = \begin{bmatrix} 1 & 3 \end{bmatrix}.
-    \]
+\[
+\mathbf{h} = \begin{bmatrix} 1 & 3 \end{bmatrix}.
+\]
 
     Let \(W_2 \in \mathbb{R}^{2 \times 1}\) and \(b_2 \in \mathbb{R}\):
 
-    \[
-    W_2 = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}, \quad b_2 = 0.
-    \]
+\[
+W_2 = \begin{bmatrix} 0.5 \\ 1 \end{bmatrix}, \quad b_2 = 0.
+\]
 
     Output scalar at this position:
 
-    \[
-    \mathrm{FFN}(\mathbf{x}) = \mathbf{h} W_2 + b_2 = 1\cdot 0.5 + 3\cdot 1 + 0 = 3.5.
-    \]
+\[
+\mathrm{FFN}(\mathbf{x}) = \mathbf{h} W_2 + b_2 = 1\cdot 0.5 + 3\cdot 1 + 0 = 3.5.
+\]
 
     In full-sized models, \(d_{\mathrm{ff}} \gg d\) (expand–contract), and the activation may be GELU instead of ReLU, but the affine–nonlinear–affine pattern is unchanged.
 

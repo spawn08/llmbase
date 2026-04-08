@@ -28,9 +28,11 @@ We use consistent notation throughout. Here's what each symbol means:
     
     **Concrete example**: If \(d = 3\), then \(\mathbf{x} \in \mathbb{R}^3\) could be:
     
-    \[
-    \mathbf{x} = \begin{bmatrix} 1.5 \\ -2.0 \\ 3.14 \end{bmatrix}
-    \]
+
+\[
+\mathbf{x} = \begin{bmatrix} 1.5 \\ -2.0 \\ 3.14 \end{bmatrix}
+\]
+
     
     This is a **column vector** with 3 numbers stacked vertically. In code, this is like a list or array: `[1.5, -2.0, 3.14]`.
 
@@ -53,9 +55,11 @@ A **vector** is just an ordered list of numbers. Think of it as a point in space
 !!! example "Real-world example: describing a house"
     You could represent a house as a vector in \(\mathbb{R}^4\):
     
-    \[
-    \text{house} = \begin{bmatrix} 3 \\ 2.5 \\ 1800 \\ 2015 \end{bmatrix}
-    \]
+
+\[
+\text{house} = \begin{bmatrix} 3 \\ 2.5 \\ 1800 \\ 2015 \end{bmatrix}
+\]
+
     
     - \(x_1 = 3\) bedrooms
     - \(x_2 = 2.5\) bathrooms
@@ -105,9 +109,11 @@ The **dot product** multiplies matching elements and sums them up:
 !!! example "Dot product with numbers"
     Let \(\mathbf{w} = [0.5, -1, 0.25]\) and \(\mathbf{x} = [1, 2, 3]\):
     
-    \[
-    \mathbf{w} \cdot \mathbf{x} = (0.5)(1) + (-1)(2) + (0.25)(3) = 0.5 - 2 + 0.75 = -0.75
-    \]
+
+\[
+\mathbf{w} \cdot \mathbf{x} = (0.5)(1) + (-1)(2) + (0.25)(3) = 0.5 - 2 + 0.75 = -0.75
+\]
+
     
     **What this means**: The dot product measures how "aligned" two vectors are. If they point in similar directions, the result is large and positive. If they point in opposite directions, it's negative. If they're perpendicular, it's zero.
 
@@ -124,9 +130,11 @@ Each **row** of \(W\) does a dot product with \(\mathbf{x}\):
 !!! example "Matrix-vector multiplication step by step"
     Let \(W = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix}\) and \(\mathbf{x} = \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix}\):
     
-    \[
-    W\mathbf{x} = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix} = \begin{bmatrix} (1)(1) + (2)(0) + (3)(-1) \\ (4)(1) + (5)(0) + (6)(-1) \end{bmatrix} = \begin{bmatrix} -2 \\ -2 \end{bmatrix}
-    \]
+
+\[
+W\mathbf{x} = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix} = \begin{bmatrix} (1)(1) + (2)(0) + (3)(-1) \\ (4)(1) + (5)(0) + (6)(-1) \end{bmatrix} = \begin{bmatrix} -2 \\ -2 \end{bmatrix}
+\]
+
     
     - **Row 1** \(\cdot\) \(\mathbf{x}\) = \(1 + 0 - 3 = -2\) → first output
     - **Row 2** \(\cdot\) \(\mathbf{x}\) = \(4 + 0 - 6 = -2\) → second output
@@ -226,9 +234,10 @@ The capital sigma \(\Sigma\) means "add up a sequence of terms":
 \]
 
 !!! example "Summation with numbers"
-    \[
-    \sum_{i=1}^{4} i^2 = 1^2 + 2^2 + 3^2 + 4^2 = 1 + 4 + 9 + 16 = 30
-    \]
+
+\[
+\sum_{i=1}^{4} i^2 = 1^2 + 2^2 + 3^2 + 4^2 = 1 + 4 + 9 + 16 = 30
+\]
 
 ### Product (\(\Pi\))
 
@@ -239,9 +248,10 @@ The capital pi \(\Pi\) means "multiply a sequence of terms":
 \]
 
 !!! example "Product with numbers"
-    \[
-    \prod_{i=1}^{4} i = 1 \times 2 \times 3 \times 4 = 24
-    \]
+
+\[
+\prod_{i=1}^{4} i = 1 \times 2 \times 3 \times 4 = 24
+\]
 
 ---
 
@@ -287,9 +297,11 @@ A **random variable** \(X\) can take different values with different probabiliti
 !!! example "Fair die roll"
     Let \(X\) be the outcome of rolling a fair 6-sided die:
     
-    \[
-    P(X = 1) = P(X = 2) = \cdots = P(X = 6) = \frac{1}{6}
-    \]
+
+\[
+P(X = 1) = P(X = 2) = \cdots = P(X = 6) = \frac{1}{6}
+\]
+
     
     Each outcome has probability \(\frac{1}{6}\).
 
@@ -309,9 +321,10 @@ The **expected value** \(\mathbb{E}[X]\) is the "average" value you'd expect ove
 \]
 
 !!! example "Expected value of a die roll"
-    \[
-    \mathbb{E}[X] = 1\cdot\frac{1}{6} + 2\cdot\frac{1}{6} + 3\cdot\frac{1}{6} + 4\cdot\frac{1}{6} + 5\cdot\frac{1}{6} + 6\cdot\frac{1}{6} = 3.5
-    \]
+
+\[
+\mathbb{E}[X] = 1\cdot\frac{1}{6} + 2\cdot\frac{1}{6} + 3\cdot\frac{1}{6} + 4\cdot\frac{1}{6} + 5\cdot\frac{1}{6} + 6\cdot\frac{1}{6} = 3.5
+\]
 
 ### Variance
 
@@ -347,9 +360,11 @@ The symbol \(\odot\) denotes **elementwise multiplication** of two vectors of th
 \]
 
 !!! example "Hadamard product"
-    \[
-    \begin{bmatrix} 1 \\ 2 \\ 3 \end{bmatrix} \odot \begin{bmatrix} 4 \\ 5 \\ 6 \end{bmatrix} = \begin{bmatrix} 4 \\ 10 \\ 18 \end{bmatrix}
-    \]
+
+\[
+\begin{bmatrix} 1 \\ 2 \\ 3 \end{bmatrix} \odot \begin{bmatrix} 4 \\ 5 \\ 6 \end{bmatrix} = \begin{bmatrix} 4 \\ 10 \\ 18 \end{bmatrix}
+\]
+
     
     Contrast with the **dot product** \(\mathbf{u} \cdot \mathbf{v}\), which produces a **scalar** (single number), while \(\mathbf{u} \odot \mathbf{v}\) produces a **vector**.
 
@@ -380,9 +395,11 @@ The **gradient** \(\nabla f\) is a vector containing **all partial derivatives**
 !!! math-intuition "In Plain English"
     The gradient points in the direction of **steepest increase** of the function. In machine learning, we go in the **opposite direction** (gradient descent) to **minimize** the loss:
     
-    \[
-    \mathbf{w}_{\text{new}} = \mathbf{w}_{\text{old}} - \eta \nabla_{\mathbf{w}} L
-    \]
+
+\[
+\mathbf{w}_{\text{new}} = \mathbf{w}_{\text{old}} - \eta \nabla_{\mathbf{w}} L
+\]
+
     
     where \(\eta\) is the learning rate (step size).
 

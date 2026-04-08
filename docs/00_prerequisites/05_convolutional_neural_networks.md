@@ -44,25 +44,25 @@ Mathematical **convolution** flips the kernel; **cross-correlation** does not. I
 !!! example "Worked Example: one output pixel with real numbers"
     Take the **top-left** \(3 \times 3\) patch of \(X\) and a kernel \(\mathbf{W}\):
 
-    \[
-    X[0{:}3,\,0{:}3] = \begin{bmatrix}
-    1 & 1 & 1\\
-    2 & 2 & 2\\
-    3 & 3 & 3
-    \end{bmatrix},
-    \quad
-    \mathbf{W} = \begin{bmatrix}
-    1 & 0 & 0\\
-    0 & 1 & 0\\
-    0 & 0 & 1
-    \end{bmatrix}.
-    \]
+\[
+X[0{:}3,\,0{:}3] = \begin{bmatrix}
+1 & 1 & 1\\
+2 & 2 & 2\\
+3 & 3 & 3
+\end{bmatrix},
+\quad
+\mathbf{W} = \begin{bmatrix}
+1 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{bmatrix}.
+\]
 
     The output at \(Y[0,0]\) is the **sum of elementwise products**:
 
-    \[
-    Y[0,0] = 1\cdot 1 + 1\cdot 0 + 1\cdot 0 + 2\cdot 0 + 2\cdot 1 + 2\cdot 0 + 3\cdot 0 + 3\cdot 0 + 3\cdot 1 = 1 + 2 + 3 = 6.
-    \]
+\[
+Y[0,0] = 1\cdot 1 + 1\cdot 0 + 1\cdot 0 + 2\cdot 0 + 2\cdot 1 + 2\cdot 0 + 3\cdot 0 + 3\cdot 0 + 3\cdot 1 = 1 + 2 + 3 = 6.
+\]
 
     Sliding the kernel to the next position (e.g. one step right) repeats the operation on a **new** patch, producing \(Y[0,1]\), and so on.
 
@@ -108,9 +108,9 @@ The full weight tensor has shape **\((C_{\mathrm{out}},\, C_{\mathrm{in}},\, K,\
 !!! example "Worked Example: parameter count"
     \(C_{\mathrm{in}}=64,\, C_{\mathrm{out}}=128,\, K=3\):
 
-    \[
-    128\,(64\cdot 9 + 1) = 128 \times 577 = 73{,}856 \text{ parameters for that layer.}
-    \]
+\[
+128\,(64\cdot 9 + 1) = 128 \times 577 = 73{,}856 \text{ parameters for that layer.}
+\]
 
 ### Pooling Layers
 
@@ -125,28 +125,28 @@ The full weight tensor has shape **\((C_{\mathrm{out}},\, C_{\mathrm{in}},\, K,\
 !!! example "Worked Example: \(2\times 2\) max pool, stride \(2\) on a \(4\times 4\) map"
     Input (one channel):
 
-    \[
-    \begin{bmatrix}
-    1 & 3 & 2 & 4\\
-    5 & 6 & 1 & 0\\
-    2 & 2 & 7 & 8\\
-    0 & 1 & 3 & 2
-    \end{bmatrix}.
-    \]
+\[
+\begin{bmatrix}
+1 & 3 & 2 & 4\\
+5 & 6 & 1 & 0\\
+2 & 2 & 7 & 8\\
+0 & 1 & 3 & 2
+\end{bmatrix}.
+\]
 
     Partition into four \(2\times 2\) blocks. Max in each block:
 
-    \[
-    \begin{bmatrix}
-    \max(1,3,5,6) & \max(2,4,1,0)\\
-    \max(2,2,0,1) & \max(7,8,3,2)
-    \end{bmatrix}
-    =
-    \begin{bmatrix}
-    6 & 4\\
-    2 & 8
-    \end{bmatrix}.
-    \]
+\[
+\begin{bmatrix}
+\max(1,3,5,6) & \max(2,4,1,0)\\
+\max(2,2,0,1) & \max(7,8,3,2)
+\end{bmatrix}
+=
+\begin{bmatrix}
+6 & 4\\
+2 & 8
+\end{bmatrix}.
+\]
 
     Spatial size \(4\to 2\); each pooled value summarizes a **region**.
 

@@ -72,57 +72,57 @@ For a weight \(W\) in a linear layer \(\mathbf{z} = W\mathbf{x} + \mathbf{b}\), 
 !!! example "Worked Example: 2-layer network with ReLU and squared loss"
     **Architecture.** Input \(\mathbf{x} \in \mathbb{R}^2\), one hidden layer with ReLU, scalar linear output. Parameters:
 
-    \[
-    W_1 = \begin{bmatrix} 0.1 & 0.2 \\ 0.3 & 0.4 \end{bmatrix}, \quad
-    \mathbf{b}_1 = \begin{bmatrix} 0.01 \\ 0.02 \end{bmatrix}, \quad
-    W_2 = \begin{bmatrix} 0.5 & 0.6 \end{bmatrix}, \quad
-    b_2 = 0.03.
-    \]
+\[
+W_1 = \begin{bmatrix} 0.1 & 0.2 \\ 0.3 & 0.4 \end{bmatrix}, \quad
+\mathbf{b}_1 = \begin{bmatrix} 0.01 \\ 0.02 \end{bmatrix}, \quad
+W_2 = \begin{bmatrix} 0.5 & 0.6 \end{bmatrix}, \quad
+b_2 = 0.03.
+\]
 
     Let \(\mathbf{x} = [1,\,2]^\top\), target \(y = 1\).
 
     **Forward**
 
-    \[
-    \mathbf{z}_1 = W_1 \mathbf{x} + \mathbf{b}_1
-    = \begin{bmatrix} 0.51 \\ 1.12 \end{bmatrix}, \quad
-    \mathbf{h} = \mathrm{ReLU}(\mathbf{z}_1) = \begin{bmatrix} 0.51 \\ 1.12 \end{bmatrix}.
-    \]
+\[
+\mathbf{z}_1 = W_1 \mathbf{x} + \mathbf{b}_1
+= \begin{bmatrix} 0.51 \\ 1.12 \end{bmatrix}, \quad
+\mathbf{h} = \mathrm{ReLU}(\mathbf{z}_1) = \begin{bmatrix} 0.51 \\ 1.12 \end{bmatrix}.
+\]
 
-    \[
-    z_2 = W_2 \mathbf{h} + b_2 = 0.5(0.51) + 0.6(1.12) + 0.03 = 0.957.
-    \]
+\[
+z_2 = W_2 \mathbf{h} + b_2 = 0.5(0.51) + 0.6(1.12) + 0.03 = 0.957.
+\]
 
     Squared loss:
 
-    \[
-    L = (z_2 - y)^2 = (0.957 - 1)^2 = 0.001849.
-    \]
+\[
+L = (z_2 - y)^2 = (0.957 - 1)^2 = 0.001849.
+\]
 
     **Backward** (scalar output; \(\mathrm{ReLU}'(z) = \mathbb{1}_{z>0}\))
 
-    \[
-    \frac{\partial L}{\partial z_2} = 2(z_2 - y) = -0.086.
-    \]
+\[
+\frac{\partial L}{\partial z_2} = 2(z_2 - y) = -0.086.
+\]
 
-    \[
-    \frac{\partial L}{\partial W_2} = \frac{\partial L}{\partial z_2}\,\mathbf{h}^\top
-    = \begin{bmatrix} -0.04386 & -0.09632 \end{bmatrix}, \quad
-    \frac{\partial L}{\partial b_2} = -0.086.
-    \]
+\[
+\frac{\partial L}{\partial W_2} = \frac{\partial L}{\partial z_2}\,\mathbf{h}^\top
+= \begin{bmatrix} -0.04386 & -0.09632 \end{bmatrix}, \quad
+\frac{\partial L}{\partial b_2} = -0.086.
+\]
 
-    \[
-    \frac{\partial L}{\partial \mathbf{h}} = W_2^\top \frac{\partial L}{\partial z_2}
-    = \begin{bmatrix} -0.043 \\ -0.0516 \end{bmatrix}.
-    \]
+\[
+\frac{\partial L}{\partial \mathbf{h}} = W_2^\top \frac{\partial L}{\partial z_2}
+= \begin{bmatrix} -0.043 \\ -0.0516 \end{bmatrix}.
+\]
 
     Since both entries of \(\mathbf{z}_1\) are positive, \(\partial L/\partial \mathbf{z}_1 = \partial L/\partial \mathbf{h}\).
 
-    \[
-    \frac{\partial L}{\partial W_1} = \frac{\partial L}{\partial \mathbf{z}_1}\,\mathbf{x}^\top
-    = \begin{bmatrix} -0.043 & -0.086 \\ -0.0516 & -0.1032 \end{bmatrix}, \quad
-    \frac{\partial L}{\partial \mathbf{b}_1} = \begin{bmatrix} -0.043 \\ -0.0516 \end{bmatrix}.
-    \]
+\[
+\frac{\partial L}{\partial W_1} = \frac{\partial L}{\partial \mathbf{z}_1}\,\mathbf{x}^\top
+= \begin{bmatrix} -0.043 & -0.086 \\ -0.0516 & -0.1032 \end{bmatrix}, \quad
+\frac{\partial L}{\partial \mathbf{b}_1} = \begin{bmatrix} -0.043 \\ -0.0516 \end{bmatrix}.
+\]
 
     These are the values you should recover from a manual implementation or from PyTorch autograd for the same tensors.
 
@@ -151,9 +151,9 @@ where \(\eta > 0\) is the **learning rate**.
 !!! example "Worked Example: one SGD update"
     Scalar weight \(w = 2.0\), learning rate \(\eta = 0.1\), batch gives \(\dfrac{\partial L}{\partial w} = 0.4\).
 
-    \[
-    w_{\mathrm{new}} = 2.0 - 0.1 \times 0.4 = 2.0 - 0.04 = 1.96.
-    \]
+\[
+w_{\mathrm{new}} = 2.0 - 0.1 \times 0.4 = 2.0 - 0.04 = 1.96.
+\]
 
     *In plain terms:* one SGD step subtracts \(\eta\) times the observed gradient from the current weight—here a positive gradient **decreases** \(w\) because we step opposite to \(\nabla L\).
 
@@ -213,10 +213,12 @@ where:
     
     **Step 1: Update moments**
     
-    \[
-    \mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1-\beta_1)\,\mathbf{g}_t, \qquad
-    \mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2)\,\mathbf{g}_t \odot \mathbf{g}_t.
-    \]
+
+\[
+\mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1-\beta_1)\,\mathbf{g}_t, \qquad
+\mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2)\,\mathbf{g}_t \odot \mathbf{g}_t.
+\]
+
     
     Typical values: \(\beta_1 = 0.9\) (gradient memory), \(\beta_2 = 0.999\) (magnitude tracking).
     
@@ -224,20 +226,24 @@ where:
     
     Because \(\mathbf{m}_0=\mathbf{0}\) and \(\mathbf{v}_0=\mathbf{0}\), the early estimates are biased toward zero. We correct this:
     
-    \[
-    \widehat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1-\beta_1^t}, \qquad
-    \widehat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1-\beta_2^t}.
-    \]
+
+\[
+\widehat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1-\beta_1^t}, \qquad
+\widehat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1-\beta_2^t}.
+\]
+
     
     !!! math-intuition "Why bias correction?"
         Early in training, EMAs are **biased toward zero** because they start at zero; dividing by \(1-\beta^t\) inflates them so the first steps are not artificially timid. At \(t=1\) with \(\beta_1=0.9\), we divide by \(1-0.9=0.1\), multiplying by 10!
     
     **Step 3: Parameter update**
     
-    \[
-    \mathbf{w}_t = \mathbf{w}_{t-1} - \eta\,\frac{\widehat{\mathbf{m}}_t}{\sqrt{\widehat{\mathbf{v}}_t} + \epsilon}
-    \quad \text{(elementwise)}.
-    \]
+
+\[
+\mathbf{w}_t = \mathbf{w}_{t-1} - \eta\,\frac{\widehat{\mathbf{m}}_t}{\sqrt{\widehat{\mathbf{v}}_t} + \epsilon}
+\quad \text{(elementwise)}.
+\]
+
     
     !!! example "Worked Example: Adam for two steps (scalar)"
         Use \(\beta_1 = 0.9\), \(\beta_2 = 0.999\), \(\epsilon = 10^{-8}\), \(\eta = 0.01\), starting \(w = 1.0\), \(\mathbf{m}_0=\mathbf{v}_0=0\).
@@ -247,16 +253,19 @@ where:
         \[
         m_1 = 0.9\cdot 0 + 0.1\cdot 0.4 = 0.04, \quad v_1 = 0.999\cdot 0 + 0.001\cdot 0.16 = 0.00016.
         \]
+
         
         \[
         \widehat{m}_1 = \frac{0.04}{1-0.9} = 0.4, \quad
         \widehat{v}_1 = \frac{0.00016}{0.001} = 0.16.
         \]
+
         
         \[
         w \leftarrow 1.0 - 0.01\cdot\frac{0.4}{\sqrt{0.16}+\epsilon}
         = 1.0 - 0.01\cdot\frac{0.4}{0.4} = 0.99.
         \]
+
         
         **Step \(t=2\), gradient \(g_2 = -0.2\):**
         
@@ -264,16 +273,19 @@ where:
         m_2 = 0.9\cdot 0.04 + 0.1\cdot(-0.2) = 0.016, \quad
         v_2 = 0.999\cdot 0.00016 + 0.001\cdot 0.04 = 0.00019984.
         \]
+
         
         \[
         \widehat{m}_2 = \frac{0.016}{1-0.81} \approx 0.08421, \quad
         \widehat{v}_2 = \frac{0.00019984}{1-0.998001} \approx 0.09997.
         \]
+
         
         \[
         w \leftarrow 0.99 - 0.01\cdot\frac{0.08421}{\sqrt{0.09997}+\epsilon}
         \approx 0.99 - 0.00266 \approx 0.9873.
         \]
+
         
         (Numerical values rounded for display; implementations keep full precision.)
 

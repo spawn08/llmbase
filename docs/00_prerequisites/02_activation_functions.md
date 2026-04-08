@@ -34,12 +34,15 @@ The derivative is
     The slope is largest near \( z = 0 \) and approaches zero when \( z \) is very positive or very negative. That is **saturation**: in those regions, backpropagation multiplies many small derivatives through the network, causing **vanishing gradients** in deep stacks.
 
 !!! example "Worked Example: sigmoid at \( z = 2.0 \)"
-    \[
-    \sigma(2) = \frac{1}{1 + e^{-2}} \approx \frac{1}{1 + 0.1353} \approx 0.8808.
-    \]
-    \[
-    \sigma'(2) = 0.8808 \times (1 - 0.8808) \approx 0.105.
-    \]
+
+\[
+\sigma(2) = \frac{1}{1 + e^{-2}} \approx \frac{1}{1 + 0.1353} \approx 0.8808.
+\]
+
+\[
+\sigma'(2) = 0.8808 \times (1 - 0.8808) \approx 0.105.
+\]
+
     The neuron is already in a mildly saturated regime: the output is close to 1 and the local gradient is modest compared to the maximum \( \sigma'(0) = 0.25 \).
 
 ### Tanh
@@ -64,9 +67,11 @@ It can be written in terms of sigmoid as \( \tanh(z) = 2\sigma(2z) - 1 \). The d
 
 !!! example "Worked Example: tanh at \( z = 1.0 \)"
     Using a calculator, \( \tanh(1) \approx 0.7616 \). Then
-    \[
-    \frac{d}{dz}\tanh(1) = 1 - (0.7616)^2 \approx 0.4200.
-    \]
+
+\[
+\frac{d}{dz}\tanh(1) = 1 - (0.7616)^2 \approx 0.4200.
+\]
+
     The unit is still in a reasonably active region compared to \( |z| \gg 1 \), where the derivative would be nearly zero.
 
 ### ReLU
@@ -149,9 +154,11 @@ GELU is the activation used in **GPT-2**, **GPT-3**, and **BERT**-style Transfor
 
 !!! example "Worked Example: approximate GELU at \( x = 1.0 \)"
     Let \( t = \sqrt{2/\pi}(1 + 0.044715) \approx 0.7979 \times 1.044715 \approx 0.8336 \). Then \( \tanh(t) \approx 0.6826 \), and
-    \[
-    \mathrm{GELU}(1) \approx 0.5 \times 1 \times (1 + 0.6826) \approx 0.8413.
-    \]
+
+\[
+\mathrm{GELU}(1) \approx 0.5 \times 1 \times (1 + 0.6826) \approx 0.8413.
+\]
+
     (Exact \( \mathrm{GELU}(1) = \Phi(1) \approx 0.8413 \)—the approximation matches closely at this point.)
 
 ### SiLU and Swish
@@ -195,9 +202,11 @@ In **attention**, softmax normalizes compatibility scores across keys so weights
 
 !!! example "Worked Example: softmax on a 3-element vector"
     Let \( \mathbf{x} = (2.0,\, 1.0,\, 0.0)^\top \). Then \( e^2 \approx 7.389 \), \( e^1 \approx 2.718 \), \( e^0 = 1 \); sum \( \approx 11.107 \).
-    \[
-    \mathrm{softmax}(\mathbf{x}) \approx (0.665,\, 0.245,\, 0.090).
-    \]
+
+\[
+\mathrm{softmax}(\mathbf{x}) \approx (0.665,\, 0.245,\, 0.090).
+\]
+
     The first class dominates but does not take all mass.
 
 ## Deep Dive
@@ -206,9 +215,9 @@ In **attention**, softmax normalizes compatibility scores across keys so weights
 
     **Gated Linear Units (GLU)** and variants pair linear projections with multiplicative gating. A common FFN formulation in modern LLMs is **SwiGLU**:
 
-    \[
-    \mathrm{FFN}(\mathbf{x}) = \bigl( (\mathbf{x} W_1) \odot \mathrm{Swish}(\mathbf{x} V) \bigr) W_2,
-    \]
+\[
+\mathrm{FFN}(\mathbf{x}) = \bigl( (\mathbf{x} W_1) \odot \mathrm{Swish}(\mathbf{x} V) \bigr) W_2,
+\]
 
     where \( W_1, V, W_2 \) are learned matrices, \( \odot \) is element-wise product, and \( \mathrm{Swish}(t) = t \cdot \sigma(t) \). Intuition: one branch computes **values**, the other a **sigmoid gate** that controls which dimensions pass through—richer than a single activation after one matrix multiply.
 
@@ -216,9 +225,9 @@ In **attention**, softmax normalizes compatibility scores across keys so weights
 
     **Softmax numerical stability**: for any constant \( c \),
 
-    \[
-    \frac{e^{x_i}}{\sum_j e^{x_j}} = \frac{e^{x_i - c}}{\sum_j e^{x_j - c}}.
-    \]
+\[
+\frac{e^{x_i}}{\sum_j e^{x_j}} = \frac{e^{x_i - c}}{\sum_j e^{x_j - c}}.
+\]
 
     Setting \( c = \max_j x_j \) prevents overflow in \( e^{x_i} \) and improves floating-point behavior. Libraries always use the stabilized form in production.
 

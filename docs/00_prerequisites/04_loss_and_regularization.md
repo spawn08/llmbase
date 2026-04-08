@@ -31,12 +31,12 @@ MSE is the standard objective for **regression** (real-valued outputs): predicti
 !!! example "Worked Example: MSE with three predictions"
     Suppose targets \(y = [1,\, 0,\, 2]\) and predictions \(\hat{y} = [0.5,\, 0.5,\, 2.5]\).
 
-    \[
-    \begin{aligned}
-    L_{\mathrm{MSE}} &= \frac{1}{3}\Big[(0.5-1)^2 + (0.5-0)^2 + (2.5-2)^2\Big] \\
-    &= \frac{1}{3}\Big[0.25 + 0.25 + 0.25\Big] = \frac{0.75}{3} = 0.25.
-    \end{aligned}
-    \]
+\[
+\begin{aligned}
+L_{\mathrm{MSE}} &= \frac{1}{3}\Big[(0.5-1)^2 + (0.5-0)^2 + (2.5-2)^2\Big] \\
+&= \frac{1}{3}\Big[0.25 + 0.25 + 0.25\Big] = \frac{0.75}{3} = 0.25.
+\end{aligned}
+\]
 
 ### Cross-Entropy Loss (Binary)
 
@@ -63,15 +63,15 @@ which is exactly binary cross-entropy. Minimizing NLL **is** MLE for this probab
 !!! example "Worked Example: binary cross-entropy"
     Let \(y=1\) and \(\hat{y}=0.8\).
 
-    \[
-    L = -\big[1\cdot \log(0.8) + 0\cdot \log(0.2)\big] = -\log(0.8) \approx 0.223.
-    \]
+\[
+L = -\big[1\cdot \log(0.8) + 0\cdot \log(0.2)\big] = -\log(0.8) \approx 0.223.
+\]
 
     Let \(y=0\) and \(\hat{y}=0.3\) (so the model assigns \(0.7\) to class 1).
 
-    \[
-    L = -\big[0\cdot \log(0.3) + 1\cdot \log(0.7)\big] = -\log(0.7) \approx 0.357.
-    \]
+\[
+L = -\big[0\cdot \log(0.3) + 1\cdot \log(0.7)\big] = -\log(0.7) \approx 0.357.
+\]
 
 ### Cross-Entropy Loss (Multi-class)
 
@@ -106,15 +106,15 @@ L = \frac{1}{T}\sum_{t=1}^{T} \Big[-\log \mathrm{softmax}(\mathbf{z}_{t})_{y_t}\
 !!! example "Worked Example: vocabulary size \(K=4\)"
     True token is class 3 (one-hot \(\mathbf{y}=[0,0,1,0]\)). Suppose predicted probabilities are:
 
-    \[
-    \hat{\mathbf{y}} = [0.10,\, 0.05,\, 0.70,\, 0.15].
-    \]
+\[
+\hat{\mathbf{y}} = [0.10,\, 0.05,\, 0.70,\, 0.15].
+\]
 
     Then
 
-    \[
-    L = -\sum_{i=1}^{4} y_i \log \hat{y}_i = -\log(0.70) \approx 0.357.
-    \]
+\[
+L = -\sum_{i=1}^{4} y_i \log \hat{y}_i = -\log(0.70) \approx 0.357.
+\]
 
     If instead the model is confidently wrong, e.g. \(\hat{\mathbf{y}}=[0.70,\,0.10,\,0.10,\,0.10]\) while \(y_3=1\), then \(L=-\log(0.10)\approx 2.303\), a much larger penalty.
 
@@ -216,9 +216,9 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
 
     **LayerNorm** subtracts mean and divides by standard deviation across features, then applies affine \(\gamma,\beta\). **RMSNorm** often removes mean-centering and scales by the root-mean-square (RMS) of features, then applies a learned gain (and sometimes bias):
 
-    \[
-    \mathrm{RMS}(\mathbf{x}) = \sqrt{\frac{1}{d}\sum_{j=1}^{d} x_j^2 + \varepsilon}, \qquad \tilde{x}_j = \frac{x_j}{\mathrm{RMS}(\mathbf{x})},
-    \]
+\[
+\mathrm{RMS}(\mathbf{x}) = \sqrt{\frac{1}{d}\sum_{j=1}^{d} x_j^2 + \varepsilon}, \qquad \tilde{x}_j = \frac{x_j}{\mathrm{RMS}(\mathbf{x})},
+\]
 
     !!! math-intuition "In Plain English"
         RMSNorm keeps a **scale-stabilizing** normalization (divide by a scalar RMS) without subtracting the mean across features. In practice this can be slightly cheaper and still controls activation scale in deep residual stacks; LLaMA-class models popularized it.
@@ -229,9 +229,9 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
 
     In **pre-norm**, you compute:
 
-    \[
-    \mathbf{x}_{\ell+1} = \mathbf{x}_\ell + \mathrm{Sublayer}(\mathrm{LayerNorm}(\mathbf{x}_\ell)),
-    \]
+\[
+\mathbf{x}_{\ell+1} = \mathbf{x}_\ell + \mathrm{Sublayer}(\mathrm{LayerNorm}(\mathbf{x}_\ell)),
+\]
 
     !!! math-intuition "In Plain English"
         The residual stream \(\mathbf{x}_\ell\) is fed through LayerNorm **before** each sublayer (attention/FFN), so gradients through the residual path behave more like “identity + small perturbation” deep in the network—often easier to optimize than post-norm placements at large depth. Empirically, pre-norm became the default in many modern LLM stacks.
@@ -240,9 +240,9 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
 
     For plain SGD, adding an L2 penalty to the loss is closely analogous to **weight decay** in the update. But in **Adam**, the two are **not equivalent** because Adam scales updates by adaptive second-moment estimates. **AdamW** decouples weight decay: you apply decay directly on weights,
 
-    \[
-    \mathbf{w} \leftarrow \mathbf{w} - \eta\left(\frac{\hat{\mathbf{m}}}{\sqrt{\hat{\mathbf{v}}}+\varepsilon} + \lambda \mathbf{w}\right),
-    \]
+\[
+\mathbf{w} \leftarrow \mathbf{w} - \eta\left(\frac{\hat{\mathbf{m}}}{\sqrt{\hat{\mathbf{v}}}+\varepsilon} + \lambda \mathbf{w}\right),
+\]
 
     !!! math-intuition "In Plain English"
         Weight decay is applied **additively in the update**, not as if it were another gradient term that also gets divided by \(\sqrt{\hat{\mathbf{v}}}\). That matters because Adam’s adaptive scaling would otherwise **weaken or distort** L2-style penalties in a way that does not match classical weight decay—so **AdamW** is the standard fix. For Transformers, **AdamW + weight decay** is the common baseline.
@@ -251,9 +251,9 @@ where \(\mu\) and \(\sigma^2\) are computed across the \(d\) features of \(\math
 
     Instead of a hard one-hot target vector \(p\) with a 1 on the true class, use a mixture:
 
-    \[
-    p'_i = (1-\varepsilon)\,p_i + \frac{\varepsilon}{K},
-    \]
+\[
+p'_i = (1-\varepsilon)\,p_i + \frac{\varepsilon}{K},
+\]
 
     !!! math-intuition "In Plain English"
         You are training against a **slightly blurred** target: still mostly the true token, but with a little probability smeared across the whole vocabulary. That discourages the model from pushing logits to absurd extremes just to drive training loss to zero on memorized patterns. It changes the effective objective from hard KL to a smoother target distribution—useful, but not a free lunch if \(\varepsilon\) is chosen poorly.
