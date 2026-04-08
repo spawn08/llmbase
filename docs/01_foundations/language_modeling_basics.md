@@ -8,6 +8,11 @@ The **chain rule** is the single equation that ties classical n-gram models, rec
 
 Finally, language modeling fundamentals are how interviewers probe **generalization and data sparsity**. N-gram models make the limitations obvious: unseen contexts get zero probability without smoothing. Neural models hide the issue behind dense parameters, but the underlying tension remains: the space of possible histories grows faster than any corpus. Scaling laws and longer contexts are engineering responses to the same quantity the chain rule isolated: the conditional next-token distribution must be accurate at every position, which ties **training** (average cross-entropy) directly to **evaluation** (perplexity on held-out text). Demonstrating that you understand the Markov assumption, smoothing, and perplexity shows you know why subword tokenizers and massive pretraining budgets exist, not only what they are called.
 
+!!! tip "Notation Help"
+    - \(P(w_t \mid w_1, \ldots, w_{t-1})\) means "the probability of token \(w_t\) **given** all previous tokens" — see [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#5-probability-basics) for probability notation
+    - The vertical bar \(\mid\) means "given" or "conditioned on"
+    - \(\mathbf{v} \in \mathbb{R}^d\) means "vector v with d dimensions" — see [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#1-vectors-and-matrices)
+
 ---
 
 ## Core Concepts

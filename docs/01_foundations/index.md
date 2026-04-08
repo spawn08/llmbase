@@ -4,6 +4,51 @@ The mathematical and conceptual bedrock that existed before the Transformer. Und
 
 ---
 
+## Before You Start
+
+### Prerequisites
+
+This section builds on the **Deep Learning Fundamentals** (Part 0). You should be comfortable with:
+
+- **Perceptrons, MLPs, and forward passes** — see [The Perceptron and Feedforward Networks](../00_prerequisites/01_perceptron_and_ffn.md)
+- **Activation functions** (sigmoid, tanh, ReLU, softmax) — see [Activation Functions](../00_prerequisites/02_activation_functions.md)
+- **Backpropagation and gradient descent** — see [Backpropagation and Gradient Descent](../00_prerequisites/03_backpropagation.md)
+- **Cross-entropy loss** — see [Loss Functions and Regularization](../00_prerequisites/04_loss_and_regularization.md)
+- **Sequence modeling and RNN basics** — see [Sequence Modeling and RNNs](../00_prerequisites/06_sequence_modeling_and_rnns.md)
+
+**Mathematics used in this section:**
+- Conditional probability and the chain rule — reviewed in [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#5-probability-basics)
+- Vector notation \(\mathbf{v} \in \mathbb{R}^d\) — explained in [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#1-vectors-and-matrices)
+- Logarithms and exponentials — reviewed in [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#4-exponentials-and-logarithms)
+- Summation and product notation — explained in [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#3-summation-and-product-notation)
+
+### Reading Strategy
+
+This section progresses from **classical** language models (n-grams) → **distributional** semantics (embeddings) → **recurrent** networks → **attention**. If you're new to language modeling:
+
+**First Pass (Build Intuition):**
+- Focus on language_modeling_basics.md and word_embeddings.md — these introduce core concepts
+- Read neural_language_models.md for LSTM/GRU gate intuition (skip spectral norm discussion)
+- Read sequence_to_sequence.md for the encoder-decoder pattern and attention motivation
+- Read information_theory.md for entropy, cross-entropy, and perplexity (skip forward/reverse KL deep dive)
+- Read attention_math.md for scaled dot-product attention derivation and the 4×4 worked example
+
+**Second Pass (Deepen Understanding):**
+- Re-read with the "Deep Dive" sections included
+- Study GloVe matrix factorization, PMI, and noise contrastive estimation
+- Work through the full LSTM numerical trace
+- Study KL divergence mode-covering vs mode-seeking behavior
+- Analyze attention complexity (MAC counts) and multi-head projections
+
+!!! tip "What to Skip on First Reading"
+    - Deep dives on PMI, noise contrastive estimation, and GloVe factorization (word_embeddings.md)
+    - Spectral norm and Jacobian analysis in vanishing gradients (neural_language_models.md)
+    - Scheduled sampling deep dive (sequence_to_sequence.md)
+    - Forward vs reverse KL divergence, DPO, and Bradley-Terry model (information_theory.md)
+    - FlashAttention and low-rank kernel approximation (attention_math.md)
+
+---
+
 ## Goals
 
 After completing this section you will be able to:

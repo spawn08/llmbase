@@ -2,7 +2,13 @@
 
 ## Why This Matters for LLMs
 
-Information theory is the **shared vocabulary** for uncertainty, coding length, and distance between distributions. When you read “**minimize cross-entropy**,” “**perplexity 12**,” or “**KL penalty to the reference model**” in an RLHF paper, those are not slogans—they are precise statements about **entropy**, **expected code length**, and **distributional mismatch**. Modern LLM **pretraining** is overwhelmingly **maximum likelihood** = **cross-entropy minimization**. **Evaluation** uses perplexity (exp of average cross-entropy). **Alignment** often adds **reverse KL**-style penalties so the policy does not drift from a trusted base model. Interviewers expect you to connect **Shannon entropy → cross-entropy → KL → training loss** in one coherent chain.
+Information theory is the **shared vocabulary** for uncertainty, coding length, and distance between distributions. When you read "**minimize cross-entropy**," "**perplexity 12**," or "**KL penalty to the reference model**" in an RLHF paper, those are not slogans—they are precise statements about **entropy**, **expected code length**, and **distributional mismatch**. Modern LLM **pretraining** is overwhelmingly **maximum likelihood** = **cross-entropy minimization**. **Evaluation** uses perplexity (exp of average cross-entropy). **Alignment** often adds **reverse KL**-style penalties so the policy does not drift from a trusted base model. Interviewers expect you to connect **Shannon entropy → cross-entropy → KL → training loss** in one coherent chain.
+
+!!! tip "Notation Help"
+    - **PMF** = **Probability Mass Function** (a function that gives probabilities for discrete outcomes)
+    - \(\mathcal{X}\) is the **sample space** (set of all possible outcomes)
+    - \(\sum_{x \in \mathcal{X}}\) means "sum over all possible values of \(x\)"
+    - **Bits vs Nats**: log base 2 gives bits, natural log (base \(e\)) gives nats; 1 nat ≈ 1.44 bits
 
 ---
 

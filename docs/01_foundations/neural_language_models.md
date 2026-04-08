@@ -8,6 +8,11 @@ The progression **feedforward window → RNN → LSTM** is the historical answer
 
 Finally, bidirectional recurrence and stacked layers (ELMo) sit between static embeddings and full self-attention. Knowing what an LSTM cell computes line by line lets you read older papers and ablation studies without confusion, and it gives you vocabulary for discussing **gradient highways**, **forget gates**, and why depth plus recurrence was hard to train before modern optimizers and initialization.
 
+!!! tip "Notation Help"
+    - \([\mathbf{e}_{t-n+1}; \ldots; \mathbf{e}_{t-1}]\) uses semicolons to mean **concatenation** (stack vectors vertically)
+    - \(\odot\) denotes **elementwise multiplication** (Hadamard product) — multiply matching elements, see [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#7-the-hadamard-elementwise-product)
+    - \(\tanh\) and \(\sigma\) are activation functions — see [Activation Functions](../00_prerequisites/02_activation_functions.md)
+
 ---
 
 ## Core Concepts

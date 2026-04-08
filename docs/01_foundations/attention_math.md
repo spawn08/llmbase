@@ -4,6 +4,12 @@
 
 Every decoder-only LLM (GPT-class), encoder-only model (BERT-class), and encoder–decoder (T5, translation) **is** attention stacks plus MLPs plus norms. **Scaled dot-product attention** \(\text{softmax}(QK^\top/\sqrt{d_k})V\) is the **atomic** operation interviewers whiteboard first. Understanding **scaling**, **masks**, **multi-head** splitting, and **\(O(T^2)\)** cost is table stakes for systems roles (KV cache, FlashAttention) and research roles (linear attention, state-space layers). This page ties **Bahdanau → dot product → scaled softmax → Transformer** into one quantitative thread.
 
+!!! tip "Notation Help"
+    - \(Q\), \(K\), \(V\) are **Query**, **Key**, **Value** matrices (learned projections of input)
+    - \(d_k\) is the **dimension of key vectors** (often 64 or 128 per head)
+    - \(T\) is the **sequence length** (number of tokens)
+    - **MACs** = **Multiply-Accumulate operations** (one MAC = one multiply + one add)
+
 ---
 
 ## Core Concepts

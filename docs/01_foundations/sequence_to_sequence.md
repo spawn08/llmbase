@@ -2,7 +2,12 @@
 
 ## Why This Matters for LLMs
 
-Modern large language models did not appear from a vacuum: **sequence-to-sequence (seq2seq)** was the dominant paradigm for translation, summarization, and conditional generation before the Transformer. Seq2seq introduced the **encoder–decoder split** that still appears in T5, BART, and encoder–decoder multimodal models. Crucially, seq2seq’s main weakness—a **single-vector bottleneck**—motivated **Bahdanau attention**, which generalized into **scaled dot-product self-attention** in Transformers. Interviewers often probe seq2seq not for nostalgia, but to test whether you understand **where attention came from**, how **teacher forcing** creates **exposure bias**, and why **additive vs. multiplicative** attention foreshadows today’s \(QK^\top V\) machinery.
+Modern large language models did not appear from a vacuum: **sequence-to-sequence (seq2seq)** was the dominant paradigm for translation, summarization, and conditional generation before the Transformer. Seq2seq introduced the **encoder–decoder split** that still appears in T5, BART, and encoder–decoder multimodal models. Crucially, seq2seq's main weakness—a **single-vector bottleneck**—motivated **Bahdanau attention**, which generalized into **scaled dot-product self-attention** in Transformers. Interviewers often probe seq2seq not for nostalgia, but to test whether you understand **where attention came from**, how **teacher forcing** creates **exposure bias**, and why **additive vs. multiplicative** attention foreshadows today's \(QK^\top V\) machinery.
+
+!!! tip "Notation Help"
+    - Superscripts \(\text{enc}\) and \(\text{dec}\) distinguish **encoder** from **decoder** states
+    - Subscript \(t\) is the **time step** (position in the sequence)
+    - \(T_{\text{src}}\) means "length of the source sequence"
 
 ---
 

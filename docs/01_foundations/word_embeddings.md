@@ -8,6 +8,11 @@ Interviewers care about embeddings because they separate “I used BERT” from 
 
 Finally, embeddings are the historical bridge from **count-based n-grams** to **neural language models**. Word2Vec shows how prediction objectives on local windows induce global structure. GloVe shows how global co-occurrence matrices factor into the same space. FastText shows how **subwords** reduce out-of-vocabulary failures. Those three threads reappear inside byte-pair encoding tokenizers and sentence-piece models that feed billion-parameter models today.
 
+!!! tip "Notation Help"
+    - \(\mathbf{v}_w \in \mathbb{R}^d\) means "a vector for word \(w\) with \(d\) dimensions" — see [Math Prerequisites](../00_prerequisites/00_math_prerequisites.md#1-vectors-and-matrices)
+    - \(d \ll V\) means "d is much smaller than V" (embedding size ≪ vocabulary size)
+    - **Cosine similarity** measures how aligned two vectors are: \(\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\| \|\mathbf{v}\|}\)
+
 ---
 
 ## Core Concepts
