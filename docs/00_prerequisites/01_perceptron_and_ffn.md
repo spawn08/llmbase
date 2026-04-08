@@ -8,6 +8,9 @@ Feedforward networks are also the universal template for how neural networks **a
 
 Finally, interview loops at top tech companies routinely probe whether you can **trace a forward pass** with concrete numbers and connect equations to code. The perceptron and MLP are the cleanest place to practice that skill before attention and softmax add moving parts.
 
+!!! tip "Notation Help"
+    If symbols like \(\mathbf{x} \in \mathbb{R}^d\) or \(W \in \mathbb{R}^{m \times n}\) look unfamiliar, check the [Math Prerequisites](00_math_prerequisites.md) page first. It explains every notation with worked numerical examples.
+
 ## Core Concepts
 
 ### The Single Neuron (Perceptron)

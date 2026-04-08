@@ -6,7 +6,10 @@ Convolutional neural networks (CNNs) are the **historical backbone of computer v
 
 Vision Transformers have displaced pure CNNs for many large-scale image tasks, but **1D convolutions** still appear in **efficient sequence models** (depthwise separable variants, local mixing layers, and hybrid designs). Understanding convolutions therefore completes the **“big three”** of classical neural architectures alongside **feedforward networks (FFNs)** and **recurrent networks (RNNs)**: the vocabulary interviewers expect when you discuss **inductive bias**, **parameter sharing**, and **multimodal fusion**.
 
-Finally, **residual connections**—popularized in depth by **ResNet**—are the same structural idea as the **residual stream** in Transformers: a clean path for gradients and a stable place to add sub-layer outputs. Tracing CNNs through **ResNet → ViT → CLIP** is one of the shortest routes from “2010s vision” to “2020s multimodal LLMs.”
+Finally, **residual connections**—popularized in depth by **ResNet**—are the same structural idea as the **residual stream** in Transformers: a clean path for gradients and a stable place to add sub-layer outputs. Tracing CNNs through **ResNet → ViT → CLIP** is one of the shortest routes from "2010s vision" to "2020s multimodal LLMs."
+
+!!! tip "Notation Help"
+    The double summation \(\sum_{u=0}^{K-1}\sum_{v=0}^{K-1}\) means "loop over all positions in the kernel." See [Math Prerequisites](00_math_prerequisites.md#3-summation-and-product-notation) if the \(\Sigma\) symbol is unfamiliar.
 
 ---
 

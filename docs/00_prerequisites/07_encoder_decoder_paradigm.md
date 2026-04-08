@@ -12,6 +12,9 @@ Once you internalize the abstraction, many interview questions become variations
 
 **60-second self-check (before interviews).** Can you sketch **encoder \(\rightarrow\) bottleneck \(\rightarrow\) decoder** and name one example each from **vision**, **NLP**, and **multimodal**? Can you contrast **GPT vs BERT vs T5** in terms of which stacks exist? Can you state why **cross-attention** matters in encoder–decoder Transformers? If yes, you have the right **abstraction level**; drill Part 1 only when the interviewer goes RNN-specific.
 
+!!! tip "Notation Help"
+    The notation \(f_{\mathrm{enc}}(\mathbf{x})\) means "a function called 'enc' applied to input \(\mathbf{x}\)." The bold \(\mathbf{x}\) and \(\mathbf{z}\) are vectors. See [Math Prerequisites](00_math_prerequisites.md#1-vectors-and-matrices) if vector notation is unfamiliar.
+
 ---
 
 ## Core Concepts

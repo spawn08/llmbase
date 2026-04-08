@@ -8,6 +8,9 @@ Interviewers often probe whether you understand **saturation** (when activations
 
 Finally, activations do not exist in isolation: they interact with normalization (LayerNorm), residual connections, and gating (e.g., SwiGLU in LLaMA FFNs). A crisp mental model of sigmoid, tanh, ReLU, GELU, SiLU, and softmax is table stakes for ML systems and LLM roles at top companies.
 
+!!! tip "Notation Help"
+    If you're unfamiliar with derivatives or the notation \(\frac{d}{dz}\), see the [Math Prerequisites](00_math_prerequisites.md#2-functions-and-derivatives) section. It explains derivatives intuition-first with worked examples.
+
 ## Core Concepts
 
 ### Sigmoid

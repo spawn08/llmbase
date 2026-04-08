@@ -94,6 +94,7 @@ nav:
   - Home: index.md
   - Deep Learning Fundamentals:
     - 00_prerequisites/index.md
+    - Math Prerequisites: 00_prerequisites/00_math_prerequisites.md
     - The Perceptron and Feedforward Networks: 00_prerequisites/01_perceptron_and_ffn.md
     - Activation Functions: 00_prerequisites/02_activation_functions.md
     - Backpropagation and Gradient Descent: 00_prerequisites/03_backpropagation.md

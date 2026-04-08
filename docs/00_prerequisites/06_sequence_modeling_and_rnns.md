@@ -8,6 +8,9 @@ Understanding the sequence modeling problem also clarifies **why autoregressive 
 
 This page is a **primer**: it frames the problem, defines the vanilla RNN update, and sketches vanishing gradients and gating at an intuitive level. For **full LSTM/GRU gate equations**, ELMo-style bidirectionality, and the detailed vanishing-gradient analysis, see [Neural Language Models](../01_foundations/neural_language_models.md) (Part 1).
 
+!!! tip "Notation Help"
+    The equation \(\prod_{t=1}^{T}\) means "multiply terms from \(t=1\) to \(t=T\)." See [Math Prerequisites](00_math_prerequisites.md#3-summation-and-product-notation) for notation basics. The \(\tanh\) function is an activation explained in [Activation Functions](02_activation_functions.md).
+
 ---
 
 ## Core Concepts

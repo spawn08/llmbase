@@ -183,73 +183,99 @@ Here \(\beta \in [0,1)\) (e.g., \(0.9\)) controls how long past gradients influe
 
 ### Adam Optimizer
 
-**Adam** (Adaptive Moment Estimation) tracks a **first moment** (exponential moving average of gradients, like momentum) and a **second moment** (exponential moving average of squared gradients, like per-coordinate scale). With parameters \(\beta_1, \beta_2 \in [0,1)\), learning rate \(\eta\), and small \(\epsilon\) for numerical stability:
+**Adam** (Adaptive Moment Estimation) is the most popular optimizer for training Transformers. It combines two ideas:
+
+1. **Momentum** (remembers past gradient directions)
+2. **Adaptive learning rates** (each parameter gets its own step size based on recent gradient magnitudes)
+
+**The core update (intuition first):**
 
 \[
-\mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1-\beta_1)\,\mathbf{g}_t, \qquad
-\mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2)\,\mathbf{g}_t \odot \mathbf{g}_t.
+\mathbf{w}_t = \mathbf{w}_{t-1} - \eta\,\frac{\mathbf{m}_t}{\sqrt{\mathbf{v}_t} + \epsilon}
 \]
 
-!!! math-intuition "In Plain English"
-    \(\mathbf{m}\) tracks a **moving average of gradients** (direction with memory); \(\mathbf{v}\) tracks a moving average of **squared** gradients so each coordinate gets a sense of typical gradient magnitude.
-
-**Bias correction** (because \(\mathbf{m}_0=\mathbf{0}\), \(\mathbf{v}_0=\mathbf{0}\)):
-
-\[
-\widehat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1-\beta_1^t}, \qquad
-\widehat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1-\beta_2^t}.
-\]
+where:
+- \(\mathbf{m}_t\) = smoothed average of recent gradients (like momentum)
+- \(\mathbf{v}_t\) = smoothed average of recent **squared** gradients (tracks gradient magnitude per parameter)
+- \(\epsilon\) = tiny constant (e.g., \(10^{-8}\)) to avoid division by zero
 
 !!! math-intuition "In Plain English"
-    Early in training, EMAs are **biased toward zero** because they start at zero; dividing by \(1-\beta^t\) inflates them so the first steps are not artificially timid.
+    Think of Adam as giving each parameter its own "smart learning rate":
+    
+    - If a parameter's gradients have been **large recently**, \(\mathbf{v}_t\) is large, so the learning rate gets **scaled down** (take smaller steps)
+    - If a parameter's gradients have been **small recently**, \(\mathbf{v}_t\) is small, so the learning rate gets **scaled up** (take bigger steps)
+    - The \(\mathbf{m}_t\) term ensures we keep moving in a consistent direction, smoothing out noisy mini-batch gradients
 
-**Update:**
+    This makes Adam robust across noisy, high-dimensional Transformer losses. That is why it (or close variants like AdamW with decoupled weight decay) is a **default** in many LLM recipes.
 
-\[
-\mathbf{w}_t = \mathbf{w}_{t-1} - \eta\,\frac{\widehat{\mathbf{m}}_t}{\sqrt{\widehat{\mathbf{v}}_t} + \epsilon}
-\quad \text{(elementwise)}.
-\]
-
-!!! math-intuition "In Plain English"
-    Adam uses a smoothed gradient direction **and** per-parameter step sizes informed by recent gradient magnitudes—often robust across noisy, high-dimensional Transformer losses. That is why it (or close variants like AdamW with decoupled weight decay) is a **default** in many LLM recipes, subject to schedule and weight-decay tuning.
-
-!!! example "Worked Example: Adam for two steps (scalar)"
-    Use \(\beta_1 = 0.9\), \(\beta_2 = 0.999\), \(\epsilon = 10^{-8}\), \(\eta = 0.01\), starting \(w = 1.0\), \(\mathbf{m}_0=\mathbf{v}_0=0\).
-
-    **Step \(t=1\), gradient \(g_1 = 0.4\):**
-
+??? deep-dive "Deep Dive: Full Adam Update with Bias Correction"
+    The complete Adam algorithm includes **bias correction** to handle the fact that \(\mathbf{m}\) and \(\mathbf{v}\) start at zero.
+    
+    **Step 1: Update moments**
+    
     \[
-    m_1 = 0.1\cdot 0.4 = 0.04, \quad v_1 = 0.001\cdot 0.16 = 0.00016.
+    \mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1-\beta_1)\,\mathbf{g}_t, \qquad
+    \mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2)\,\mathbf{g}_t \odot \mathbf{g}_t.
     \]
-
+    
+    Typical values: \(\beta_1 = 0.9\) (gradient memory), \(\beta_2 = 0.999\) (magnitude tracking).
+    
+    **Step 2: Bias correction**
+    
+    Because \(\mathbf{m}_0=\mathbf{0}\) and \(\mathbf{v}_0=\mathbf{0}\), the early estimates are biased toward zero. We correct this:
+    
     \[
-    \widehat{m}_1 = \frac{0.04}{1-0.9} = 0.4, \quad
-    \widehat{v}_1 = \frac{0.00016}{0.001} = 0.16.
+    \widehat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1-\beta_1^t}, \qquad
+    \widehat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1-\beta_2^t}.
     \]
-
+    
+    !!! math-intuition "Why bias correction?"
+        Early in training, EMAs are **biased toward zero** because they start at zero; dividing by \(1-\beta^t\) inflates them so the first steps are not artificially timid. At \(t=1\) with \(\beta_1=0.9\), we divide by \(1-0.9=0.1\), multiplying by 10!
+    
+    **Step 3: Parameter update**
+    
     \[
-    w \leftarrow 1.0 - 0.01\cdot\frac{0.4}{\sqrt{0.16}+\epsilon}
-    = 1.0 - 0.01\cdot\frac{0.4}{0.4} = 0.99.
+    \mathbf{w}_t = \mathbf{w}_{t-1} - \eta\,\frac{\widehat{\mathbf{m}}_t}{\sqrt{\widehat{\mathbf{v}}_t} + \epsilon}
+    \quad \text{(elementwise)}.
     \]
-
-    **Step \(t=2\), gradient \(g_2 = -0.2\):**
-
-    \[
-    m_2 = 0.9\cdot 0.04 + 0.1\cdot(-0.2) = 0.016, \quad
-    v_2 = 0.999\cdot 0.00016 + 0.1\cdot 0.04 = 0.00415984.
-    \]
-
-    \[
-    \widehat{m}_2 = \frac{0.016}{1-0.81} \approx 0.08421, \quad
-    \widehat{v}_2 = \frac{0.00415984}{1-0.998001} \approx 2.081.
-    \]
-
-    \[
-    w \leftarrow 0.99 - 0.01\cdot\frac{0.08421}{\sqrt{2.081}+\epsilon}
-    \approx 0.99 - 0.000584 \approx 0.9894.
-    \]
-
-    (Numerical values rounded for display; implementations keep full precision.)
+    
+    !!! example "Worked Example: Adam for two steps (scalar)"
+        Use \(\beta_1 = 0.9\), \(\beta_2 = 0.999\), \(\epsilon = 10^{-8}\), \(\eta = 0.01\), starting \(w = 1.0\), \(\mathbf{m}_0=\mathbf{v}_0=0\).
+        
+        **Step \(t=1\), gradient \(g_1 = 0.4\):**
+        
+        \[
+        m_1 = 0.9\cdot 0 + 0.1\cdot 0.4 = 0.04, \quad v_1 = 0.999\cdot 0 + 0.001\cdot 0.16 = 0.00016.
+        \]
+        
+        \[
+        \widehat{m}_1 = \frac{0.04}{1-0.9} = 0.4, \quad
+        \widehat{v}_1 = \frac{0.00016}{0.001} = 0.16.
+        \]
+        
+        \[
+        w \leftarrow 1.0 - 0.01\cdot\frac{0.4}{\sqrt{0.16}+\epsilon}
+        = 1.0 - 0.01\cdot\frac{0.4}{0.4} = 0.99.
+        \]
+        
+        **Step \(t=2\), gradient \(g_2 = -0.2\):**
+        
+        \[
+        m_2 = 0.9\cdot 0.04 + 0.1\cdot(-0.2) = 0.016, \quad
+        v_2 = 0.999\cdot 0.00016 + 0.001\cdot 0.04 = 0.00019984.
+        \]
+        
+        \[
+        \widehat{m}_2 = \frac{0.016}{1-0.81} \approx 0.08421, \quad
+        \widehat{v}_2 = \frac{0.00019984}{1-0.998001} \approx 0.09997.
+        \]
+        
+        \[
+        w \leftarrow 0.99 - 0.01\cdot\frac{0.08421}{\sqrt{0.09997}+\epsilon}
+        \approx 0.99 - 0.00266 \approx 0.9873.
+        \]
+        
+        (Numerical values rounded for display; implementations keep full precision.)
 
 ### Learning Rate Schedules
 

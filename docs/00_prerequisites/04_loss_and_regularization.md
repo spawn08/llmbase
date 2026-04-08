@@ -8,6 +8,9 @@
 
 Finally, the information-theoretic bridge—**cross-entropy versus KL divergence versus entropy**—is the clean language for comparing a model distribution to a target distribution. That vocabulary shows up when you discuss alignment losses, knowledge distillation, and probabilistic interpretations of calibration. Part 1 of LLMBase leans on this background; making it automatic here saves you from hand-waving later.
 
+!!! tip "Notation Help"
+    The notation \(\log\) in ML papers usually means the **natural logarithm** (base \(e\)), often written as \(\ln\) in calculus courses. The \(\sum\) symbol means "sum up." See [Math Prerequisites](00_math_prerequisites.md#4-exponentials-and-logarithms) for a refresher on logs and exponentials.
+
 ## Core Concepts
 
 ### Mean Squared Error (MSE)
