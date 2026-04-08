@@ -19,10 +19,52 @@ After completing Part 0 you will be able to:
 
 ---
 
+## Before You Start
+
+### Prerequisites
+
+If any of these look unfamiliar, **start with the [Math Prerequisites](00_math_prerequisites.md)** page. It explains every symbol, notation, and mathematical concept used throughout this documentation, with worked numerical examples.
+
+**You should be comfortable with:**
+- High school algebra (solving equations, working with variables)
+- Basic coordinate geometry (points, lines, slopes)
+- What a function is (input → output mapping)
+
+**We'll teach you:**
+- Vector and matrix operations (with step-by-step examples)
+- Derivatives and the chain rule (intuition-first, not proof-heavy)
+- Probability basics (what distributions, expectations, and variance mean)
+
+### Reading Strategy: Two Passes
+
+This documentation is designed to be read **in two passes**:
+
+**First Pass (Build Intuition):**
+- Read the "Why This Matters" and "Core Concepts" sections
+- Focus on the "In Plain English" callout boxes
+- Work through the numerical examples
+- Skip the "Deep Dive" sections on first reading
+- Goal: Understand *what* each concept does and *why* it matters
+
+**Second Pass (Deepen Understanding):**
+- Re-read with the "Deep Dive" sections included
+- Study the code implementations
+- Attempt the interview questions
+- Goal: Understand *how* to implement and *when* to apply each concept
+
+!!! tip "What to Skip on First Reading"
+    - "Deep Dive" collapsible sections (marked with ??? deep-dive)
+    - Detailed optimizer derivations (Adam bias correction proofs)
+    - Advanced regularization theory (KL divergence decompositions)
+    - Come back to these after you've built intuition from the core concepts.
+
+---
+
 ## Topics
 
 | # | Topic | What You Will Learn |
 |---|-------|---------------------|
+| 0 | [Math Prerequisites](00_math_prerequisites.md) | **Start here if math notation is unfamiliar** — vectors, matrices, derivatives, summation, log/exp, probability basics |
 | 1 | [The Perceptron and Feedforward Networks](01_perceptron_and_ffn.md) | Single neuron, MLP, universal approximation, forward pass |
 | 2 | [Activation Functions](02_activation_functions.md) | Sigmoid, tanh, ReLU, GELU, softmax — saturation, dying neurons, when to use each |
 | 3 | [Backpropagation and Gradient Descent](03_backpropagation.md) | Chain rule, computational graphs, SGD, momentum, Adam, learning rate schedules |
