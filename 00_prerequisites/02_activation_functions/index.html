@@ -1,0 +1,3856 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Ground-Up Guide to Large Language Models for Engineers">
+      
+      
+        <meta name="author" content="Amarsingh Thakur">
+      
+      
+        <link rel="canonical" href="https://spawn08.github.io/llmbase/00_prerequisites/02_activation_functions/">
+      
+      
+        <link rel="prev" href="../01_perceptron_and_ffn/">
+      
+      
+        <link rel="next" href="../03_backpropagation/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Activation Functions - LLMBase</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+3:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Source Sans 3";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#activation-functions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+<style>
+  .md-banner {
+    background: linear-gradient(135deg, #3D5A6E 0%, #5E7A8C 50%, #6FA3B8 100%) !important;
+    color: #E4E8EE;
+  }
+  .md-banner__inner {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+</style>
+LLMBase &mdash; A ground-up guide to Large Language Models &bull; Math &bull; Code &bull; Interview Q&amp;A &bull; 33 landmark papers
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LLMBase" class="md-header__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LLMBase
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Activation Functions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LLMBase" class="md-nav__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    LLMBase
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Deep Learning Fundamentals
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Deep Learning Fundamentals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_math_prerequisites/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math Prerequisites
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_perceptron_and_ffn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Perceptron and Feedforward Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Activation Functions
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Activation Functions
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-matters-for-llms" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Matters for LLMs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Concepts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sigmoid" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sigmoid
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tanh" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tanh
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#relu" class="md-nav__link">
+    <span class="md-ellipsis">
+      ReLU
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leaky-relu-and-parametric-relu-prelu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Leaky ReLU and Parametric ReLU (PReLU)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gelu-gaussian-error-linear-unit" class="md-nav__link">
+    <span class="md-ellipsis">
+      GELU (Gaussian Error Linear Unit)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#silu-and-swish" class="md-nav__link">
+    <span class="md-ellipsis">
+      SiLU and Swish
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#softmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Softmax
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deep-dive" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deep Dive
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interview-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interview Guide
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_backpropagation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backpropagation and Gradient Descent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_loss_and_regularization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Loss Functions and Regularization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_convolutional_neural_networks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Convolutional Neural Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_sequence_modeling_and_rnns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence Modeling and RNNs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_encoder_decoder_paradigm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Encoder-Decoder Paradigm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../01_foundations/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Foundations of Language Modeling
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Foundations of Language Modeling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/language_modeling_basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/word_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Word Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/neural_language_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural Language Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/sequence_to_sequence/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence-to-Sequence
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/information_theory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/attention_math/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Mathematics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Hands-On Notebooks
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Hands-On Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/01_math_and_neural_network_basics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math & Neural Network Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/02_training_mechanics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Mechanics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/03_cnns_and_sequences.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNNs, Sequences & Encoder-Decoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/04_language_modeling_and_embeddings.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling & Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/05_neural_lm_and_seq2seq.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural LM & Seq2Seq
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/06_information_theory_and_attention.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory & Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../02_core_architectures/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Core Architectures
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Core Architectures
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/self_attention_mha/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Self-Attention and MHA
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/positional_encoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Positional Encoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/gpt_decoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT Decoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/bert_encoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT Encoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/t5_encoder_decoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5 Encoder-Decoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/mixture_of_experts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/state_space_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State Space Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../03_training/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Training and Alignment
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Training and Alignment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/pretraining/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pre-training at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/distributed_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Distributed Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/mixed_precision/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed Precision and Quantization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/instruction_tuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Instruction Tuning and SFT
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/rlhf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RLHF and DPO
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/peft/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameter-Efficient Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../04_inference/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Inference and Serving
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Inference and Serving
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/decoding_strategies/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoding Strategies
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/kv_cache/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    KV Cache
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/speculative_decoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Speculative Decoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/continuous_batching/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Batching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/quantization_inference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantization for Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/serving_systems/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLM Serving Systems
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../05_advanced/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/rag/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RAG
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agents and Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/long_context/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long-Context Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/multimodal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multimodal LLMs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/emergent_capabilities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emergent Capabilities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/evaluation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Evaluation and Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/hallucination_safety/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hallucination and Safety
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../06_research_papers/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Landmark Research Papers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Landmark Research Papers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/01_attention_is_all_you_need/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Is All You Need (Transformer)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/02_bert/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT: Bidirectional Encoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/03_gpt2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-2: Unsupervised Multitask Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/04_gpt3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-3: In-Context Learning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/05_t5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5: Text-to-Text Transfer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/06_xlnet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    XLNet: Permutation Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/07_roberta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoBERTa: Robust BERT Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/08_electra/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ELECTRA: Efficient Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/09_instructgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    InstructGPT: RLHF Pipeline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/10_palm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PaLM: Pathways at 540B
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/11_chinchilla/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chinchilla: Compute-Optimal Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/12_llama/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLaMA: Open Foundation Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/13_lora/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LoRA: Low-Rank Adaptation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/14_flash_attention/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FlashAttention: IO-Aware Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/15_mistral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mistral 7B: Efficient Small Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/16_mixtral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixtral: Sparse Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/17_flan/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FLAN: Instruction Tuning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/18_chain_of_thought/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chain-of-Thought Prompting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/19_react/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ReAct: Reasoning and Acting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/20_toolformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Toolformer: Self-Supervised Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/21_constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI: Principled Alignment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/22_clip/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLIP: Contrastive Vision-Language
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/23_codex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Codex: Code Generation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/24_mamba/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mamba: Linear-Time State Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/25_gemini/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini: Native Multimodal
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/26_deepseek_v2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V2: Multi-Head Latent Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/27_deepseek_v3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V3: MoE at 671B Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/28_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1: RL-Only Reasoning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/29_glm4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4: Bilingual Foundation Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/30_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5: Long-Context RL Scaling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/31_qwen2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen2.5: Data-Efficient Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/32_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5: Agentic Async RL
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/33_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5: Multi-Agent Coordination
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/34_rope_roformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoPE: Rotary Position Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/35_attention_residuals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Residuals: Rethinking Depth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../07_recent_advances/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Recent Advances
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Recent Advances
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/01_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/02_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/03_gpt4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-4.5 (Feb 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/04_gemini_2_5_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 2.5 Pro (Mar 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/05_llama_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Llama 4 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/13_qwen3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen 3 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/06_gpt5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5 (Aug 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/10_glm4_6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4.6 (Sep 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/07_claude_opus_4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Claude Opus 4.5 (Nov 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/12_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5 (Jan 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/08_gemini_3_1_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 3.1 Pro (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/11_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5 (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/09_gpt5_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5.4 Family (Mar 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../interview_questions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interview Question Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="activation-functions">Activation Functions<a class="headerlink" href="#activation-functions" title="Permanent link">&para;</a></h1>
+<h2 id="why-this-matters-for-llms">Why This Matters for LLMs<a class="headerlink" href="#why-this-matters-for-llms" title="Permanent link">&para;</a></h2>
+<p>Activation functions are the "on/off switches" of neural networks. Without them, no matter how many layers you stack, the network could only learn straight lines — which is useless for complex tasks like understanding language.</p>
+<p>Activation functions are the nonlinearities that let deep networks approximate arbitrary functions. Without them, stacking linear layers would collapse to a single linear map, and a Transformer would be unable to represent the rich conditional structure of language. Modern LLMs do not all use the same choice: GPT-style models and BERT family networks typically use <strong>GELU</strong> in feed-forward blocks; <strong>SiLU/Swish</strong> appears in LLaMA and related architectures; <strong>softmax</strong> normalizes attention scores and produces probability distributions over vocabulary at the output layer. The specific nonlinearity affects gradient flow during training, how quickly units saturate, and how smoothly optimization landscapes behave.</p>
+<p>Interviewers often probe whether you understand <strong>saturation</strong> (when activations sit in flat regions where gradients vanish), <strong>gradient flow</strong> through many layers, and <strong>why</strong> ReLU dominated for years while today's LLMs favor smooth, probabilistically motivated activations like GELU. You should be able to name what each major architecture uses, sketch the shape of the curve, and connect that choice to training stability and empirical performance—not just recite definitions.</p>
+<p>Finally, activations do not exist in isolation: they interact with normalization (LayerNorm), residual connections, and gating (e.g., SwiGLU in LLaMA FFNs). A crisp mental model of sigmoid, tanh, ReLU, GELU, SiLU, and softmax is table stakes for ML systems and LLM roles at top companies.</p>
+<div class="admonition tip">
+<p class="admonition-title">Notation Help</p>
+<p>If you're unfamiliar with derivatives or the notation <span class="arithmatex">\(\frac{d}{dz}\)</span>, see the <a href="../00_math_prerequisites/#2-functions-and-derivatives">Math Prerequisites</a> section. It explains derivatives intuition-first with worked examples.</p>
+</div>
+<h2 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h2>
+<h3 id="sigmoid">Sigmoid<a class="headerlink" href="#sigmoid" title="Permanent link">&para;</a></h3>
+<p><strong>What does this look like?</strong> Imagine a dimmer switch that smoothly goes from "off" (0) to "on" (1). That's sigmoid.</p>
+<p>The sigmoid maps any real input to the open interval <span class="arithmatex">\( (0, 1) \)</span>:</p>
+<div class="arithmatex">\[
+\sigma(z) = \frac{1}{1 + e^{-z}}.
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>The sigmoid squashes large positive <span class="arithmatex">\( z \)</span> toward 1 and large negative <span class="arithmatex">\( z \)</span> toward 0. It is interpretable as a soft "probability" when used in a single output, but hidden layers rarely use it today because of vanishing gradients.</p>
+</div>
+<p>We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.</p>
+<p>The derivative is</p>
+<div class="arithmatex">\[
+\sigma'(z) = \sigma(z)\bigl(1 - \sigma(z)\bigr).
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>The slope is largest near <span class="arithmatex">\( z = 0 \)</span> and approaches zero when <span class="arithmatex">\( z \)</span> is very positive or very negative. That is <strong>saturation</strong>: in those regions, backpropagation multiplies many small derivatives through the network, causing <strong>vanishing gradients</strong> in deep stacks.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: sigmoid at <span class="arithmatex">\( z = 2.0 \)</span></p>
+</div>
+<div class="arithmatex">\[
+\sigma(2) = \frac{1}{1 + e^{-2}} \approx \frac{1}{1 + 0.1353} \approx 0.8808.
+\]</div>
+<div class="arithmatex">\[
+\sigma'(2) = 0.8808 \times (1 - 0.8808) \approx 0.105.
+\]</div>
+<div class="highlight"><pre><span></span><code>The neuron is already in a mildly saturated regime: the output is close to 1 and the local gradient is modest compared to the maximum \( \sigma&#39;(0) = 0.25 \).
+</code></pre></div>
+<h3 id="tanh">Tanh<a class="headerlink" href="#tanh" title="Permanent link">&para;</a></h3>
+<p><strong>What does this look like?</strong> Like sigmoid but the switch goes from -1 to +1, so it can represent "strongly no" as well as "strongly yes."</p>
+<p>Hyperbolic tangent maps <span class="arithmatex">\( \mathbb{R} \to (-1, 1) \)</span>:</p>
+<div class="arithmatex">\[
+\tanh(z) = \frac{e^{z} - e^{-z}}{e^{z} + e^{-z}}.
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Tanh is an S-shaped squashing function like sigmoid, but its outputs are <strong>zero-centered</strong> (negative inputs yield negative outputs). That often makes optimization easier than sigmoid hidden activations, which output only positive values.</p>
+</div>
+<p>It can be written in terms of sigmoid as <span class="arithmatex">\( \tanh(z) = 2\sigma(2z) - 1 \)</span>.</p>
+<p>We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.</p>
+<p>The derivative is</p>
+<div class="arithmatex">\[
+\frac{d}{dz}\tanh(z) = 1 - \tanh^2(z).
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Like sigmoid, tanh <strong>saturates</strong> at large <span class="arithmatex">\( |z| \)</span>, so vanishing gradients remain a concern in very deep unmitigated stacks—though centering still helps compared to sigmoid in many classical setups.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: tanh at <span class="arithmatex">\( z = 1.0 \)</span></p>
+<p>Using a calculator, <span class="arithmatex">\( \tanh(1) \approx 0.7616 \)</span>. Then</p>
+</div>
+<div class="arithmatex">\[
+\frac{d}{dz}\tanh(1) = 1 - (0.7616)^2 \approx 0.4200.
+\]</div>
+<div class="highlight"><pre><span></span><code>The unit is still in a reasonably active region compared to \( |z| \gg 1 \), where the derivative would be nearly zero.
+</code></pre></div>
+<h3 id="relu">ReLU<a class="headerlink" href="#relu" title="Permanent link">&para;</a></h3>
+<p><strong>What does this look like?</strong> The simplest possible rule: if the number is negative, output zero. If positive, pass it through unchanged. Like a gate that only opens one way.</p>
+<p>Rectified Linear Unit is piecewise linear:</p>
+<div class="arithmatex">\[
+\mathrm{ReLU}(z) = \max(0, z).
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Negative inputs are clipped to zero; positive inputs pass through unchanged. That sparsifies activations and avoids the saturation problem on the positive side that plagues sigmoid/tanh.</p>
+</div>
+<p>We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.</p>
+<p>The derivative (where it exists) is</p>
+<div class="arithmatex">\[
+\frac{d}{dz}\mathrm{ReLU}(z) =
+\begin{cases}
+1 &amp; z &gt; 0, \\
+0 &amp; z &lt; 0,
+\end{cases}
+\]</div>
+<p>with the undefined point at <span class="arithmatex">\( z = 0 \)</span> handled in practice by convention (e.g., 0 or 1).</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>If a neuron's pre-activation stays negative for all training examples, its gradient is always zero—the <strong>dying ReLU</strong> problem. On the positive side, the gradient is 1, which helps gradient flow but can also contribute to exploding activations without careful initialization and normalization.</p>
+</div>
+<p>Computationally, ReLU is cheap: comparison and max versus exponentials in tanh/sigmoid.</p>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: ReLU in active and dead regions</p>
+<ul>
+<li>For <span class="arithmatex">\( z = 3.0 \)</span>: <span class="arithmatex">\( \mathrm{ReLU}(3) = 3 \)</span>, derivative <span class="arithmatex">\( 1 \)</span> (active).</li>
+<li>For <span class="arithmatex">\( z = -2.0 \)</span>: <span class="arithmatex">\( \mathrm{ReLU}(-2) = 0 \)</span>, derivative <span class="arithmatex">\( 0 \)</span> (dead for backprop through this unit).</li>
+</ul>
+</div>
+<h3 id="leaky-relu-and-parametric-relu-prelu">Leaky ReLU and Parametric ReLU (PReLU)<a class="headerlink" href="#leaky-relu-and-parametric-relu-prelu" title="Permanent link">&para;</a></h3>
+<p><strong>Leaky ReLU</strong> uses a small slope <span class="arithmatex">\( \alpha &gt; 0 \)</span> for negative inputs:</p>
+<div class="arithmatex">\[
+f(z) = \max(\alpha z, z) =
+\begin{cases}
+z &amp; z \ge 0, \\
+\alpha z &amp; z &lt; 0.
+\end{cases}
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>A tiny leak (e.g., <span class="arithmatex">\( \alpha = 0.01 \)</span>) prevents the gradient from being exactly zero for all negative <span class="arithmatex">\( z \)</span>, reducing the severity of dying ReLU at the cost of a small negative activation mass.</p>
+</div>
+<p><strong>Parametric ReLU (PReLU)</strong> treats <span class="arithmatex">\( \alpha \)</span> as a <strong>learned</strong> parameter (per channel or shared), so the network can adapt how much negative information to retain.</p>
+<div class="arithmatex">\[
+f(z) = \max(\alpha z, z), \quad \alpha \text{ trainable.}
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Instead of fixing the leak, the model learns how "linear" the negative half should be—useful when the optimal nonlinearity is data-dependent.</p>
+</div>
+<h3 id="gelu-gaussian-error-linear-unit">GELU (Gaussian Error Linear Unit)<a class="headerlink" href="#gelu-gaussian-error-linear-unit" title="Permanent link">&para;</a></h3>
+<p><strong>What does this look like?</strong> A "smarter" version of ReLU that doesn't have the sharp corner — it smoothly curves near zero. Used in GPT and BERT.</p>
+<p>GELU is defined using the Gaussian cumulative distribution function <span class="arithmatex">\( \Phi \)</span>:</p>
+<div class="arithmatex">\[
+\mathrm{GELU}(x) = x \cdot \Phi(x).
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>You scale the identity by the probability that a draw from a standard Gaussian is less than <span class="arithmatex">\( x \)</span>. Large positive <span class="arithmatex">\( x \)</span> behave like identity; large negative <span class="arithmatex">\( x \)</span> are softly suppressed—smoother than ReLU's hard zero.</p>
+</div>
+<p>We need the derivative because during training, the network needs to know: if I change the input slightly, how much does the output change? That's what the derivative tells us.</p>
+<p>A common <strong>approximation</strong> used in implementations (e.g., in many Transformer FFNs) is</p>
+<div class="arithmatex">\[
+\mathrm{GELU}(x) \approx 0.5\, x \left( 1 + \tanh\left( \sqrt{\tfrac{2}{\pi}} \left( x + 0.044715\, x^{3} \right) \right) \right).
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>This is a smooth, differentiable function that looks like a softened ReLU: near zero it is curved rather than kinked, which can make optimization landscapes nicer for very deep networks and when combined with LayerNorm and Adam-style optimizers.</p>
+</div>
+<p>GELU is the activation used in <strong>GPT-2</strong>, <strong>GPT-3</strong>, and <strong>BERT</strong>-style Transformers for feed-forward sublayers (exact definition vs. approximation varies by codebase).</p>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: approximate GELU at <span class="arithmatex">\( x = 1.0 \)</span></p>
+<p>Let <span class="arithmatex">\( t = \sqrt{2/\pi}(1 + 0.044715) \approx 0.7979 \times 1.044715 \approx 0.8336 \)</span>. Then <span class="arithmatex">\( \tanh(t) \approx 0.6826 \)</span>, and</p>
+</div>
+<div class="arithmatex">\[
+\mathrm{GELU}(1) \approx 0.5 \times 1 \times (1 + 0.6826) \approx 0.8413.
+\]</div>
+<div class="highlight"><pre><span></span><code>(Exact \( \mathrm{GELU}(1) = \Phi(1) \approx 0.8413 \)—the approximation matches closely at this point.)
+</code></pre></div>
+<h3 id="silu-and-swish">SiLU and Swish<a class="headerlink" href="#silu-and-swish" title="Permanent link">&para;</a></h3>
+<p>The <strong>Sigmoid Linear Unit (SiLU)</strong> is also called <strong>Swish</strong> (with unit parameters):</p>
+<div class="arithmatex">\[
+\mathrm{SiLU}(x) = x \cdot \sigma(x) = \frac{x}{1 + e^{-x}}.
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>For negative <span class="arithmatex">\( x \)</span>, sigmoid damps the output toward zero but allows small negative values—unlike ReLU's hard cutoff. For large positive <span class="arithmatex">\( x \)</span>, <span class="arithmatex">\( \sigma(x) \approx 1 \)</span>, so SiLU behaves like identity.</p>
+</div>
+<p>SiLU/Swish is used in <strong>LLaMA</strong> and <strong>PaLM</strong> family models (often inside SwiGLU blocks—see Deep Dive). <strong>Connection to GELU</strong>: both are smooth, non-monotonic-ish adjustments of the identity; GELU uses the Gaussian CDF while SiLU uses the logistic sigmoid as a gate. They are distinct functions but play a similar "smooth ReLU family" role in modern architectures.</p>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: SiLU at <span class="arithmatex">\( x = -1.0 \)</span> and <span class="arithmatex">\( x = 2.0 \)</span></p>
+<ul>
+<li><span class="arithmatex">\( x = -1 \)</span>: <span class="arithmatex">\( \sigma(-1) \approx 0.2689 \)</span>, so <span class="arithmatex">\( \mathrm{SiLU}(-1) \approx -0.2689 \)</span> (small negative, not hard-clamped to 0).</li>
+<li><span class="arithmatex">\( x = 2 \)</span>: <span class="arithmatex">\( \sigma(2) \approx 0.8808 \)</span>, so <span class="arithmatex">\( \mathrm{SiLU}(2) \approx 1.7616 \)</span> (close to 2).</li>
+</ul>
+</div>
+<h3 id="softmax">Softmax<a class="headerlink" href="#softmax" title="Permanent link">&para;</a></h3>
+<p><strong>What does this look like?</strong> Not really an on/off switch — it's more like "divide the pie". It takes a bunch of scores and converts them to percentages that add up to 100%.</p>
+<p>Given a vector <span class="arithmatex">\( \mathbf{x} = (x_1, \ldots, x_K)^\top \)</span>, softmax produces a probability vector:</p>
+<div class="arithmatex">\[
+\mathrm{softmax}(x_i) = \frac{e^{x_i}}{\sum_{j=1}^{K} e^{x_j}}, \quad i = 1, \ldots, K.
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Softmax exponentiates each score and normalizes so entries are positive and sum to 1. The largest logit gets the most mass, but other classes still receive some probability unless gaps are huge.</p>
+</div>
+<p><strong>Temperature</strong> <span class="arithmatex">\( T &gt; 0 \)</span> scales logits before softmax:</p>
+<div class="arithmatex">\[
+\mathrm{softmax}_T(x_i) = \frac{e^{x_i / T}}{\sum_{j} e^{x_j / T}}.
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p><span class="arithmatex">\( T &gt; 1 \)</span> softens the distribution (more uniform); <span class="arithmatex">\( T &lt; 1 \)</span> sharpens it (more peaked). In some distillation and sampling setups, temperature controls randomness versus confidence.</p>
+</div>
+<p>In <strong>attention</strong>, softmax normalizes compatibility scores across keys so weights sum to 1 per query position. In the <strong>output layer</strong> of classifiers or language models, softmax maps logits to token probabilities.</p>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: softmax on a 3-element vector</p>
+<p>Let <span class="arithmatex">\( \mathbf{x} = (2.0,\, 1.0,\, 0.0)^\top \)</span>. Then <span class="arithmatex">\( e^2 \approx 7.389 \)</span>, <span class="arithmatex">\( e^1 \approx 2.718 \)</span>, <span class="arithmatex">\( e^0 = 1 \)</span>; sum <span class="arithmatex">\( \approx 11.107 \)</span>.</p>
+</div>
+<div class="arithmatex">\[
+\mathrm{softmax}(\mathbf{x}) \approx (0.665,\, 0.245,\, 0.090).
+\]</div>
+<div class="highlight"><pre><span></span><code>The first class dominates but does not take all mass.
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Output Range</th>
+<th>Used Where?</th>
+<th>One-Line Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sigmoid</td>
+<td>(0, 1)</td>
+<td>Gates in LSTMs</td>
+<td>Smooth 0-to-1 switch</td>
+</tr>
+<tr>
+<td>Tanh</td>
+<td>(-1, 1)</td>
+<td>RNN hidden states</td>
+<td>Centered version of sigmoid</td>
+</tr>
+<tr>
+<td>ReLU</td>
+<td>[0, ∞)</td>
+<td>Most hidden layers</td>
+<td>Zero if negative, pass if positive</td>
+</tr>
+<tr>
+<td>GELU</td>
+<td>≈(-0.17, ∞)</td>
+<td>GPT, BERT FFN layers</td>
+<td>Smooth ReLU</td>
+</tr>
+<tr>
+<td>SiLU/Swish</td>
+<td>≈(-0.28, ∞)</td>
+<td>LLaMA FFN layers</td>
+<td>Self-gated smooth ReLU</td>
+</tr>
+<tr>
+<td>Softmax</td>
+<td>(0, 1), sums to 1</td>
+<td>Output layer, attention</td>
+<td>Converts scores to probabilities</td>
+</tr>
+</tbody>
+</table>
+<h2 id="deep-dive">Deep Dive<a class="headerlink" href="#deep-dive" title="Permanent link">&para;</a></h2>
+<details class="deep-dive">
+<summary>GLU variants, GELU/SwiGLU trend, and softmax stability</summary>
+<p><strong>Gated Linear Units (GLU)</strong> and variants pair linear projections with multiplicative gating. A common FFN formulation in modern LLMs is <strong>SwiGLU</strong>:</p>
+</details>
+<div class="arithmatex">\[
+\mathrm{FFN}(\mathbf{x}) = \bigl( (\mathbf{x} W_1) \odot \mathrm{Swish}(\mathbf{x} V) \bigr) W_2,
+\]</div>
+<div class="highlight"><pre><span></span><code>where \( W_1, V, W_2 \) are learned matrices, \( \odot \) is element-wise product, and \( \mathrm{Swish}(t) = t \cdot \sigma(t) \). Intuition: one branch computes **values**, the other a **sigmoid gate** that controls which dimensions pass through—richer than a single activation after one matrix multiply.
+
+**Why move from ReLU to GELU/SwiGLU in large Transformers?** Empirically, smooth activations (GELU, SiLU) often yield better perplexity and downstream metrics at scale; the inductive bias interacts favorably with residual connections, LayerNorm, and Adam. SwiGLU increases parameter and compute in the FFN (two up-projections) but has become a standard quality-efficiency tradeoff in LLaMA-class models.
+
+**Softmax numerical stability**: for any constant \( c \),
+</code></pre></div>
+<div class="arithmatex">\[
+\frac{e^{x_i}}{\sum_j e^{x_j}} = \frac{e^{x_i - c}}{\sum_j e^{x_j - c}}.
+\]</div>
+<div class="highlight"><pre><span></span><code>Setting \( c = \max_j x_j \) prevents overflow in \( e^{x_i} \) and improves floating-point behavior. Libraries always use the stabilized form in production.
+</code></pre></div>
+<h2 id="code">Code<a class="headerlink" href="#code" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="sd">Plot common activation functions and derivatives; implement SwiGLU FFN in PyTorch.</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">Requires: pip install torch matplotlib numpy</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="k">def</span><span class="w"> </span><span class="nf">gelu_approx</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.044715</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">)))</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="k">def</span><span class="w"> </span><span class="nf">gelu_approx_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="k">return</span> <span class="p">(</span><span class="n">gelu_approx</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span> <span class="o">-</span> <span class="n">gelu_approx</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">eps</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">eps</span><span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">silu</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="k">return</span> <span class="n">x</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">)))</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="k">def</span><span class="w"> </span><span class="nf">silu_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    <span class="n">s</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">)))</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>    <span class="k">return</span> <span class="n">s</span> <span class="o">+</span> <span class="n">x</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_activations_and_derivatives</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">800</span><span class="p">)</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">dsigmoid</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>        <span class="n">s</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">)))</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="k">return</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">dtanh</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">drelu</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>        <span class="k">return</span> <span class="p">(</span><span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>    <span class="n">activations</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>        <span class="sa">r</span><span class="s2">&quot;$\sigma$ (sigmoid)&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">))),</span> <span class="n">dsigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a>        <span class="sa">r</span><span class="s2">&quot;$\tanh$&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">dtanh</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>        <span class="sa">r</span><span class="s2">&quot;ReLU&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">drelu</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>        <span class="sa">r</span><span class="s2">&quot;GELU (approx)&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">gelu_approx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">gelu_approx_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>        <span class="sa">r</span><span class="s2">&quot;SiLU / Swish&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">silu</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">silu_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>    <span class="p">}</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>
+<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="n">activations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Activation functions&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$z$ or $x$&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$f(z)$&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a>
+<a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a>    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span> <span class="ow">in</span> <span class="n">activations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a>        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Derivatives (GELU via central difference)&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$z$ or $x$&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69" href="#__codelineno-0-69"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$f&#39;(z)$&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70" href="#__codelineno-0-70"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a>    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper right&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a>
+<a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a>    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a>    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a>
+<a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a>
+<a id="__codelineno-0-77" name="__codelineno-0-77" href="#__codelineno-0-77"></a><span class="k">class</span><span class="w"> </span><span class="nc">SwiGLUFFN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78" href="#__codelineno-0-78"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Feed-forward block: (x @ w1) * Swish(x @ v) @ w2 + bias pattern.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79" href="#__codelineno-0-79"></a>
+<a id="__codelineno-0-80" name="__codelineno-0-80" href="#__codelineno-0-80"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-81" name="__codelineno-0-81" href="#__codelineno-0-81"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="__codelineno-0-82" name="__codelineno-0-82" href="#__codelineno-0-82"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">w1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83" href="#__codelineno-0-83"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_ff</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-0-84" name="__codelineno-0-84" href="#__codelineno-0-84"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">w2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_ff</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-0-85" name="__codelineno-0-85" href="#__codelineno-0-85"></a>
+<a id="__codelineno-0-86" name="__codelineno-0-86" href="#__codelineno-0-86"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="__codelineno-0-87" name="__codelineno-0-87" href="#__codelineno-0-87"></a>        <span class="c1"># Swish(a) = a * sigmoid(a); gate = Swish(x @ v)</span>
+<a id="__codelineno-0-88" name="__codelineno-0-88" href="#__codelineno-0-88"></a>        <span class="n">gate</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">silu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<a id="__codelineno-0-89" name="__codelineno-0-89" href="#__codelineno-0-89"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">w2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">gate</span><span class="p">)</span>
+<a id="__codelineno-0-90" name="__codelineno-0-90" href="#__codelineno-0-90"></a>
+<a id="__codelineno-0-91" name="__codelineno-0-91" href="#__codelineno-0-91"></a>
+<a id="__codelineno-0-92" name="__codelineno-0-92" href="#__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="nf">_demo_swiglu</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-93" name="__codelineno-0-93" href="#__codelineno-0-93"></a>    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-94" name="__codelineno-0-94" href="#__codelineno-0-94"></a>    <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">16</span>
+<a id="__codelineno-0-95" name="__codelineno-0-95" href="#__codelineno-0-95"></a>    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+<a id="__codelineno-0-96" name="__codelineno-0-96" href="#__codelineno-0-96"></a>    <span class="n">ffn</span> <span class="o">=</span> <span class="n">SwiGLUFFN</span><span class="p">(</span><span class="n">d_model</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">d_ff</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+<a id="__codelineno-0-97" name="__codelineno-0-97" href="#__codelineno-0-97"></a>    <span class="n">y</span> <span class="o">=</span> <span class="n">ffn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98" href="#__codelineno-0-98"></a>    <span class="k">assert</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+<a id="__codelineno-0-99" name="__codelineno-0-99" href="#__codelineno-0-99"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SwiGLU output shape:&quot;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+<a id="__codelineno-0-100" name="__codelineno-0-100" href="#__codelineno-0-100"></a>
+<a id="__codelineno-0-101" name="__codelineno-0-101" href="#__codelineno-0-101"></a>
+<a id="__codelineno-0-102" name="__codelineno-0-102" href="#__codelineno-0-102"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-103" name="__codelineno-0-103" href="#__codelineno-0-103"></a>    <span class="n">plot_activations_and_derivatives</span><span class="p">()</span>
+<a id="__codelineno-0-104" name="__codelineno-0-104" href="#__codelineno-0-104"></a>    <span class="n">_demo_swiglu</span><span class="p">()</span>
+</code></pre></div>
+<h2 id="interview-guide">Interview Guide<a class="headerlink" href="#interview-guide" title="Permanent link">&para;</a></h2>
+<div class="admonition interview">
+<p class="admonition-title">FAANG-Level Questions</p>
+<ol>
+<li>
+<p><strong>Why can't a deep network without nonlinear activations represent arbitrary decision boundaries?</strong> Expect: composition of linear maps is linear; need nonlinearity for universality and feature hierarchies.</p>
+</li>
+<li>
+<p><strong>Compare vanishing gradients in sigmoid/tanh vs. ReLU.</strong> Expect: sigmoid/tanh saturate on both sides; ReLU has zero gradient only on the negative side (dying ReLU) but unit gradient on positive side.</p>
+</li>
+<li>
+<p><strong>What is the derivative of ReLU and where is it undefined?</strong> Expect: 1 for <span class="arithmatex">\( z &gt; 0 \)</span>, 0 for <span class="arithmatex">\( z &lt; 0 \)</span>; convention at 0; mention subgradient.</p>
+</li>
+<li>
+<p><strong>Write softmax and explain why we subtract the max before exponentiating.</strong> Expect: numerical stability; mathematical equivalence.</p>
+</li>
+<li>
+<p><strong>What activation does BERT use in its FFN, and why might GELU beat ReLU there?</strong> Expect: GELU; smoother than ReLU; empirical gains with Adam/LayerNorm/residuals (high level).</p>
+</li>
+<li>
+<p><strong>Define SiLU/Swish and name one major open-weight LLM family that uses SwiGLU.</strong> Expect: <span class="arithmatex">\( x\sigma(x) \)</span>; LLaMA / many descendants.</p>
+</li>
+<li>
+<p><strong>How does temperature affect softmax at the output of a language model?</strong> Expect: sharp vs. flat distributions; sampling vs. greedy behavior.</p>
+</li>
+<li>
+<p><strong>What is SwiGLU in a Transformer FFN?</strong> Expect: two up-projections, multiply by Swish gate, down-project; parameter overhead vs. quality.</p>
+</li>
+<li>
+<p><strong>Why might zero-centered outputs (tanh) help compared to sigmoid in older networks?</strong> Expect: nicer gradient dynamics when inputs to next layer have mean near zero (historical context).</p>
+</li>
+<li>
+<p><strong>When is softmax used inside attention?</strong> Expect: over scores per query across keys; weights sum to 1; scaled dot-product attention.</p>
+</li>
+</ol>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">Follow-up Probes</p>
+<ol>
+<li>
+<p><strong>If all ReLU units in a layer are dead, what happens in backprop?</strong> Gradients w.r.t. inputs to that layer are zero for that path; may need different init, Leaky ReLU, or learning rate adjustment.</p>
+</li>
+<li>
+<p><strong>Is GELU monotonic?</strong> Yes, GELU is monotonically increasing (unlike SiLU which is non-monotonic).</p>
+</li>
+<li>
+<p><strong>How does SwiGLU differ from a standard ReLU FFN <span class="arithmatex">\( \mathrm{ReLU}(x W_1) W_2 \)</span>?</strong> Extra gate projection and multiplicative interaction; Swish instead of ReLU.</p>
+</li>
+<li>
+<p><strong>What is the relationship between logits and cross-entropy at the output?</strong> Softmax + log + NLL; stable fused implementation in frameworks.</p>
+</li>
+<li>
+<p><strong>Could you use softmax hidden activations?</strong> Impractical: full vector normalization per unit; not used as element-wise hidden activation; softmax is for vectors to probabilities.</p>
+</li>
+</ol>
+</div>
+<div class="admonition key-phrases">
+<p class="admonition-title">Key Phrases to Use in Interviews</p>
+<ul>
+<li>"Saturation kills gradient flow when <span class="arithmatex">\( \sigma' \)</span> or <span class="arithmatex">\( \tanh' \)</span> is near zero."</li>
+<li>"ReLU sparsifies and avoids bilateral saturation but can suffer from dying ReLU."</li>
+<li>"GELU is a smooth, probabilistically motivated nonlinearity standard in GPT/BERT FFNs."</li>
+<li>"SiLU and Swish are self-gated: <span class="arithmatex">\( x \cdot \sigma(x) \)</span>; SwiGLU pairs them with GLU-style FFNs in LLaMA."</li>
+<li>"Always stabilize softmax with <span class="arithmatex">\( z_i - \max_j z_j \)</span> before exponentiating."</li>
+<li>"Attention uses softmax over scores so weights are positive and sum to one per query."</li>
+<li>"Modern LLMs trade extra FFN parameters (SwiGLU) for better quality at scale."</li>
+</ul>
+</div>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Hendrycks, D., &amp; Gimpel, K. (2016). <em>Gaussian Error Linear Units (GELUs)</em>. <a href="https://arxiv.org/abs/1606.08415">arXiv:1606.08415</a></li>
+<li>Ramachandran, P., Zoph, B., &amp; Le, Q. V. (2017). <em>Searching for Activation Functions</em>. (Swish). <a href="https://arxiv.org/abs/1710.05941">arXiv:1710.05941</a></li>
+<li>Dauphin, Y. N., et al. (2017). <em>Language Modeling with Gated Convolutional Networks</em>. (GLU formulation). <a href="https://arxiv.org/abs/1612.08083">arXiv:1612.08083</a></li>
+<li>Shazeer, N. (2020). <em>GLU Variants Improve Transformer</em>. <a href="https://arxiv.org/abs/2002.05202">arXiv:2002.05202</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../01_perceptron_and_ffn/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Perceptron and Feedforward Networks">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                The Perceptron and Feedforward Networks
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../03_backpropagation/" class="md-footer__link md-footer__link--next" aria-label="Next: Backpropagation and Gradient Descent">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Backpropagation and Gradient Descent
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 LLMBase contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/spawn08/llmbase" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.path", "navigation.footer", "toc.follow", "toc.integrate", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

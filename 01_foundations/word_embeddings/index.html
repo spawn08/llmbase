@@ -1,0 +1,3801 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Ground-Up Guide to Large Language Models for Engineers">
+      
+      
+        <meta name="author" content="Amarsingh Thakur">
+      
+      
+        <link rel="canonical" href="https://spawn08.github.io/llmbase/01_foundations/word_embeddings/">
+      
+      
+        <link rel="prev" href="../language_modeling_basics/">
+      
+      
+        <link rel="next" href="../neural_language_models/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Word Embeddings - LLMBase</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+3:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Source Sans 3";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#word-embeddings" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+<style>
+  .md-banner {
+    background: linear-gradient(135deg, #3D5A6E 0%, #5E7A8C 50%, #6FA3B8 100%) !important;
+    color: #E4E8EE;
+  }
+  .md-banner__inner {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+</style>
+LLMBase &mdash; A ground-up guide to Large Language Models &bull; Math &bull; Code &bull; Interview Q&amp;A &bull; 33 landmark papers
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LLMBase" class="md-header__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LLMBase
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Word Embeddings
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LLMBase" class="md-nav__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    LLMBase
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../00_prerequisites/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Deep Learning Fundamentals
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Deep Learning Fundamentals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/00_math_prerequisites/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math Prerequisites
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/01_perceptron_and_ffn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Perceptron and Feedforward Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/02_activation_functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Activation Functions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/03_backpropagation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backpropagation and Gradient Descent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/04_loss_and_regularization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Loss Functions and Regularization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/05_convolutional_neural_networks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Convolutional Neural Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/06_sequence_modeling_and_rnns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence Modeling and RNNs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/07_encoder_decoder_paradigm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Encoder-Decoder Paradigm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Foundations of Language Modeling
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Foundations of Language Modeling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../language_modeling_basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Word Embeddings
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Word Embeddings
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-matters-for-llms" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Matters for LLMs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Concepts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-one-hot-vectors-to-dense-embeddings" class="md-nav__link">
+    <span class="md-ellipsis">
+      From One-Hot Vectors to Dense Embeddings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-geometry-encodes-meaning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Geometry Encodes Meaning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#embedding-arithmetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Embedding Arithmetic
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#word2vec-cbow-continuous-bag-of-words" class="md-nav__link">
+    <span class="md-ellipsis">
+      Word2Vec CBOW (Continuous Bag of Words)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#word2vec-skip-gram" class="md-nav__link">
+    <span class="md-ellipsis">
+      Word2Vec Skip-Gram
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hierarchical-softmax-optional-output-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hierarchical Softmax (Optional Output Layer)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#negative-sampling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negative Sampling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#glove-and-co-occurrence-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      GloVe and Co-occurrence Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fasttext-and-subwords" class="md-nav__link">
+    <span class="md-ellipsis">
+      FastText and Subwords
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contextual-versus-static-embeddings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contextual Versus Static Embeddings
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deep-dive-pmi-noise-contrastive-estimation-and-modern-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deep Dive: PMI, Noise Contrastive Estimation, and Modern Retrieval
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interview-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interview Guide
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Interview Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-interviewers-actually-ask" class="md-nav__link">
+    <span class="md-ellipsis">
+      What Interviewers Actually Ask
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../neural_language_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural Language Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sequence_to_sequence/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence-to-Sequence
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../information_theory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../attention_math/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Mathematics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Hands-On Notebooks
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Hands-On Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/01_math_and_neural_network_basics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math & Neural Network Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/02_training_mechanics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Mechanics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/03_cnns_and_sequences.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNNs, Sequences & Encoder-Decoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/04_language_modeling_and_embeddings.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling & Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/05_neural_lm_and_seq2seq.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural LM & Seq2Seq
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/06_information_theory_and_attention.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory & Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../02_core_architectures/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Core Architectures
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Core Architectures
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/self_attention_mha/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Self-Attention and MHA
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/positional_encoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Positional Encoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/gpt_decoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT Decoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/bert_encoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT Encoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/t5_encoder_decoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5 Encoder-Decoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/mixture_of_experts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02_core_architectures/state_space_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State Space Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../03_training/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Training and Alignment
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Training and Alignment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/pretraining/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pre-training at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/distributed_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Distributed Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/mixed_precision/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed Precision and Quantization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/instruction_tuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Instruction Tuning and SFT
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/rlhf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RLHF and DPO
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/peft/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameter-Efficient Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../04_inference/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Inference and Serving
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Inference and Serving
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/decoding_strategies/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoding Strategies
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/kv_cache/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    KV Cache
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/speculative_decoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Speculative Decoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/continuous_batching/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Batching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/quantization_inference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantization for Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/serving_systems/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLM Serving Systems
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../05_advanced/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/rag/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RAG
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agents and Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/long_context/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long-Context Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/multimodal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multimodal LLMs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/emergent_capabilities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emergent Capabilities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/evaluation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Evaluation and Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/hallucination_safety/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hallucination and Safety
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../06_research_papers/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Landmark Research Papers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Landmark Research Papers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/01_attention_is_all_you_need/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Is All You Need (Transformer)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/02_bert/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT: Bidirectional Encoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/03_gpt2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-2: Unsupervised Multitask Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/04_gpt3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-3: In-Context Learning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/05_t5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5: Text-to-Text Transfer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/06_xlnet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    XLNet: Permutation Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/07_roberta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoBERTa: Robust BERT Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/08_electra/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ELECTRA: Efficient Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/09_instructgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    InstructGPT: RLHF Pipeline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/10_palm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PaLM: Pathways at 540B
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/11_chinchilla/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chinchilla: Compute-Optimal Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/12_llama/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLaMA: Open Foundation Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/13_lora/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LoRA: Low-Rank Adaptation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/14_flash_attention/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FlashAttention: IO-Aware Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/15_mistral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mistral 7B: Efficient Small Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/16_mixtral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixtral: Sparse Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/17_flan/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FLAN: Instruction Tuning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/18_chain_of_thought/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chain-of-Thought Prompting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/19_react/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ReAct: Reasoning and Acting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/20_toolformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Toolformer: Self-Supervised Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/21_constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI: Principled Alignment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/22_clip/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLIP: Contrastive Vision-Language
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/23_codex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Codex: Code Generation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/24_mamba/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mamba: Linear-Time State Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/25_gemini/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini: Native Multimodal
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/26_deepseek_v2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V2: Multi-Head Latent Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/27_deepseek_v3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V3: MoE at 671B Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/28_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1: RL-Only Reasoning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/29_glm4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4: Bilingual Foundation Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/30_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5: Long-Context RL Scaling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/31_qwen2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen2.5: Data-Efficient Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/32_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5: Agentic Async RL
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/33_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5: Multi-Agent Coordination
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/34_rope_roformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoPE: Rotary Position Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/35_attention_residuals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Residuals: Rethinking Depth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../07_recent_advances/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Recent Advances
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Recent Advances
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/01_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/02_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/03_gpt4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-4.5 (Feb 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/04_gemini_2_5_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 2.5 Pro (Mar 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/05_llama_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Llama 4 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/13_qwen3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen 3 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/06_gpt5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5 (Aug 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/10_glm4_6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4.6 (Sep 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/07_claude_opus_4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Claude Opus 4.5 (Nov 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/12_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5 (Jan 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/08_gemini_3_1_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 3.1 Pro (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/11_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5 (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/09_gpt5_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5.4 Family (Mar 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../interview_questions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interview Question Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="word-embeddings">Word Embeddings<a class="headerlink" href="#word-embeddings" title="Permanent link">&para;</a></h1>
+<h2 id="why-this-matters-for-llms">Why This Matters for LLMs<a class="headerlink" href="#why-this-matters-for-llms" title="Permanent link">&para;</a></h2>
+<p>Computers don't understand words — they only understand numbers. So how do we feed 'cat' into a neural network? We convert each word into a list of numbers (a 'vector'). The magic is in HOW we choose those numbers: words with similar meanings get similar number lists. This means 'cat' and 'kitten' have similar vectors, while 'cat' and 'spaceship' have very different ones.</p>
+<p>Modern LLMs do not read text as a lookup table of unrelated symbols. They map every token into a <strong>dense vector</strong> so that computation can blend meaning, syntax, and shallow world knowledge inside linear algebra. Static word embeddings (Word2Vec, GloVe, FastText) were the first widely successful demonstration that <strong>geometry can track semantics</strong>: directions between vectors mirror analogies and co-occurrence statistics. That idea survived every architecture change: Transformer layers still operate on vectors in <span class="arithmatex">\(\mathbb{R}^d\)</span>, and analysis of hidden states still uses cosine similarity and linear probes.</p>
+<p>Interviewers care about embeddings because they separate “I used BERT” from “I know why discrete NLP fails.” One-hot vectors have no notion of distance. Two different words are always orthogonal. Embeddings convert the <strong>curse of dimensionality</strong> in sparse counting into a <strong>smooth optimization problem</strong> where similar words share evidence. Every paper on instruction tuning, retrieval-augmented generation, or contrastive pretraining assumes you are comfortable with vector spaces and why cosine similarity appears everywhere.</p>
+<p>Finally, embeddings are the historical bridge from <strong>count-based n-grams</strong> to <strong>neural language models</strong>. Word2Vec shows how prediction objectives on local windows induce global structure. GloVe shows how global co-occurrence matrices factor into the same space. FastText shows how <strong>subwords</strong> reduce out-of-vocabulary failures. Those three threads reappear inside byte-pair encoding tokenizers and sentence-piece models that feed billion-parameter models today.</p>
+<div class="admonition tip">
+<p class="admonition-title">Notation Help</p>
+<ul>
+<li><span class="arithmatex">\(\mathbf{v}_w \in \mathbb{R}^d\)</span> means "a vector for word <span class="arithmatex">\(w\)</span> with <span class="arithmatex">\(d\)</span> dimensions" — see <a href="../../00_prerequisites/00_math_prerequisites/#1-vectors-and-matrices">Math Prerequisites</a></li>
+<li><span class="arithmatex">\(d \ll V\)</span> means "d is much smaller than V" (embedding size ≪ vocabulary size)</li>
+<li><strong>Cosine similarity</strong> measures how aligned two vectors are: <span class="arithmatex">\(\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\| \|\mathbf{v}\|}\)</span></li>
+</ul>
+</div>
+<hr />
+<h2 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h2>
+<h3 id="from-one-hot-vectors-to-dense-embeddings">From One-Hot Vectors to Dense Embeddings<a class="headerlink" href="#from-one-hot-vectors-to-dense-embeddings" title="Permanent link">&para;</a></h3>
+<h4 id="the-idea">The Idea<a class="headerlink" href="#the-idea" title="Permanent link">&para;</a></h4>
+<p>The simplest approach is one-hot encoding: give each word its own slot in a long list of zeros, and put a 1 in that slot. If your vocabulary has 50,000 words, 'cat' might be a list of 50,000 numbers with a 1 in position 3,742 and zeros everywhere else. The problem? This tells us nothing about meaning — 'cat' is equally far from 'kitten' and 'spaceship.'</p>
+<p>A vocabulary of size <span class="arithmatex">\(V\)</span> can represent each word type as a vector <span class="arithmatex">\(\mathbf{e}_w \in \mathbb{R}^V\)</span> with a single <span class="arithmatex">\(1\)</span> in position <span class="arithmatex">\(w\)</span> and zeros elsewhere. That is the <strong>one-hot</strong> encoding. It is honest about discreteness but useless for similarity: every pair of distinct words has dot product zero, so <strong>no gradient</strong> pushes “cat” toward “dog” when the model sees them in interchangeable syntactic slots. A <strong>word embedding</strong> replaces the sparse vector with <span class="arithmatex">\(\mathbf{v}_w \in \mathbb{R}^d\)</span> where <span class="arithmatex">\(d \ll V\)</span>. Similar words end up near each other because the training objective forces the model to share statistical evidence across neighbors in meaning or distribution.</p>
+<h4 id="the-math-one-hot-orthogonality">The Math (One-Hot Orthogonality)<a class="headerlink" href="#the-math-one-hot-orthogonality" title="Permanent link">&para;</a></h4>
+<p>Let <span class="arithmatex">\(\mathbf{u}_a\)</span> and <span class="arithmatex">\(\mathbf{u}_b\)</span> be one-hot vectors for distinct words <span class="arithmatex">\(a\)</span> and <span class="arithmatex">\(b\)</span>. Then:</p>
+<div class="arithmatex">\[
+\mathbf{u}_a^\top \mathbf{u}_b = 0,
+\qquad
+\|\mathbf{u}_a\|_2 = \|\mathbf{u}_b\|_2 = 1.
+\]</div>
+<p>The <strong>cosine similarity</strong> <span class="arithmatex">\(\cos(\mathbf{u}_a, \mathbf{u}_b) = \frac{\mathbf{u}_a^\top \mathbf{u}_b}{\|\mathbf{u}_a\|\|\mathbf{u}_b\|}\)</span> is zero for any distinct pair.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>The dot product counts coordinate-wise overlap. Two different one-hot vectors never share a nonzero coordinate, so the dot product is zero. Geometry cannot reflect “cat and dog are both nouns” because every word lives on a different corner of a simplex, equidistant from all unrelated corners.</p>
+</div>
+<h3 id="why-geometry-encodes-meaning">Why Geometry Encodes Meaning<a class="headerlink" href="#why-geometry-encodes-meaning" title="Permanent link">&para;</a></h3>
+<p>Co-occurrence statistics say: words that appear in similar contexts behave like synonyms, antonyms in contrastive frames, or related entities. A model forced to predict missing words from neighbors must place words that share contexts near one another in vector space so that the same weight matrices can service many tokens. <strong>Linear structure</strong> emerges because many linguistic relations look like offsets: gender, tense, and capital-country pairs often appear as nearly parallel vector differences. That is not mysticism; it is a consequence of bilinear objectives and shared hidden layers compressing PMI-like statistics into low rank.</p>
+<p>Frequency effects matter: high-frequency function words dominate raw counts, so training recipes downsample “the” or use negative sampling from a tempered unigram distribution. Rare content words receive fewer gradient updates, which is why skip-gram often beats CBOW on rare tokens: skip-gram emits more training pairs where the rare word is the center. Geometry therefore mixes <strong>semantic similarity</strong> with <strong>distributional similarity</strong>, and the two align often enough that vector arithmetic makes headlines.</p>
+<p>When you measure <strong>alignment</strong> between embedding spaces (Procrustes analysis, orthogonal mapping), you are testing whether two models trained on different corpora carved the same low-dimensional structure into different bases. That is the same mathematical instinct behind <strong>linear probes</strong> on Transformer layers: if a simple map recovers labels from hidden states, the information is geometrically simple in that space.</p>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Cosine Similarity in Two Dimensions (Illustrative)</p>
+<p>Let <span class="arithmatex">\(\mathbf{v}_{\text{cat}} = (1.0, 0.2)\)</span> and <span class="arithmatex">\(\mathbf{v}_{\text{dog}} = (0.9, 0.3)\)</span>.<br />
+Dot product: <span class="arithmatex">\(1.0 \cdot 0.9 + 0.2 \cdot 0.3 = 0.96\)</span>.<br />
+Norms: <span class="arithmatex">\(\|\mathbf{v}_{\text{cat}}\| = \sqrt{1 + 0.04} \approx 1.02\)</span>, <span class="arithmatex">\(\|\mathbf{v}_{\text{dog}}\| = \sqrt{0.81 + 0.09} \approx 0.95\)</span>.<br />
+Cosine: <span class="arithmatex">\(0.96 / (1.02 \cdot 0.95) \approx 0.99\)</span>.<br />
+Compare <span class="arithmatex">\(\mathbf{v}_{\text{rocket}} = (0.1, 1.0)\)</span>: dot with <span class="arithmatex">\(\mathbf{v}_{\text{cat}}\)</span> is <span class="arithmatex">\(1.0 \cdot 0.1 + 0.2 \cdot 1.0 = 0.3\)</span>, norms product <span class="arithmatex">\(\approx 1.02 \cdot 1.005\)</span>, cosine <span class="arithmatex">\(\approx 0.29\)</span>.<br />
+The small toy vectors separate <strong>domestic animals</strong> from <strong>vehicles</strong> by angle, which is how evaluators summarize embedding quality at scale.</p>
+</div>
+<h3 id="embedding-arithmetic">Embedding Arithmetic<a class="headerlink" href="#embedding-arithmetic" title="Permanent link">&para;</a></h3>
+<p>The most famous word embedding result: king − man + woman ≈ queen. This works because the vectors learned a 'gender direction' and a 'royalty direction' as separate dimensions. It's not perfect (it fails often), but it shows that the geometry of the vector space genuinely reflects meaning.</p>
+<p>The famous analogy <span class="arithmatex">\(\mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}\)</span> is evaluated by nearest-neighbor search after the vector combination.</p>
+<div class="arithmatex">\[
+\mathbf{q} = \mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}},
+\qquad
+w^\star = \arg\max_{w \in \mathcal{V} \setminus \{\text{king},\text{man},\text{woman}\}} \cos(\mathbf{q}, \mathbf{v}_w).
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>You add the vector difference that encodes “royal gender offset” to the vector for <code>woman</code>. If embeddings trained on news text, the closest word to <span class="arithmatex">\(\mathbf{q}\)</span> is often <code>queen</code>. The operation is heuristic: it fails when multiple relations compete or when frequencies skew neighborhoods.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Two-Dimensional Analogy Arithmetic</p>
+<p>Let <span class="arithmatex">\(\mathbf{v}_{\text{king}} = (2, 0)\)</span>, <span class="arithmatex">\(\mathbf{v}_{\text{man}} = (1, 0)\)</span>, <span class="arithmatex">\(\mathbf{v}_{\text{woman}} = (1, 1)\)</span>, <span class="arithmatex">\(\mathbf{v}_{\text{queen}} = (2, 1)\)</span>, <span class="arithmatex">\(\mathbf{v}_{\text{child}} = (0, 2)\)</span>.<br />
+<span class="arithmatex">\(\mathbf{q} = (2,0) - (1,0) + (1,1) = (2,1)\)</span>.<br />
+Cosine of <span class="arithmatex">\(\mathbf{q}\)</span> with <span class="arithmatex">\(\mathbf{v}_{\text{queen}} = (2,1)\)</span> is <span class="arithmatex">\(1\)</span> (perfect alignment).<br />
+Cosine of <span class="arithmatex">\(\mathbf{q}\)</span> with <span class="arithmatex">\(\mathbf{v}_{\text{child}}\)</span>: dot <span class="arithmatex">\(= 2\)</span>, norms <span class="arithmatex">\(\sqrt{5}\)</span> and <span class="arithmatex">\(2\)</span>, cosine <span class="arithmatex">\(= 2 / (2\sqrt{5}) \approx 0.447\)</span>.<br />
+The argmax over <span class="arithmatex">\(\{\text{queen}, \text{child}\}\)</span> picks <code>queen</code>, matching the intended analogy in this fabricated numeric setup.</p>
+</div>
+<p>Word2Vec's brilliant insight: you can learn good word vectors by playing a prediction game. Skip-gram says: 'Given the word ice, predict what words appear near it (cream, cold, rink).' CBOW does the reverse: 'Given cream, cold, rink, predict the center word (ice).' After training on billions of words, the vectors magically capture meaning!</p>
+<h3 id="word2vec-cbow-continuous-bag-of-words">Word2Vec CBOW (Continuous Bag of Words)<a class="headerlink" href="#word2vec-cbow-continuous-bag-of-words" title="Permanent link">&para;</a></h3>
+<p>CBOW predicts the <strong>center</strong> word from the <strong>average</strong> of embeddings of surrounding words. For window <span class="arithmatex">\(c\)</span>, the context representation is:</p>
+<div class="arithmatex">\[
+\mathbf{h}_t = \frac{1}{2c} \sum_{\substack{-c \le j \le c \\ j \ne 0}} \mathbf{v}_{w_{t+j}}.
+\]</div>
+<p>The model maximizes <span class="arithmatex">\(\sum_t \log P(w_t \mid \mathbf{h}_t)\)</span> with a softmax over the vocabulary using <span class="arithmatex">\(\mathbf{h}_t\)</span> in place of a single <span class="arithmatex">\(\mathbf{v}_{w_t}\)</span>.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>CBOW <strong>compresses</strong> the context into one vector by averaging neighbors before prediction. Averaging smooths rare contexts: several distinct neighbor words contribute partial evidence. Skip-gram instead holds the center fixed and emits separate predictions for each neighbor, which allocates more work to low-frequency center tokens.</p>
+</div>
+<h3 id="word2vec-skip-gram">Word2Vec Skip-Gram<a class="headerlink" href="#word2vec-skip-gram" title="Permanent link">&para;</a></h3>
+<h4 id="objective">Objective<a class="headerlink" href="#objective" title="Permanent link">&para;</a></h4>
+<p><strong>Skip-gram</strong> maximizes the sum of log probabilities of <strong>context</strong> words given a <strong>center</strong> word. For corpus length <span class="arithmatex">\(T\)</span>, window radius <span class="arithmatex">\(c\)</span>:</p>
+<div class="arithmatex">\[
+\mathcal{L} = \sum_{t=1}^{T} \sum_{\substack{-c \le j \le c \\ j \ne 0}} \log P(w_{t+j} \mid w_t).
+\]</div>
+<p>The conditional is a softmax over the vocabulary using an <strong>input</strong> vector <span class="arithmatex">\(\mathbf{v}_{w}\)</span> for <span class="arithmatex">\(w_t\)</span> and an <strong>output</strong> vector <span class="arithmatex">\(\mathbf{v}'_{w}\)</span> for each possible output word:</p>
+<div class="arithmatex">\[
+P(w_O \mid w_I) = \frac{\exp({\mathbf{v}'_{w_O}}^\top \mathbf{v}_{w_I})}{\sum_{w \in \mathcal{V}} \exp({\mathbf{v}'_{w}}^\top \mathbf{v}_{w_I})}.
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>For each position <span class="arithmatex">\(t\)</span>, the center word <span class="arithmatex">\(w_t\)</span> is the conditioning event. Words within <span class="arithmatex">\(\pm c\)</span> positions are targets. The model must raise the score <span class="arithmatex">\({\mathbf{v}'_{w_{t+j}}}^\top \mathbf{v}_{w_t}\)</span> for true context words relative to every other word in the vocabulary. The softmax turns scores into a probability vector that sums to <span class="arithmatex">\(1\)</span>.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Skip-Gram Step with Concrete Numbers</p>
+<p><strong>Vocabulary size <span class="arithmatex">\(V = 3\)</span></strong> with words <code>king</code>, <code>queen</code>, <code>child</code>.<br />
+<strong>Center word:</strong> <code>king</code> with input embedding <span class="arithmatex">\(\mathbf{v}_{\text{king}} = (1.0, 0.0)\)</span>.<br />
+<strong>Output embeddings</strong> as rows of a <span class="arithmatex">\(3 \times 2\)</span> matrix:
+<span class="arithmatex">\(\mathbf{v}'_{\text{king}} = (0.5, 0.1)\)</span>, <span class="arithmatex">\(\mathbf{v}'_{\text{queen}} = (0.4, 0.2)\)</span>, <span class="arithmatex">\(\mathbf{v}'_{\text{child}} = (0.1, 0.0)\)</span>.
+<strong>Scores</strong> <span class="arithmatex">\(s_i = {\mathbf{v}'_{i}}^\top \mathbf{v}_{\text{king}}\)</span>:<br />
+<span class="arithmatex">\(s_{\text{king}} = 0.5\)</span>, <span class="arithmatex">\(s_{\text{queen}} = 0.4\)</span>, <span class="arithmatex">\(s_{\text{child}} = 0.1\)</span>.
+<strong>Softmax denominators:</strong> <span class="arithmatex">\(\exp(0.5) + \exp(0.4) + \exp(0.1) \approx 1.649 + 1.492 + 1.105 = 4.246\)</span>.<br />
+<span class="arithmatex">\(P(\text{queen} \mid \text{king}) \approx 1.492 / 4.246 \approx 0.35\)</span>.<br />
+If the true context word is <code>queen</code>, the contribution to <span class="arithmatex">\(\mathcal{L}\)</span> is <span class="arithmatex">\(\log 0.35 \approx -1.05\)</span>.<br />
+<strong>Gradient intuition (conceptual):</strong> optimization increases <span class="arithmatex">\(s_{\text{queen}}\)</span> by nudging <span class="arithmatex">\(\mathbf{v}_{\text{king}}\)</span> to align better with <span class="arithmatex">\(\mathbf{v}'_{\text{queen}}\)</span> and by nudging all <span class="arithmatex">\(\mathbf{v}'_{w}\)</span> for incorrect words downward relative to the numerator. You do not need the full Jacobian on paper; you need the story: <strong>pull true pair together, push negatives apart under the softmax pressure</strong>.</p>
+</div>
+<h3 id="hierarchical-softmax-optional-output-layer">Hierarchical Softmax (Optional Output Layer)<a class="headerlink" href="#hierarchical-softmax-optional-output-layer" title="Permanent link">&para;</a></h3>
+<p>Hierarchical softmax places words at <strong>leaves of a binary tree</strong> (often Huffman tree by frequency). The probability of word <span class="arithmatex">\(w\)</span> is the product of branch decisions along the path from root to leaf, each branch a sigmoid of a learned score. Complexity drops from <span class="arithmatex">\(O(V)\)</span> to <span class="arithmatex">\(O(\log V)\)</span> per training step because only one root-to-leaf path is updated.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Instead of comparing the center word against all vocabulary logits at once, the model walks a tree and multiplies probabilities of left-or-right choices. Frequent words live near the root on short paths; rare words take longer paths. The math is a product of sigmoids along the path.</p>
+</div>
+<h3 id="negative-sampling">Negative Sampling<a class="headerlink" href="#negative-sampling" title="Permanent link">&para;</a></h3>
+<p>Full softmax costs <span class="arithmatex">\(O(V)\)</span> per training step. <strong>Negative sampling</strong> replaces the full denominator with a small set of <strong>negative draws</strong> from a noise distribution <span class="arithmatex">\(P_n(w)\)</span>, typically proportional to unigram frequency raised to the <span class="arithmatex">\(\frac{3}{4}\)</span> power. For a true pair <span class="arithmatex">\((w_I, w_O)\)</span> and <span class="arithmatex">\(k\)</span> negative words <span class="arithmatex">\(w_{i}^{\text{neg}}\)</span>, the binary logistic objective resembles:</p>
+<div class="arithmatex">\[
+\log \sigma({\mathbf{v}'_{w_O}}^\top \mathbf{v}_{w_I})
++ \sum_{i=1}^{k} \mathbb{E}_{w \sim P_n}\bigl[\log \sigma(-{\mathbf{v}'_{w}}^\top \mathbf{v}_{w_I})\bigr].
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Instead of comparing the true context word against all <span class="arithmatex">\(V\)</span> words simultaneously, the model learns by <strong>contrasting</strong> the true word against a handful of impostors sampled from noise. Sigmoid maps the score to <span class="arithmatex">\((0,1)\)</span> so the objective looks like logistic regression: predict “is this the true context word?” The sum over negatives says: low scores are good for junk words.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Negative Sampling Probability Arithmetic</p>
+<p>Suppose <span class="arithmatex">\(k = 2\)</span> and the sampled negatives are <code>child</code> and <code>table</code> for center <code>king</code>, with true context <code>queen</code>. For any candidate word <span class="arithmatex">\(w\)</span>, define the score <span class="arithmatex">\(s_w = (\mathbf{v}'_w)^\top \mathbf{v}_{\text{king}}\)</span>. Use <span class="arithmatex">\(\sigma(z) = 1 / (1 + \exp(-z))\)</span>.
+<strong>Positive score</strong> <span class="arithmatex">\(s_{\text{queen}} = 2.0\)</span>: <span class="arithmatex">\(\log \sigma(2.0) \approx \log(0.881) \approx -0.127\)</span>.
+<strong>Negative <code>child</code></strong> with <span class="arithmatex">\(s_{\text{child}} = -1.0\)</span>: the training term is <span class="arithmatex">\(\log \sigma(-s_{\text{child}}) = \log \sigma(1.0) \approx \log(0.731) \approx -0.314\)</span>.
+<strong>Negative <code>table</code></strong> with <span class="arithmatex">\(s_{\text{table}} = 0.5\)</span>: <span class="arithmatex">\(\log \sigma(-0.5) \approx \log(0.378) \approx -0.975\)</span>.
+<strong>Sum of the three log terms:</strong> <span class="arithmatex">\(-0.127 + (-0.314) + (-0.975) = -1.416\)</span>. Stochastic gradient steps <strong>increase</strong> this sum by raising <span class="arithmatex">\(s_{\text{queen}}\)</span> while pushing <span class="arithmatex">\(s_{\text{child}}\)</span> and <span class="arithmatex">\(s_{\text{table}}\)</span> downward so that impostor scores stay below zero after the negative sign inside the sigmoid.</p>
+</div>
+<h3 id="glove-and-co-occurrence-structure">GloVe and Co-occurrence Structure<a class="headerlink" href="#glove-and-co-occurrence-structure" title="Permanent link">&para;</a></h3>
+<p>GloVe takes a different approach: instead of predicting neighbors word by word, it looks at the GLOBAL co-occurrence statistics of the entire corpus at once. It asks: 'cat and purr co-occur a lot, so their vectors should be close.' The math is different from Word2Vec, but the result is similar.</p>
+<p>GloVe constructs a global word–word co-occurrence matrix <span class="arithmatex">\(X\)</span> where <span class="arithmatex">\(X_{ij}\)</span> counts how often word <span class="arithmatex">\(j\)</span> appears in the context window of word <span class="arithmatex">\(i\)</span>. The model learns vectors <span class="arithmatex">\(\mathbf{w}_i\)</span> and <span class="arithmatex">\(\tilde{\mathbf{w}}_j\)</span> plus biases <span class="arithmatex">\(b_i\)</span> and <span class="arithmatex">\(\tilde{b}_j\)</span> to satisfy:</p>
+<div class="arithmatex">\[
+\mathbf{w}_i^\top \tilde{\mathbf{w}}_j + b_i + \tilde{b}_j \approx \log X_{ij}.
+\]</div>
+<p>Ratios like <span class="arithmatex">\(P(j \mid i) / P(k \mid i)\)</span> encode meaning because they cancel generic frequency effects.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>The log co-occurrence <span class="arithmatex">\(\log X_{ij}\)</span> grows when words co-occur often. The bilinear term <span class="arithmatex">\(\mathbf{w}_i^\top \tilde{\mathbf{w}}_j\)</span> tries to match that log count in a low-dimensional inner product space. Biases absorb words that are frequent everywhere.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Five-Word Vocabulary Co-occurrence Counts</p>
+<p><strong>Vocabulary in order:</strong> <code>river</code>, <code>bank</code>, <code>money</code>, <code>water</code>, <code>loan</code>.<br />
+<strong>Window size 1</strong> (immediate neighbors only) on the synthetic corpus:
+- <code>river bank water</code>
+- <code>bank money loan</code>
+- <code>river water bank</code>
+<strong>Symmetric count</strong> <span class="arithmatex">\(X_{ij}\)</span>: count <span class="arithmatex">\(i\)</span> as focus and <span class="arithmatex">\(j\)</span> as context, then add the symmetric focus-context swap if you use a symmetric definition. Here we accumulate ordered pairs within each sentence twice if both directions matter; for simplicity, count <strong>unordered co-occurrence</strong> within the window once per ordered pair <span class="arithmatex">\((i,j)\)</span> where <span class="arithmatex">\(i\)</span> is left of <span class="arithmatex">\(j\)</span> or right of <span class="arithmatex">\(i\)</span> within distance 1.</p>
+<p>Pairs:
+- Sentence 1: <code>(river,bank)</code>, <code>(bank,water)</code>
+- Sentence 2: <code>(bank,money)</code>, <code>(money,loan)</code>
+- Sentence 3: <code>(river,water)</code>, <code>(water,bank)</code></p>
+<p>Aggregate unique unordered pairs with counts:
+<code>(river,bank):1</code>, <code>(bank,water):2</code> (from sentences 1 and 3), <code>(bank,money):1</code>, <code>(money,loan):1</code>, <code>(river,water):2</code>.</p>
+<p>Row <code>bank</code> touches <code>river</code>, <code>water</code>, <code>money</code> with total co-occurrence mass <span class="arithmatex">\(1 + 2 + 1 = 4\)</span> across distinct partners when you sum <span class="arithmatex">\(X_{\text{bank},j}\)</span> for <span class="arithmatex">\(j \ne \text{bank}\)</span> in this toy (self-loops omitted). GloVe would regress <span class="arithmatex">\(\log X_{ij}\)</span> for each nonzero cell while weighting rare pairs differently in the full algorithm.</p>
+</div>
+<h3 id="fasttext-and-subwords">FastText and Subwords<a class="headerlink" href="#fasttext-and-subwords" title="Permanent link">&para;</a></h3>
+<p>FastText's contribution: it breaks words into character pieces (subwords). So 'unhappiness' is broken into 'un', 'happi', 'ness'. This means FastText can handle words it has never seen before — by assembling them from known pieces.</p>
+<p>FastText represents word <span class="arithmatex">\(w\)</span> as the sum of embeddings of its character <span class="arithmatex">\(n\)</span>-grams. For word <code>where</code> with boundary symbols <code>&lt;</code> and <code>&gt;</code>, 3-grams include <code>&lt;wh</code>, <code>whe</code>, <code>her</code>, <code>ere</code>, <code>re&gt;</code>.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Rare words share character sequences with frequent words, so gradients update subword vectors even when the full word is uncommon. At test time, an unknown word is composed from its <span class="arithmatex">\(n\)</span>-grams, giving a non-random vector instead of a generic UNK bucket.</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Decomposing <code>running</code></p>
+<p>Use <span class="arithmatex">\(n = 3\)</span> with <code>&lt;</code> and <code>&gt;</code> boundaries: <code>&lt;ru</code>, <code>run</code>, <code>unn</code>, <code>nni</code>, <code>ing</code>, <code>ng&gt;</code>.<br />
+Suppose each 3-gram has a 2-D vector; FastText sets
+<span class="arithmatex">\(\mathbf{v}_{\text{running}} = \sum_{\text{g} \in \text{grams}} \mathbf{z}_g\)</span>.
+If <code>run</code> and <code>running</code> share <code>run</code>, <code>unn</code>, their sum overlaps partially, pulling their full-word vectors closer than unrelated strings like <code>rocket</code>.</p>
+</div>
+<h3 id="contextual-versus-static-embeddings">Contextual Versus Static Embeddings<a class="headerlink" href="#contextual-versus-static-embeddings" title="Permanent link">&para;</a></h3>
+<p><strong>Static</strong> embeddings assign one vector per word type. <strong>Contextual</strong> models (ELMo, BERT, GPT) produce a vector that depends on the full sentence: the representation of <code>bank</code> differs in “river bank” versus “investment bank.”</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Static (Word2Vec, GloVe, FastText)</th>
+<th>Contextual (Transformer hidden states)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Polysemy</td>
+<td>Collapsed into one vector</td>
+<td>Disambiguated per position</td>
+</tr>
+<tr>
+<td>Precompute</td>
+<td>Single matrix lookup</td>
+<td>Forward pass required</td>
+</tr>
+<tr>
+<td>Downstream use</td>
+<td>Feature input</td>
+<td>Fine-tune or prompt</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Static embeddings are a <strong>dictionary</strong>. Contextual embeddings are a <strong>function</strong> <span class="arithmatex">\(f(\text{sentence}, \text{position})\)</span>. Modern LLMs are almost entirely contextual; static methods remain relevant for data efficiency, retrieval indexes, and understanding history.</p>
+</div>
+<hr />
+<h2 id="deep-dive-pmi-noise-contrastive-estimation-and-modern-retrieval">Deep Dive: PMI, Noise Contrastive Estimation, and Modern Retrieval<a class="headerlink" href="#deep-dive-pmi-noise-contrastive-estimation-and-modern-retrieval" title="Permanent link">&para;</a></h2>
+<details class="deep-dive">
+<summary>Deep Dive: From Skip-Gram to Contrastive Learning</summary>
+<p>Skip-gram with negative sampling is related to <strong>noise contrastive estimation</strong>: discriminate true context draws from a known noise distribution. Pointwise mutual information <span class="arithmatex">\(\text{PMI}(w,c) = \log \frac{P(w,c)}{P(w)P(c)}\)</span> connects co-occurrence ratios to log-odds. Modern sentence embeddings and RAG systems reuse the same contrastive shape: pull aligned pairs, push mismatched pairs, avoid full-softmax denominators at scale.</p>
+</details>
+<hr />
+<h2 id="code">Code<a class="headerlink" href="#code" title="Permanent link">&para;</a></h2>
+<p>The script below trains skip-gram Word2Vec with <code>gensim</code>, inspects neighbors and analogies, and projects vectors with t-SNE. Inline comments connect parameters to the math above.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="sd">Train Word2Vec with gensim, inspect analogies, and visualize with t-SNE.</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">TSNE</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># gensim&#39;s Word2Vec handles data loading, training, and analogy tests</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gensim.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Word2Vec</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># ── Toy corpus ──────────────────────────────────────────────────────────</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">sentences</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">[</span><span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;king&quot;</span><span class="p">,</span> <span class="s2">&quot;ruled&quot;</span><span class="p">,</span> <span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;kingdom&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="p">[</span><span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;queen&quot;</span><span class="p">,</span> <span class="s2">&quot;ruled&quot;</span><span class="p">,</span> <span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;kingdom&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="p">[</span><span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;prince&quot;</span><span class="p">,</span> <span class="s2">&quot;will&quot;</span><span class="p">,</span> <span class="s2">&quot;be&quot;</span><span class="p">,</span> <span class="s2">&quot;king&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="p">[</span><span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;princess&quot;</span><span class="p">,</span> <span class="s2">&quot;will&quot;</span><span class="p">,</span> <span class="s2">&quot;be&quot;</span><span class="p">,</span> <span class="s2">&quot;queen&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="p">[</span><span class="s2">&quot;man&quot;</span><span class="p">,</span> <span class="s2">&quot;and&quot;</span><span class="p">,</span> <span class="s2">&quot;woman&quot;</span><span class="p">,</span> <span class="s2">&quot;are&quot;</span><span class="p">,</span> <span class="s2">&quot;humans&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="p">[</span><span class="s2">&quot;boy&quot;</span><span class="p">,</span> <span class="s2">&quot;and&quot;</span><span class="p">,</span> <span class="s2">&quot;girl&quot;</span><span class="p">,</span> <span class="s2">&quot;are&quot;</span><span class="p">,</span> <span class="s2">&quot;children&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="p">[</span><span class="s2">&quot;king&quot;</span><span class="p">,</span> <span class="s2">&quot;is&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;man&quot;</span><span class="p">,</span> <span class="s2">&quot;who&quot;</span><span class="p">,</span> <span class="s2">&quot;rules&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="p">[</span><span class="s2">&quot;queen&quot;</span><span class="p">,</span> <span class="s2">&quot;is&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;woman&quot;</span><span class="p">,</span> <span class="s2">&quot;who&quot;</span><span class="p">,</span> <span class="s2">&quot;rules&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="p">[</span><span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;dog&quot;</span><span class="p">,</span> <span class="s2">&quot;chased&quot;</span><span class="p">,</span> <span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;cat&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="p">[</span><span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;cat&quot;</span><span class="p">,</span> <span class="s2">&quot;sat&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;the&quot;</span><span class="p">,</span> <span class="s2">&quot;mat&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">]</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="c1"># ── Train Skip-gram model ──────────────────────────────────────────────</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Word2Vec</span><span class="p">(</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    <span class="n">sentences</span><span class="p">,</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    <span class="n">vector_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>   <span class="c1"># embedding dimension d in R^d</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    <span class="n">window</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>         <span class="c1"># context radius c in the skip-gram sum</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    <span class="n">min_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>      <span class="c1"># include all words (toy corpus only)</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>    <span class="n">sg</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>             <span class="c1"># 1 = skip-gram (predict context from center)</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    <span class="n">epochs</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>       <span class="c1"># multiple passes because the corpus is tiny</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>    <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="p">)</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="c1"># ── Inspect similarities ───────────────────────────────────────────────</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Most similar to &#39;king&#39;:&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">(</span><span class="s2">&quot;king&quot;</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>    <span class="c1"># cosine similarity between learned vectors</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">word</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="c1"># ── Analogy: king - man + woman ≈ queen ────────────────────────────────</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">most_similar</span><span class="p">(</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>        <span class="n">positive</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;king&quot;</span><span class="p">,</span> <span class="s2">&quot;woman&quot;</span><span class="p">],</span> <span class="n">negative</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;man&quot;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">3</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>    <span class="p">)</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">king - man + woman →&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>    <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">word</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Analogy skipped (word not in vocab): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>
+<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a><span class="c1"># ── t-SNE 2D visualization ─────────────────────────────────────────────</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="n">words</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="o">.</span><span class="n">key_to_index</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a><span class="n">vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">model</span><span class="o">.</span><span class="n">wv</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span><span class="p">])</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>
+<a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a><span class="n">tsne</span> <span class="o">=</span> <span class="n">TSNE</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">perplexity</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a><span class="n">coords</span> <span class="o">=</span> <span class="n">tsne</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">vectors</span><span class="p">)</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a>
+<a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">coords</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">words</span><span class="p">):</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a>    <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a>        <span class="n">word</span><span class="p">,</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a>        <span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a>        <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>        <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a>        <span class="n">va</span><span class="o">=</span><span class="s2">&quot;bottom&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69" href="#__codelineno-0-69"></a>    <span class="p">)</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70" href="#__codelineno-0-70"></a><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Word2Vec Embeddings — t-SNE Projection&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Dimension 1&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Dimension 2&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;word2vec_tsne.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saved: word2vec_tsne.png&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="interview-guide">Interview Guide<a class="headerlink" href="#interview-guide" title="Permanent link">&para;</a></h2>
+<h3 id="what-interviewers-actually-ask">What Interviewers Actually Ask<a class="headerlink" href="#what-interviewers-actually-ask" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">FAANG-Level Questions</p>
+<ol>
+<li><strong>Why are one-hot vectors inadequate for neural NLP?</strong><br />
+<em>Depth:</em> Orthogonality, no similarity, parameter explosion if used as inputs to large layers without compression.</li>
+<li><strong>Explain skip-gram versus CBOW in one minute.</strong><br />
+<em>Depth:</em> Skip-gram predicts context from center (better for rare words); CBOW predicts center from averaged context (faster, slightly worse on rares).</li>
+<li><strong>What problem does negative sampling solve?</strong><br />
+<em>Depth:</em> Full softmax is <span class="arithmatex">\(O(V)\)</span> per update; negatives reduce to <span class="arithmatex">\(O(k)\)</span> logistic contrasts.</li>
+<li><strong>How does GloVe differ philosophically from Word2Vec?</strong><br />
+<em>Depth:</em> Global matrix factorization of log co-occurrences versus local window prediction; both learn geometric structure.</li>
+<li><strong>What is the out-of-vocabulary problem and how does FastText mitigate it?</strong><br />
+<em>Depth:</em> Unknown words have no row in a word-level table; character <span class="arithmatex">\(n\)</span>-grams compose a vector from subword units.</li>
+<li><strong>Define cosine similarity and say when you prefer it over Euclidean distance.</strong><br />
+<em>Depth:</em> Normalize by magnitude; useful when length correlates with frequency rather than semantics.</li>
+<li><strong>How does polysemy challenge static embeddings?</strong><br />
+<em>Depth:</em> Single vector averages all senses; contextual models disambiguate per token position.</li>
+<li><strong>Describe embedding arithmetic limitations.</strong><br />
+<em>Depth:</em> Analogies fail for symmetric or multi-relation words; small corpora give noisy directions.</li>
+<li><strong>How would you detect hubness in k-NN embedding spaces?</strong><br />
+<em>Depth:</em> Some vectors appear as nearest neighbors for many queries; mention cosine versus inner product, frequency bias, and evaluation on held-out analogy sets.</li>
+<li><strong>Why does averaging Word2Vec vectors of words in a sentence give a crude sentence embedding?</strong><br />
+<em>Depth:</em> Order ignored, polysemy ignored, function words dominate unless weighted; contextual models fix these by conditioning on full sequences.</li>
+</ol>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">Follow-up Probes</p>
+<ol>
+<li>Why might you raise unigram frequencies to the <span class="arithmatex">\(\frac{3}{4}\)</span> power when sampling negatives?</li>
+<li>What does hierarchical softmax achieve in complexity terms?</li>
+<li>When would you still use static embeddings in a Transformer pipeline?</li>
+<li>How does tokenization interact with FastText’s original word-boundary <span class="arithmatex">\(n\)</span>-grams?</li>
+<li>Why can t-SNE distances mislead qualitative interpretation?</li>
+</ol>
+</div>
+<div class="admonition key-phrases">
+<p class="admonition-title">Key Phrases to Use in Interviews</p>
+<ul>
+<li>“Skip-gram maximizes <span class="arithmatex">\(\sum \log P(\text{context} \mid \text{center})\)</span>”</li>
+<li>“Noise contrastive estimation with sampled negatives”</li>
+<li>“Global log co-occurrence matrix factorization (GloVe)”</li>
+<li>“Subword composition for OOV robustness”</li>
+<li>“Cosine similarity on <span class="arithmatex">\(\ell_2\)</span>-normalized vectors”</li>
+</ul>
+</div>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Mikolov et al. (2013), <em>Efficient Estimation of Word Representations in Vector Space</em></li>
+<li>Pennington et al. (2014), <em>GloVe: Global Vectors for Word Representation</em></li>
+<li>Bojanowski et al. (2017), <em>Enriching Word Vectors with Subword Information</em></li>
+<li>Levy and Goldberg (2014), <em>Neural Word Embedding as Implicit Matrix Factorization</em> (connects skip-gram to PMI)</li>
+<li><a href="https://web.stanford.edu/class/cs224n/">Stanford CS224N — Word Vectors lecture</a></li>
+</ul>
+<p><strong>Reading order:</strong> Start with Mikolov for training objectives, read Pennington for global matrix intuition, read Bojanowski for subwords, then Levy and Goldberg when you want the PMI bridge formalized.</p>
+<p><strong>Notation note:</strong> Papers differ on whether <span class="arithmatex">\(\mathbf{v}_w\)</span> denotes input or output vectors. Word2Vec uses two sets per word; GloVe uses word and context rows. In interviews, say “input and output embeddings” explicitly when discussing softmax parameters.</p>
+<p><strong>Evaluation:</strong> WordSim-353 and analogy benchmarks (Google, MSR) measure cosine-neighborhood quality. Report intrinsic scores only alongside downstream task numbers when arguing real utility.</p>
+<p><strong>Stability:</strong> Fixed random seeds and multiple runs matter: negative sampling is stochastic, and small corpora yield high-variance vectors.</p>
+<p><strong>License of corpora:</strong> Redistribution terms affect which pretrained embeddings you may ship inside a commercial product; keep compliance separate from the math.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../language_modeling_basics/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Language Modeling">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Language Modeling
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../neural_language_models/" class="md-footer__link md-footer__link--next" aria-label="Next: Neural Language Models">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Neural Language Models
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 LLMBase contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/spawn08/llmbase" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.path", "navigation.footer", "toc.follow", "toc.integrate", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3830 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Ground-Up Guide to Large Language Models for Engineers">
+      
+      
+        <meta name="author" content="Amarsingh Thakur">
+      
+      
+        <link rel="canonical" href="https://spawn08.github.io/llmbase/02_core_architectures/bert_encoder_only/">
+      
+      
+        <link rel="prev" href="../gpt_decoder_only/">
+      
+      
+        <link rel="next" href="../t5_encoder_decoder/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>BERT Encoder-Only - LLMBase</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+3:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Source Sans 3";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#bert-encoder-only-transformers" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+<style>
+  .md-banner {
+    background: linear-gradient(135deg, #3D5A6E 0%, #5E7A8C 50%, #6FA3B8 100%) !important;
+    color: #E4E8EE;
+  }
+  .md-banner__inner {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+</style>
+LLMBase &mdash; A ground-up guide to Large Language Models &bull; Math &bull; Code &bull; Interview Q&amp;A &bull; 33 landmark papers
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LLMBase" class="md-header__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LLMBase
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              BERT Encoder-Only
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LLMBase" class="md-nav__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    LLMBase
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../00_prerequisites/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Deep Learning Fundamentals
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Deep Learning Fundamentals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/00_math_prerequisites/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math Prerequisites
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/01_perceptron_and_ffn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Perceptron and Feedforward Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/02_activation_functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Activation Functions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/03_backpropagation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backpropagation and Gradient Descent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/04_loss_and_regularization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Loss Functions and Regularization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/05_convolutional_neural_networks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Convolutional Neural Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/06_sequence_modeling_and_rnns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence Modeling and RNNs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00_prerequisites/07_encoder_decoder_paradigm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Encoder-Decoder Paradigm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../01_foundations/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Foundations of Language Modeling
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Foundations of Language Modeling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/language_modeling_basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/word_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Word Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/neural_language_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural Language Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/sequence_to_sequence/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence-to-Sequence
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/information_theory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01_foundations/attention_math/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Mathematics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Hands-On Notebooks
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Hands-On Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/01_math_and_neural_network_basics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math & Neural Network Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/02_training_mechanics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Mechanics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/03_cnns_and_sequences.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNNs, Sequences & Encoder-Decoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/04_language_modeling_and_embeddings.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling & Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/05_neural_lm_and_seq2seq.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural LM & Seq2Seq
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/06_information_theory_and_attention.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory & Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Core Architectures
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Core Architectures
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../self_attention_mha/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Self-Attention and MHA
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../positional_encoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Positional Encoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpt_decoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT Decoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    BERT Encoder-Only
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    BERT Encoder-Only
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-matters-for-llms" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Matters for LLMs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Concepts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#masked-language-model-mlm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Masked Language Model (MLM)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-sentence-prediction-nsp-historical-objective" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Sentence Prediction (NSP) — Historical Objective
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-bert-cannot-generate-text-like-gpt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why BERT Cannot Generate Text Like GPT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fine-tuning-cls-and-the-classification-head" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fine-Tuning: [CLS] and the Classification Head
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bert-as-an-embedding-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      BERT as an Embedding Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sentence-bert-and-contrastive-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sentence-BERT and Contrastive Learning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bert-variants-detailed" class="md-nav__link">
+    <span class="md-ellipsis">
+      BERT Variants (Detailed)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deep-dive" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deep Dive
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interview-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interview Guide
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../t5_encoder_decoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5 Encoder-Decoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mixture_of_experts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../state_space_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State Space Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../03_training/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Training and Alignment
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Training and Alignment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/pretraining/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pre-training at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/distributed_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Distributed Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/mixed_precision/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed Precision and Quantization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/instruction_tuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Instruction Tuning and SFT
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/rlhf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RLHF and DPO
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03_training/peft/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameter-Efficient Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../04_inference/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Inference and Serving
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Inference and Serving
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/decoding_strategies/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoding Strategies
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/kv_cache/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    KV Cache
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/speculative_decoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Speculative Decoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/continuous_batching/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Batching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/quantization_inference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantization for Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04_inference/serving_systems/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLM Serving Systems
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../05_advanced/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/rag/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RAG
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agents and Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/long_context/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long-Context Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/multimodal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multimodal LLMs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/emergent_capabilities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emergent Capabilities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/evaluation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Evaluation and Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05_advanced/hallucination_safety/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hallucination and Safety
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../06_research_papers/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Landmark Research Papers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Landmark Research Papers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/01_attention_is_all_you_need/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Is All You Need (Transformer)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/02_bert/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT: Bidirectional Encoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/03_gpt2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-2: Unsupervised Multitask Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/04_gpt3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-3: In-Context Learning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/05_t5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5: Text-to-Text Transfer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/06_xlnet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    XLNet: Permutation Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/07_roberta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoBERTa: Robust BERT Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/08_electra/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ELECTRA: Efficient Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/09_instructgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    InstructGPT: RLHF Pipeline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/10_palm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PaLM: Pathways at 540B
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/11_chinchilla/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chinchilla: Compute-Optimal Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/12_llama/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLaMA: Open Foundation Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/13_lora/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LoRA: Low-Rank Adaptation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/14_flash_attention/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FlashAttention: IO-Aware Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/15_mistral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mistral 7B: Efficient Small Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/16_mixtral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixtral: Sparse Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/17_flan/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FLAN: Instruction Tuning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/18_chain_of_thought/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chain-of-Thought Prompting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/19_react/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ReAct: Reasoning and Acting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/20_toolformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Toolformer: Self-Supervised Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/21_constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI: Principled Alignment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/22_clip/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLIP: Contrastive Vision-Language
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/23_codex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Codex: Code Generation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/24_mamba/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mamba: Linear-Time State Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/25_gemini/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini: Native Multimodal
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/26_deepseek_v2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V2: Multi-Head Latent Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/27_deepseek_v3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V3: MoE at 671B Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/28_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1: RL-Only Reasoning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/29_glm4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4: Bilingual Foundation Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/30_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5: Long-Context RL Scaling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/31_qwen2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen2.5: Data-Efficient Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/32_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5: Agentic Async RL
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/33_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5: Multi-Agent Coordination
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/34_rope_roformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoPE: Rotary Position Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06_research_papers/35_attention_residuals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Residuals: Rethinking Depth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../07_recent_advances/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Recent Advances
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Recent Advances
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/01_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/02_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/03_gpt4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-4.5 (Feb 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/04_gemini_2_5_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 2.5 Pro (Mar 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/05_llama_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Llama 4 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/13_qwen3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen 3 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/06_gpt5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5 (Aug 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/10_glm4_6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4.6 (Sep 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/07_claude_opus_4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Claude Opus 4.5 (Nov 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/12_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5 (Jan 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/08_gemini_3_1_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 3.1 Pro (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/11_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5 (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07_recent_advances/09_gpt5_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5.4 Family (Mar 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../interview_questions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interview Question Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="bert-encoder-only-transformers">BERT: Encoder-Only Transformers<a class="headerlink" href="#bert-encoder-only-transformers" title="Permanent link">&para;</a></h1>
+<h2 id="why-this-matters-for-llms">Why This Matters for LLMs<a class="headerlink" href="#why-this-matters-for-llms" title="Permanent link">&para;</a></h2>
+<p>BERT (<em>Bidirectional Encoder Representations from Transformers</em>) established that <strong>masked language modeling</strong> on large text could pre-train deep bidirectional representations that transfer to classification, span prediction, and sentence-pair tasks with light fine-tuning. Even though generative decoder-only models now dominate open-ended chat, <strong>encoder-only</strong> and <strong>encoder-style</strong> models remain the backbone of <strong>search relevance</strong>, <strong>reranking</strong>, <strong>named entity recognition</strong>, <strong>semantic retrieval</strong>, and <strong>embedding APIs</strong> in production. Interviewers still use BERT as the canonical contrast to GPT because the <strong>attention mask</strong> and <strong>training objective</strong> differ in ways that change what the model can do at inference.</p>
+<p>A second reason to master BERT is <strong>representation learning</strong>: BERT’s <code>[CLS]</code> vector and token-level hidden states are the historical starting point for <strong>sentence embeddings</strong> and <strong>dense retrieval</strong>. Methods such as Sentence-BERT explicitly fine-tune BERT with <strong>siamese</strong> and <strong>contrastive</strong> objectives so that cosine similarity aligns with semantic similarity. Modern embedding models evolved from this lineage. If you can explain <strong>MLM</strong>, <strong>why bidirectional attention breaks autoregressive generation</strong>, and <strong>how fine-tuning adds a small task head</strong>, you demonstrate literacy in both classical NLP transfer learning and today’s retrieval stacks.</p>
+<p>Third, BERT is a clean laboratory for <strong>pre-training distribution</strong> questions: the <code>[MASK]</code> token appears during pre-training but rarely at fine-tuning time, so BERT uses a <strong>mixed masking policy</strong> (replace with mask, random token, or keep original) to reduce train–test skew. Similar concerns reappear in instruction tuning and tool-use formatting for large models. Understanding BERT’s objectives trains you to ask the right question: <strong>does the model see the same kind of inputs at deployment that it saw during training?</strong></p>
+<hr />
+<h2 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h2>
+<h3 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
+<p>BERT is an <strong>encoder-only</strong> Transformer stack. Every layer uses <strong>full self-attention</strong>: each token may attend to <strong>all</strong> other tokens in the segment (within a maximum length). There is <strong>no causal mask</strong> that hides the future.</p>
+<p>Typical single-segment input places a variable number of content tokens between <code>[CLS]</code> and <code>[SEP]</code>. For a sequence of length <span class="arithmatex">\(T\)</span>, you can read the layout as <code>[CLS]</code> followed by tokens <span class="arithmatex">\(w_1\)</span> through <span class="arithmatex">\(w_T\)</span> in order, then <code>[SEP]</code>. A minimal concrete example with three words is <code>[CLS] w_1 w_2 w_3 [SEP]</code>.</p>
+<p>For sentence-pair tasks (natural language inference, paraphrase), the input looks like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[CLS]  sentence_A_tokens  [SEP]  sentence_B_tokens  [SEP]
+</code></pre></div>
+<p><strong>Token embeddings</strong>, <strong>positional embeddings</strong>, and <strong>segment embeddings</strong> (token-type IDs) are summed to form the input to the first encoder layer. The final hidden state of <code>[CLS]</code> is often used as a <strong>sequence-level</strong> vector for classification.</p>
+<hr />
+<h3 id="masked-language-model-mlm">Masked Language Model (MLM)<a class="headerlink" href="#masked-language-model-mlm" title="Permanent link">&para;</a></h3>
+<p>BERT randomly selects <strong>15%</strong> of input subword tokens. For each selected token, one of three actions is applied:</p>
+<ul>
+<li><strong>80%</strong> of the time replace it with the special <code>[MASK]</code> token.</li>
+<li><strong>10%</strong> of the time replace it with a <strong>random</strong> vocabulary token.</li>
+<li><strong>10%</strong> of the time <strong>keep</strong> the original token unchanged.</li>
+</ul>
+<p>The model is trained to predict the <strong>original</strong> token identity at masked positions using bidirectional context.</p>
+<p>Let <span class="arithmatex">\(\mathcal{M}\)</span> be the set of masked positions in a sequence. The MLM contribution to training is:</p>
+<div class="arithmatex">\[
+\mathcal{L}_{\text{MLM}} = -\frac{1}{|\mathcal{M}|}\sum_{i \in \mathcal{M}} \log P_\theta(w_i \mid \mathbf{x}_{\setminus \mathcal{M}}, \mathbf{x}_{\mathcal{M}\setminus\{i\}})
+\]</div>
+<p>In plain implementation terms, the model outputs a distribution over the vocabulary at each position, but you compute the loss only at positions in <span class="arithmatex">\(\mathcal{M}\)</span>.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>At each masked slot, BERT must guess the original word using <strong>both left and right</strong> context. The sum over positions in <span class="arithmatex">\(\mathcal{M}\)</span> means you average (or sum) cross-entropy losses only where you placed a mask or a surrogate token. The random-token and keep-original tricks prevent the model from learning trivial correlations that only fire when the input contains the literal <code>[MASK]</code> string.</p>
+</div>
+<p>The probability uses a softmax over vocabulary logits <span class="arithmatex">\(\boldsymbol{\ell}_i \in \mathbb{R}^V\)</span> at position <span class="arithmatex">\(i\)</span>:</p>
+<div class="arithmatex">\[
+P_\theta(w_i = v \mid \cdot) = \frac{\exp(\ell_{i,v})}{\sum_{v'=1}^{V}\exp(\ell_{i,v'})}
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>This is the same softmax machinery as language modeling, but the <strong>conditioning event</strong> is different: the model may look at future words because there is no causal mask. The predicted distribution answers “which word belongs in this slot given the entire sentence?” rather than “what is the next word left-to-right?”</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Worked Example: Masking <code>cat</code> in a Sentence</p>
+<p>Input sentence after tokenization (simplified word-level vocabulary for readability):<br />
+<code>The [MASK] sat on the mat</code><br />
+Suppose the original token at the mask position is <strong><code>cat</code></strong>.</p>
+<p><strong>Model outputs</strong> at the <code>[MASK]</code> position might produce logits (only four toy words shown):</p>
+<table>
+<thead>
+<tr>
+<th>token</th>
+<th>logit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cat</td>
+<td>3.0</td>
+</tr>
+<tr>
+<td>dog</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>mat</td>
+<td>0.2</td>
+</tr>
+<tr>
+<td>the</td>
+<td>0.1</td>
+</tr>
+</tbody>
+</table>
+<p>Softmax denominator:<br />
+<span class="arithmatex">\(\exp(3.0) + \exp(1.5) + \exp(0.2) + \exp(0.1) \approx 20.09 + 4.48 + 1.22 + 1.11 = 26.90\)</span>.</p>
+<p><span class="arithmatex">\(P(\text{cat}) \approx 20.09 / 26.90 \approx 0.75\)</span>.</p>
+<p>Cross-entropy for the true label <code>cat</code>: <span class="arithmatex">\(-\log(0.75) \approx 0.29\)</span> nats.</p>
+<p><strong>Why bidirectional context helps:</strong> From the left, <code>The</code> raises mass on nouns and noun phrases; from the right, <code>sat</code> prefers animate subjects in simple training corpora. The model combines these cues. A unidirectional left-to-right model at the position of <code>The</code> would not yet see <code>sat</code> when predicting the token after <code>The</code>, so it would lack that future evidence unless you use a different objective.</p>
+<p>During training, this position might not always show <code>[MASK]</code>: sometimes the token is replaced by a random word (forcing the model to rely on context to detect the error) or left as <code>cat</code> (forcing the model to use contextualized hidden states rather than only copying the surface token).</p>
+</div>
+<hr />
+<h3 id="next-sentence-prediction-nsp-historical-objective">Next Sentence Prediction (NSP) — Historical Objective<a class="headerlink" href="#next-sentence-prediction-nsp-historical-objective" title="Permanent link">&para;</a></h3>
+<p>Original BERT included a <strong>binary classification</strong> auxiliary task: given two segments A and B, predict whether B is the actual next sentence of A in the corpus.</p>
+<div class="arithmatex">\[
+\mathcal{L}_{\text{NSP}} = -\big(y \log \sigma(z) + (1-y)\log(1-\sigma(z))\big)
+\]</div>
+<p>where <span class="arithmatex">\(z\)</span> is a learned linear function of the <code>[CLS]</code> representation after the encoder, and <span class="arithmatex">\(y \in \{0,1\}\)</span> indicates true continuation versus random pairing.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>This is standard binary cross-entropy. The model must produce a single score from the <code>[CLS]</code> vector that separates <strong>genuine adjacent pairs</strong> from <strong>random pairs</strong>. Later work, especially <strong>RoBERTa</strong>, found NSP <strong>unnecessary or harmful</strong> for many tasks when training was otherwise improved. You should know NSP for historical accuracy but also know that modern BERT-family training often <strong>drops</strong> it.</p>
+</div>
+<hr />
+<h3 id="why-bert-cannot-generate-text-like-gpt">Why BERT Cannot Generate Text Like GPT<a class="headerlink" href="#why-bert-cannot-generate-text-like-gpt" title="Permanent link">&para;</a></h3>
+<p>Autoregressive generation requires a <strong>factorization</strong> of joint probability as a product of next-token conditionals:</p>
+<div class="arithmatex">\[
+P(w_1,\ldots,w_T) = \prod_{t=1}^{T} P(w_t \mid w_1,\ldots,w_{t-1})
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>The product says the probability of the whole string factors into a chain of <strong>next-step</strong> choices. Step <span class="arithmatex">\(t\)</span> only conditions on symbols that appear <strong>before</strong> <span class="arithmatex">\(t\)</span>. That matches how humans often model language left-to-right for generation: pick the first word, then the second given the first, and continue. Causal Transformers implement this conditioning with a <strong>triangular mask</strong> so the computation at position <span class="arithmatex">\(t\)</span> never reads positions <span class="arithmatex">\(t+1\)</span> and beyond.</p>
+</div>
+<p>A causal decoder enforces this by construction: the representation at position <span class="arithmatex">\(t\)</span> does not depend on future tokens.</p>
+<p>BERT with bidirectional attention <strong>does not</strong> define a unique ordering for generating an open-ended continuation. If you attempted to sample the next token left-to-right using BERT logits at each step, you would be <strong>misusing</strong> a model trained for <strong>fill-in-the-blank</strong> with global context. The training objective never taught BERT to produce a <strong>sequential</strong> conditional distribution consistent with causal generation. At a masked position, BERT’s predicted distribution assumes <strong>all other tokens are fixed</strong>; during generation those other tokens are not yet fixed at the right margin.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Generative language modeling answers “what comes next given only the past?” BERT answers “what word belongs in this hole given <strong>everything</strong> around it?” Those are different questions. You can <strong>impute</strong> tokens with iterative masking strategies (like some cloze-style procedures), but that is not the same clean autoregressive story as GPT-style sampling.</p>
+</div>
+<hr />
+<h3 id="fine-tuning-cls-and-the-classification-head">Fine-Tuning: <code>[CLS]</code> and the Classification Head<a class="headerlink" href="#fine-tuning-cls-and-the-classification-head" title="Permanent link">&para;</a></h3>
+<p>For <strong>sequence-level classification</strong> (sentiment, topic), BERT feeds the final hidden vector <span class="arithmatex">\(\mathbf{h}_{\texttt{[CLS]}} \in \mathbb{R}^{d_{\text{model}}}\)</span> into a <strong>dropout</strong> layer (optional in inference) and a <strong>linear</strong> map to <span class="arithmatex">\(C\)</span> classes:</p>
+<div class="arithmatex">\[
+\boldsymbol{\ell} = \mathbf{W} \mathbf{h}_{\texttt{[CLS]}} + \mathbf{b},
+\qquad
+P(c) = \frac{\exp(\ell_c)}{\sum_{c'=1}^{C}\exp(\ell_{c'})}
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p><code>[CLS]</code> is a learned “aggregate slot.” During fine-tuning, gradients flow back through supervised loss into all layers so that the <code>[CLS]</code> vector becomes informative for your downstream labels. The linear head is tiny compared to the transformer body.</p>
+</div>
+<p><strong>Parameter count sketch for BERT-base:</strong> <span class="arithmatex">\(d_{\text{model}} = 768\)</span>. A <strong>two-class</strong> head uses <span class="arithmatex">\(\mathbf{W} \in \mathbb{R}^{2 \times 768}\)</span> and <span class="arithmatex">\(\mathbf{b} \in \mathbb{R}^{2}\)</span>, which is <span class="arithmatex">\(2 \times 768 + 2 = 1538\)</span> parameters. The <strong>body</strong> of BERT-base is about <strong>110 million</strong> parameters, so the head is <strong>far smaller than one tenth of one percent</strong> of the total. Fine-tuning therefore adjusts primarily <strong>shared representations</strong> inside BERT, not a large external module.</p>
+<p>For <strong>token-level</strong> tasks (NER), you place a linear head on <strong>every token</strong> hidden state independently (often with a CRF on top in classical pipelines, though plain per-token softmax remains a baseline).</p>
+<hr />
+<h3 id="bert-as-an-embedding-model">BERT as an Embedding Model<a class="headerlink" href="#bert-as-an-embedding-model" title="Permanent link">&para;</a></h3>
+<p>Given input tokens, BERT outputs a hidden vector for each subword token. Common pooling strategies to form a <strong>single sentence embedding</strong> include:</p>
+<ul>
+<li><strong><code>[CLS]</code> pooling:</strong> use <span class="arithmatex">\(\mathbf{h}_{\texttt{[CLS]}}\)</span> from the last layer (or a fixed earlier layer in some pipelines).</li>
+<li><strong>Mean pooling:</strong> average token hidden states over <strong>non-padding</strong> positions:
+  [
+  \mathbf{s} = \frac{1}{|\mathcal{I}|}\sum_{i \in \mathcal{I}} \mathbf{h}_i
+  ]
+  where <span class="arithmatex">\(\mathcal{I}\)</span> indexes real tokens.</li>
+</ul>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Mean pooling spreads evidence across all content words; <code>[CLS]</code> relies on a single learned slot that must compress the sequence. Mean pooling often works better <strong>without</strong> supervised fine-tuning for semantic textual similarity when the base model was not optimized for <code>[CLS]</code> alone. <code>[CLS]</code> can work well after task-specific fine-tuning that teaches aggregation behavior.</p>
+</div>
+<p><strong>When to prefer which:</strong> If you have <strong>labeled data</strong> for a task closely related to your deployment distribution, fine-tune and use <code>[CLS]</code> if that matches training. If you need a <strong>generic sentence vector</strong> from off-the-shelf BERT without task labels, <strong>mean pooling</strong> over last-layer states is a strong baseline. Always apply <strong>L2 normalization</strong> before cosine similarity if that is your metric.</p>
+<hr />
+<h3 id="sentence-bert-and-contrastive-learning">Sentence-BERT and Contrastive Learning<a class="headerlink" href="#sentence-bert-and-contrastive-learning" title="Permanent link">&para;</a></h3>
+<p><strong>Sentence-BERT (SBERT)</strong> fine-tunes Siamese BERT encoders so that <strong>semantic similarity</strong> correlates with <strong>embedding distance</strong>. A typical training pair <span class="arithmatex">\((a, b)\)</span> with similarity label <span class="arithmatex">\(y\)</span> might use a contrastive or triplet objective. A simple <strong>classification-style</strong> formulation for regression on similarity scores uses cosine similarity <span class="arithmatex">\(\cos(\mathbf{s}_a, \mathbf{s}_b)\)</span> fed into a small classifier; <strong>triplet loss</strong> pushes positives closer than negatives:</p>
+<div class="arithmatex">\[
+\mathcal{L}_{\text{triplet}} = \max\big(0,\; \|\mathbf{s}_a - \mathbf{s}_p\|_2^2 - \|\mathbf{s}_a - \mathbf{s}_n\|_2^2 + m\big)
+\]</div>
+<p>for anchor <span class="arithmatex">\(a\)</span>, positive <span class="arithmatex">\(p\)</span>, negative <span class="arithmatex">\(n\)</span>, and margin <span class="arithmatex">\(m\)</span>.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Standard BERT with mean pooling does not directly optimize cosine space geometry for semantic similarity. SBERT <strong>aligns</strong> the encoder to a metric that retrieval systems need. Contrastive objectives are the conceptual bridge from BERT hidden states to modern <strong>embedding APIs</strong> and <strong>RAG</strong> retrievers.</p>
+</div>
+<hr />
+<h3 id="bert-variants-detailed">BERT Variants (Detailed)<a class="headerlink" href="#bert-variants-detailed" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Year</th>
+<th>Key change</th>
+<th>Parameters (representative)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BERT-base</td>
+<td>2018</td>
+<td>Original Transformer encoder, MLM + NSP</td>
+<td>110M</td>
+</tr>
+<tr>
+<td>BERT-large</td>
+<td>2018</td>
+<td>More layers and wider hidden size</td>
+<td>340M</td>
+</tr>
+<tr>
+<td>RoBERTa</td>
+<td>2019</td>
+<td>Removed NSP, dynamic masking, more data, longer training</td>
+<td>125M / 355M</td>
+</tr>
+<tr>
+<td>ALBERT</td>
+<td>2019</td>
+<td>Factorized embeddings, cross-layer parameter sharing</td>
+<td>12M–235M depending on config</td>
+</tr>
+<tr>
+<td>DistilBERT</td>
+<td>2019</td>
+<td>Knowledge distillation from BERT to smaller student</td>
+<td>66M</td>
+</tr>
+<tr>
+<td>DeBERTa</td>
+<td>2020</td>
+<td>Disentangled attention with separate content and relative position terms</td>
+<td>134M–1.5B</td>
+</tr>
+</tbody>
+</table>
+<p><strong>RoBERTa</strong> trains longer with larger batches and does not rely on NSP. <strong>Dynamic masking</strong> recomputes which tokens are masked on each epoch, increasing effective diversity.</p>
+<p><strong>ALBERT</strong> reduces parameter count by sharing weights across layers and factorizing the embedding matrix, trading some capacity per layer for efficiency.</p>
+<p><strong>DistilBERT</strong> matches a fraction of BERT’s behavior using a distillation loss that encourages the student logits to mimic the teacher.</p>
+<p><strong>DeBERTa</strong> refines how attention scores combine token content and relative positions, improving robustness on several benchmarks.</p>
+<hr />
+<h2 id="deep-dive">Deep Dive<a class="headerlink" href="#deep-dive" title="Permanent link">&para;</a></h2>
+<details class="deep-dive">
+<summary>Deep Dive: Train–Test Mismatch in MLM and What BERT Did About It</summary>
+<p>If BERT always replaced masked tokens with <code>[MASK]</code>, the model might overfit <strong>surface patterns</strong> that only occur around the literal mask token. Real fine-tuning data rarely contains <code>[MASK]</code> in the same way. By replacing <strong>10%</strong> of selected tokens with random words and leaving <strong>10%</strong> unchanged, BERT forces the model to use <strong>contextualized hidden states</strong> to detect wrong or surprising tokens and to predict tokens even when the input still shows the original word. This is an early instance of a broader lesson: <strong>match deployment statistics</strong> when possible, and when not possible, <strong>augment training</strong> so the model cannot rely on brittle cues.</p>
+</details>
+<details class="deep-dive">
+<summary>Deep Dive: Encoder-Only Models in Modern Retrieval Pipelines</summary>
+<p>Contemporary systems often combine <strong>generative</strong> models with <strong>retrieval</strong>. Dense retrievers may still use BERT-derived architectures or their descendants (E5, BGE, sentence-transformers). The engineering pattern is: <strong>encode queries and documents</strong> into vectors, perform <strong>approximate nearest neighbor</strong> search, then pass top passages to a generator. Encoder-only thinking remains central to the <strong>first stage</strong> even when the second stage is decoder-only. Understanding pooling, normalization, and contrastive fine-tuning is how you connect classical BERT concepts to <strong>RAG</strong> latency budgets and recall–precision trade-offs.</p>
+</details>
+<hr />
+<h2 id="code">Code<a class="headerlink" href="#code" title="Permanent link">&para;</a></h2>
+<p>The following script uses <strong>Hugging Face Transformers</strong> and <strong>PyTorch</strong>. It demonstrates <strong>masked language modeling inference</strong>, <strong>short classification fine-tuning</strong> on toy data, and <strong>embedding extraction</strong> with cosine similarity. Install dependencies with <code>pip install torch transformers</code> in your environment.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="sd">BERT with Hugging Face: MLM inference, classification fine-tuning, embeddings.</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="sd">Requires: pip install torch transformers</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">AdamW</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">BertForMaskedLM</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">BertForSequenceClassification</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">BertModel</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">BertTokenizer</span><span class="p">,</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="k">def</span><span class="w"> </span><span class="nf">mlm_demo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Fill-in-the-blank using bert-base-uncased Masked LM.&quot;&quot;&quot;</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">BertTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;bert-base-uncased&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">BertForMaskedLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;bert-base-uncased&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;The capital of France is [MASK].&quot;</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>    <span class="n">inputs</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>    <span class="n">mask_positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">mask_token_id</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>        <span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>    <span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>        <span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">logits</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>    <span class="c1"># Logits at the first [MASK] position: shape (vocab_size,)</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>    <span class="n">mask_logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:]</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>    <span class="n">probs</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">mask_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>    <span class="n">top_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MLM candidates for [MASK] in:&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>    <span class="k">for</span> <span class="n">score</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">top_k</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">top_k</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>        <span class="n">tok</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">idx</span><span class="p">])</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">tok</span><span class="si">!r:</span><span class="s2">20s</span><span class="si">}</span><span class="s2">  P ≈ </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="k">def</span><span class="w"> </span><span class="nf">classification_finetune_demo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Toy binary sentiment fine-tuning (demonstrates mechanics only).&quot;&quot;&quot;</span>
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a>    <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">BertTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;bert-base-uncased&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">BertForSequenceClassification</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a>        <span class="s2">&quot;bert-base-uncased&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a>        <span class="n">num_labels</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>    <span class="p">)</span>
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a>    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a>
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>    <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a>        <span class="p">(</span><span class="s2">&quot;I love this movie, it was fantastic!&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a>        <span class="p">(</span><span class="s2">&quot;Terrible film, a complete waste of time.&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a>        <span class="p">(</span><span class="s2">&quot;Brilliant acting and a moving story.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a>        <span class="p">(</span><span class="s2">&quot;Dull, predictable, and poorly edited.&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a>    <span class="p">]</span>
+<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a>
+<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a>    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">AdamW</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">2e-5</span><span class="p">)</span>
+<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>
+<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a>    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a>        <span class="n">total_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a>        <span class="k">for</span> <span class="n">sentence</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">:</span>
+<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a>            <span class="n">batch</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span>
+<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a>                <span class="n">sentence</span><span class="p">,</span>
+<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a>                <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a>                <span class="n">padding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a>                <span class="n">truncation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a>                <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a>            <span class="p">)</span>
+<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a>            <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">label</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a>            <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">batch</span><span class="p">)</span>
+<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a>            <span class="n">loss</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">loss</span>
+<a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a>            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a>            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+<a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a>            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a>            <span class="n">total_loss</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;epoch </span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">  avg_loss = </span><span class="si">{</span><span class="n">total_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a>
+<a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a>    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a>    <span class="n">test_sentence</span> <span class="o">=</span> <span class="s2">&quot;This is an amazing product and I would buy it again.&quot;</span>
+<a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a>    <span class="n">batch</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span>
+<a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a>        <span class="n">test_sentence</span><span class="p">,</span>
+<a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a>        <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a>        <span class="n">padding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-1-88" name="__codelineno-1-88" href="#__codelineno-1-88"></a>        <span class="n">truncation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-1-89" name="__codelineno-1-89" href="#__codelineno-1-89"></a>    <span class="p">)</span>
+<a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a>    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">logits</span>
+<a id="__codelineno-1-92" name="__codelineno-1-92" href="#__codelineno-1-92"></a>        <span class="n">pred</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<a id="__codelineno-1-93" name="__codelineno-1-93" href="#__codelineno-1-93"></a>    <span class="n">label_name</span> <span class="o">=</span> <span class="s2">&quot;positive&quot;</span> <span class="k">if</span> <span class="n">pred</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;negative&quot;</span>
+<a id="__codelineno-1-94" name="__codelineno-1-94" href="#__codelineno-1-94"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Prediction for </span><span class="si">{</span><span class="n">pred</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">label_name</span><span class="si">}</span><span class="s2">) on: </span><span class="si">{</span><span class="n">test_sentence</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-95" name="__codelineno-1-95" href="#__codelineno-1-95"></a>
+<a id="__codelineno-1-96" name="__codelineno-1-96" href="#__codelineno-1-96"></a>
+<a id="__codelineno-1-97" name="__codelineno-1-97" href="#__codelineno-1-97"></a><span class="k">def</span><span class="w"> </span><span class="nf">embedding_demo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-98" name="__codelineno-1-98" href="#__codelineno-1-98"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Last-layer [CLS] embeddings and cosine similarity between two sentences.&quot;&quot;&quot;</span>
+<a id="__codelineno-1-99" name="__codelineno-1-99" href="#__codelineno-1-99"></a>    <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">BertTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;bert-base-uncased&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-100" name="__codelineno-1-100" href="#__codelineno-1-100"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">BertModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;bert-base-uncased&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-101" name="__codelineno-1-101" href="#__codelineno-1-101"></a>    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<a id="__codelineno-1-102" name="__codelineno-1-102" href="#__codelineno-1-102"></a>
+<a id="__codelineno-1-103" name="__codelineno-1-103" href="#__codelineno-1-103"></a>    <span class="n">sentences</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-1-104" name="__codelineno-1-104" href="#__codelineno-1-104"></a>        <span class="s2">&quot;The cat sat on the mat.&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-105" name="__codelineno-1-105" href="#__codelineno-1-105"></a>        <span class="s2">&quot;A kitten rested on the rug.&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-106" name="__codelineno-1-106" href="#__codelineno-1-106"></a>    <span class="p">]</span>
+<a id="__codelineno-1-107" name="__codelineno-1-107" href="#__codelineno-1-107"></a>    <span class="n">cls_embeddings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-1-108" name="__codelineno-1-108" href="#__codelineno-1-108"></a>    <span class="n">mean_embeddings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-1-109" name="__codelineno-1-109" href="#__codelineno-1-109"></a>
+<a id="__codelineno-1-110" name="__codelineno-1-110" href="#__codelineno-1-110"></a>    <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">sentences</span><span class="p">:</span>
+<a id="__codelineno-1-111" name="__codelineno-1-111" href="#__codelineno-1-111"></a>        <span class="n">batch</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">sent</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">truncation</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-1-112" name="__codelineno-1-112" href="#__codelineno-1-112"></a>        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<a id="__codelineno-1-113" name="__codelineno-1-113" href="#__codelineno-1-113"></a>            <span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">batch</span><span class="p">)</span>
+<a id="__codelineno-1-114" name="__codelineno-1-114" href="#__codelineno-1-114"></a>        <span class="n">last_hidden</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">last_hidden_state</span>  <span class="c1"># (1, seq, hidden)</span>
+<a id="__codelineno-1-115" name="__codelineno-1-115" href="#__codelineno-1-115"></a>        <span class="n">mask</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (1, seq, 1)</span>
+<a id="__codelineno-1-116" name="__codelineno-1-116" href="#__codelineno-1-116"></a>        <span class="n">summed</span> <span class="o">=</span> <span class="p">(</span><span class="n">last_hidden</span> <span class="o">*</span> <span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-1-117" name="__codelineno-1-117" href="#__codelineno-1-117"></a>        <span class="n">lengths</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+<a id="__codelineno-1-118" name="__codelineno-1-118" href="#__codelineno-1-118"></a>        <span class="n">mean_pool</span> <span class="o">=</span> <span class="n">summed</span> <span class="o">/</span> <span class="n">lengths</span>
+<a id="__codelineno-1-119" name="__codelineno-1-119" href="#__codelineno-1-119"></a>
+<a id="__codelineno-1-120" name="__codelineno-1-120" href="#__codelineno-1-120"></a>        <span class="n">cls_embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">last_hidden</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<a id="__codelineno-1-121" name="__codelineno-1-121" href="#__codelineno-1-121"></a>        <span class="n">mean_embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_pool</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<a id="__codelineno-1-122" name="__codelineno-1-122" href="#__codelineno-1-122"></a>
+<a id="__codelineno-1-123" name="__codelineno-1-123" href="#__codelineno-1-123"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">cos</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<a id="__codelineno-1-124" name="__codelineno-1-124" href="#__codelineno-1-124"></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">cosine_similarity</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<a id="__codelineno-1-125" name="__codelineno-1-125" href="#__codelineno-1-125"></a>
+<a id="__codelineno-1-126" name="__codelineno-1-126" href="#__codelineno-1-126"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cosine similarity ([CLS] pooling):&quot;</span><span class="p">,</span> <span class="n">cos</span><span class="p">(</span><span class="n">cls_embeddings</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cls_embeddings</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<a id="__codelineno-1-127" name="__codelineno-1-127" href="#__codelineno-1-127"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cosine similarity (mean pooling): &quot;</span><span class="p">,</span> <span class="n">cos</span><span class="p">(</span><span class="n">mean_embeddings</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mean_embeddings</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<a id="__codelineno-1-128" name="__codelineno-1-128" href="#__codelineno-1-128"></a>
+<a id="__codelineno-1-129" name="__codelineno-1-129" href="#__codelineno-1-129"></a>
+<a id="__codelineno-1-130" name="__codelineno-1-130" href="#__codelineno-1-130"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-1-131" name="__codelineno-1-131" href="#__codelineno-1-131"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Masked Language Modeling ===&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-132" name="__codelineno-1-132" href="#__codelineno-1-132"></a>    <span class="n">mlm_demo</span><span class="p">()</span>
+<a id="__codelineno-1-133" name="__codelineno-1-133" href="#__codelineno-1-133"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Classification Fine-Tuning (toy) ===&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-134" name="__codelineno-1-134" href="#__codelineno-1-134"></a>    <span class="n">classification_finetune_demo</span><span class="p">()</span>
+<a id="__codelineno-1-135" name="__codelineno-1-135" href="#__codelineno-1-135"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Embeddings ===&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-136" name="__codelineno-1-136" href="#__codelineno-1-136"></a>    <span class="n">embedding_demo</span><span class="p">()</span>
+</code></pre></div>
+<hr />
+<h2 id="interview-guide">Interview Guide<a class="headerlink" href="#interview-guide" title="Permanent link">&para;</a></h2>
+<div class="admonition interview">
+<p class="admonition-title">FAANG-Level Questions</p>
+<ol>
+<li><strong>What is masked language modeling, and why does BERT use the 80/10/10 replacement strategy?</strong>
+<em>Answer:</em> MLM trains the model to predict <strong>original</strong> tokens at masked positions using <strong>bidirectional</strong> context. <strong>80%</strong> <code>[MASK]</code>, <strong>10%</strong> random token, <strong>10%</strong> unchanged prevents the model from relying only on the literal <code>[MASK]</code> surface form (train–test mismatch at fine-tune time) and forces use of <strong>contextual</strong> representations.</li>
+<li><strong>Explain the difference between bidirectional encoder attention and causal decoder attention using one sentence each for what information a position may use.</strong>
+<em>Answer:</em> <strong>Encoder:</strong> position <span class="arithmatex">\(i\)</span> may attend to <strong>all</strong> tokens in the segment (past and future). <strong>Decoder:</strong> position <span class="arithmatex">\(i\)</span> may attend only to tokens <strong>at indices <span class="arithmatex">\(\le i\)</span></strong> (past and self), never future.</li>
+<li><strong>Why is BERT unsuitable for standard autoregressive text generation the way GPT is trained?</strong>
+<em>Answer:</em> BERT is trained for <strong>joint</strong> fill-in-the-blank with full context, not the product <span class="arithmatex">\(\prod_t P(w_t\mid w_{&lt;t})\)</span>. It does not define a coherent <strong>left-to-right</strong> conditional for sampling the next token without misusing the training distribution (unless you use iterative masking heuristics, not standard GPT decoding).</li>
+<li><strong>What was Next Sentence Prediction, why was it used originally, and what did RoBERTa conclude?</strong>
+<em>Answer:</em> NSP binary-predicted whether segment B <strong>followed</strong> segment A—intended to teach <strong>inter-sentence</strong> relations. <strong>RoBERTa</strong> found NSP often <strong>unnecessary or harmful</strong> when other training improvements (more data, dynamic masking, longer sequences) were applied; many modern recipes <strong>drop</strong> NSP.</li>
+<li><strong>How does fine-tuning add a classification head on top of <code>[CLS]</code>, and roughly how many parameters does that head contribute for BERT-base with two labels?</strong>
+<em>Answer:</em> Final <span class="arithmatex">\(\mathbf{h}_{\texttt{[CLS]}}\in\mathbb{R}^{768}\)</span> is passed through a linear layer to <span class="arithmatex">\(C\)</span> logits (often with dropout). For <strong>two</strong> labels: <span class="arithmatex">\(W\in\mathbb{R}^{2\times768}\)</span>, <span class="arithmatex">\(b\in\mathbb{R}^2\)</span> → <strong>1,538</strong> parameters—negligible vs ~110M in the encoder body.</li>
+<li><strong>Compare <code>[CLS]</code> pooling versus mean token pooling for sentence embeddings. When might each be preferred?</strong>
+<em>Answer:</em> <strong><code>[CLS]</code></strong> is a single learned aggregate slot—strong when <strong>fine-tuned</strong> for classification with that objective. <strong>Mean pooling</strong> averages real token vectors—often better <strong>off-the-shelf</strong> similarity without task-specific <code>[CLS]</code> training. Always <strong>L2-normalize</strong> for cosine similarity.</li>
+<li><strong>What problem does Sentence-BERT solve that raw BERT mean pooling does not directly optimize?</strong>
+<em>Answer:</em> Standard BERT + mean pool is trained for <strong>MLM</strong>, not <strong>metric geometry</strong>. SBERT uses <strong>siamese/contrastive</strong> objectives so cosine distance aligns with <strong>semantic similarity</strong>—critical for retrieval and clustering.</li>
+<li><strong>Name three BERT variants and one distinctive idea for each (RoBERTa, ALBERT, DistilBERT, DeBERTa).</strong>
+<em>Answer:</em> <strong>RoBERTa</strong>: no NSP, dynamic masking, more/better training. <strong>ALBERT</strong>: factorized embeddings + <strong>cross-layer weight sharing</strong> for fewer params. <strong>DistilBERT</strong>: <strong>distillation</strong> from BERT teacher. <strong>DeBERTa</strong>: <strong>disentangled</strong> content vs relative-position in attention.</li>
+<li><strong>How would you use BERT hidden states in a retrieval pipeline, and what metric would you use between query and document vectors?</strong>
+<em>Answer:</em> Encode query and documents to fixed vectors (e.g. mean-pool last layer, or dedicated retriever checkpoints), index with <strong>ANN</strong> (FAISS, ScaNN). <strong>Cosine similarity</strong> (or dot product on L2-normalized vectors) is standard for ranking.</li>
+<li><strong>If validation accuracy plateaus during fine-tuning while training loss keeps dropping, what steps would you take to diagnose overfitting or data issues?</strong>
+<em>Answer:</em> Suspect <strong>overfitting</strong>: check gap train/val, early stopping, smaller LR, more data/augmentation, <strong>class balance</strong> on val. Verify <strong>val leakage</strong> or <strong>label noise</strong>; plot per-class metrics; try stronger <strong>regularization</strong> (dropout, weight decay).</li>
+</ol>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">Follow-up Probes</p>
+<ul>
+<li><strong>Why might max pooling over tokens be risky compared to mean pooling for variable-length sentences?</strong></li>
+<li><strong>How does segment embedding interact with single-sentence versus pair inputs?</strong></li>
+<li><strong>What happens to gradients for unmasked positions in standard MLM loss computation?</strong></li>
+<li><strong>Why is cosine similarity more common than raw dot product for sentence vectors of different lengths?</strong></li>
+<li><strong>How does distillation for DistilBERT differ from masked language modeling alone?</strong></li>
+</ul>
+</div>
+<div class="admonition key-phrases">
+<p class="admonition-title">Key Phrases to Use in Interviews</p>
+<ul>
+<li><strong>“BERT is encoder-only with full self-attention: every token sees every other token in the segment.”</strong></li>
+<li><strong>“MLM trains the model to predict masked tokens using bidirectional context.”</strong></li>
+<li><strong>“The 80/10/10 masking policy reduces train–test mismatch around the <code>[MASK]</code> token.”</strong></li>
+<li><strong>“Autoregressive generation requires a causal factorization; BERT’s objective is fill-in-the-blank with global context.”</strong></li>
+<li><strong>“Fine-tuning attaches a small task head; most parameters live in the shared encoder.”</strong></li>
+<li><strong>“Sentence-BERT aligns embedding space geometry with semantic similarity using siamese or contrastive training.”</strong></li>
+<li><strong>“RoBERTa improved training recipe and often drops NSP; dynamic masking increases data diversity.”</strong></li>
+</ul>
+</div>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Devlin et al. (2018), <em>BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</em></li>
+<li>Liu et al. (2019), <em>RoBERTa: A Robustly Optimized BERT Pretraining Approach</em></li>
+<li>Lan et al. (2019), <em>ALBERT: A Lite BERT for Self-supervised Learning of Language Representations</em></li>
+<li>Sanh et al. (2019), <em>DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter</em></li>
+<li>Reimers &amp; Gurevych (2019), <em>Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</em></li>
+<li>He et al. (2020), <em>DeBERTa: Decoding-enhanced BERT with Disentangled Attention</em></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../gpt_decoder_only/" class="md-footer__link md-footer__link--prev" aria-label="Previous: GPT Decoder-Only">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                GPT Decoder-Only
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../t5_encoder_decoder/" class="md-footer__link md-footer__link--next" aria-label="Next: T5 Encoder-Decoder">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                T5 Encoder-Decoder
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 LLMBase contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/spawn08/llmbase" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.path", "navigation.footer", "toc.follow", "toc.integrate", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

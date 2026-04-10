@@ -1,0 +1,3901 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Ground-Up Guide to Large Language Models for Engineers">
+      
+      
+        <meta name="author" content="Amarsingh Thakur">
+      
+      
+        <link rel="canonical" href="https://spawn08.github.io/llmbase/06_research_papers/">
+      
+      
+        <link rel="prev" href="../05_advanced/hallucination_safety/">
+      
+      
+        <link rel="next" href="01_attention_is_all_you_need/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Top 35 Research Papers in Large Language Models - LLMBase</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+3:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Source Sans 3";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#top-35-research-papers-in-large-language-models" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+<style>
+  .md-banner {
+    background: linear-gradient(135deg, #3D5A6E 0%, #5E7A8C 50%, #6FA3B8 100%) !important;
+    color: #E4E8EE;
+  }
+  .md-banner__inner {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+</style>
+LLMBase &mdash; A ground-up guide to Large Language Models &bull; Math &bull; Code &bull; Interview Q&amp;A &bull; 33 landmark papers
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="LLMBase" class="md-header__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LLMBase
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Top 35 Research Papers in Large Language Models
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="LLMBase" class="md-nav__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    LLMBase
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../00_prerequisites/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Deep Learning Fundamentals
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Deep Learning Fundamentals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/00_math_prerequisites/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math Prerequisites
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/01_perceptron_and_ffn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Perceptron and Feedforward Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/02_activation_functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Activation Functions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/03_backpropagation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backpropagation and Gradient Descent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/04_loss_and_regularization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Loss Functions and Regularization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/05_convolutional_neural_networks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Convolutional Neural Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/06_sequence_modeling_and_rnns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence Modeling and RNNs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/07_encoder_decoder_paradigm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Encoder-Decoder Paradigm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../01_foundations/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Foundations of Language Modeling
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Foundations of Language Modeling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/language_modeling_basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/word_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Word Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/neural_language_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural Language Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/sequence_to_sequence/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence-to-Sequence
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/information_theory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/attention_math/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Mathematics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Hands-On Notebooks
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Hands-On Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/01_math_and_neural_network_basics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math & Neural Network Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/02_training_mechanics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Mechanics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/03_cnns_and_sequences.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNNs, Sequences & Encoder-Decoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/04_language_modeling_and_embeddings.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling & Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/05_neural_lm_and_seq2seq.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural LM & Seq2Seq
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/06_information_theory_and_attention.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory & Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../02_core_architectures/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Core Architectures
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Core Architectures
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/self_attention_mha/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Self-Attention and MHA
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/positional_encoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Positional Encoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/gpt_decoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT Decoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/bert_encoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT Encoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/t5_encoder_decoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5 Encoder-Decoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/mixture_of_experts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/state_space_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State Space Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../03_training/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Training and Alignment
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Training and Alignment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/pretraining/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pre-training at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/distributed_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Distributed Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/mixed_precision/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed Precision and Quantization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/instruction_tuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Instruction Tuning and SFT
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/rlhf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RLHF and DPO
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/peft/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameter-Efficient Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../04_inference/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Inference and Serving
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Inference and Serving
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/decoding_strategies/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoding Strategies
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/kv_cache/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    KV Cache
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/speculative_decoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Speculative Decoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/continuous_batching/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Batching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/quantization_inference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantization for Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/serving_systems/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLM Serving Systems
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../05_advanced/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/rag/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RAG
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agents and Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/long_context/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long-Context Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/multimodal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multimodal LLMs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/emergent_capabilities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emergent Capabilities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/evaluation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Evaluation and Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/hallucination_safety/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hallucination and Safety
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="./" class="md-nav__link md-nav__link--active">
+              
+  
+  <span class="md-ellipsis">
+    Landmark Research Papers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link md-nav__link--active" for="__nav_9" id="__nav_9_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Landmark Research Papers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="01_attention_is_all_you_need/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Is All You Need (Transformer)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="02_bert/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT: Bidirectional Encoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="03_gpt2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-2: Unsupervised Multitask Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="04_gpt3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-3: In-Context Learning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="05_t5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5: Text-to-Text Transfer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="06_xlnet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    XLNet: Permutation Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="07_roberta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoBERTa: Robust BERT Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="08_electra/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ELECTRA: Efficient Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="09_instructgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    InstructGPT: RLHF Pipeline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="10_palm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PaLM: Pathways at 540B
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="11_chinchilla/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chinchilla: Compute-Optimal Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="12_llama/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLaMA: Open Foundation Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="13_lora/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LoRA: Low-Rank Adaptation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="14_flash_attention/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FlashAttention: IO-Aware Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="15_mistral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mistral 7B: Efficient Small Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="16_mixtral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixtral: Sparse Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="17_flan/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FLAN: Instruction Tuning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="18_chain_of_thought/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chain-of-Thought Prompting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="19_react/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ReAct: Reasoning and Acting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="20_toolformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Toolformer: Self-Supervised Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="21_constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI: Principled Alignment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="22_clip/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLIP: Contrastive Vision-Language
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="23_codex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Codex: Code Generation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="24_mamba/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mamba: Linear-Time State Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="25_gemini/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini: Native Multimodal
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="26_deepseek_v2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V2: Multi-Head Latent Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="27_deepseek_v3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V3: MoE at 671B Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="28_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1: RL-Only Reasoning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="29_glm4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4: Bilingual Foundation Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="30_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5: Long-Context RL Scaling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="31_qwen2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen2.5: Data-Efficient Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="32_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5: Agentic Async RL
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="33_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5: Multi-Agent Coordination
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="34_rope_roformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoPE: Rotary Position Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="35_attention_residuals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Residuals: Rethinking Depth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../07_recent_advances/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Recent Advances
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Recent Advances
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/01_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/02_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/03_gpt4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-4.5 (Feb 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/04_gemini_2_5_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 2.5 Pro (Mar 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/05_llama_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Llama 4 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/13_qwen3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen 3 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/06_gpt5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5 (Aug 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/10_glm4_6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4.6 (Sep 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/07_claude_opus_4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Claude Opus 4.5 (Nov 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/12_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5 (Jan 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/08_gemini_3_1_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 3.1 Pro (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/11_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5 (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/09_gpt5_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5.4 Family (Mar 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interview_questions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interview Question Bank
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="top-35-research-papers-in-large-language-models">Top 35 Research Papers in Large Language Models<a class="headerlink" href="#top-35-research-papers-in-large-language-models" title="Permanent link">&para;</a></h1>
+<p>This section provides <strong>in-depth documentation</strong> for the 35 landmark papers that shaped modern LLMs. Each paper page includes:</p>
+<ul>
+<li><strong>Simple math explanations</strong> — every equation broken down step by step</li>
+<li><strong>Python implementations</strong> — runnable code demonstrating the core ideas</li>
+<li><strong>Interview importance</strong> — why interviewers ask about it and difficulty level</li>
+<li><strong>Interview Q&amp;A</strong> — specific questions with detailed answers</li>
+<li><strong>Connections</strong> — how each paper relates to others</li>
+</ul>
+<h2 id="how-to-use-this-section">How to Use This Section<a class="headerlink" href="#how-to-use-this-section" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Quick review:</strong> Read the TL;DR and Key Takeaways table at the bottom of each page</li>
+<li><strong>Deep study:</strong> Work through the math section and run the Python code</li>
+<li><strong>Interview prep:</strong> Focus on the Interview Q&amp;A section — practice explaining these aloud</li>
+<li><strong>Build connections:</strong> Follow the "Connections to Other Papers" links to see how ideas evolved</li>
+</ol>
+<h2 id="papers-by-category">Papers by Category<a class="headerlink" href="#papers-by-category" title="Permanent link">&para;</a></h2>
+<h3 id="architecture-foundations">Architecture Foundations<a class="headerlink" href="#architecture-foundations" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><a href="01_attention_is_all_you_need/">Attention Is All You Need</a></td>
+<td>2017</td>
+<td>Transformer architecture — self-attention replaces recurrence</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="02_bert/">BERT</a></td>
+<td>2018</td>
+<td>Bidirectional encoder with masked language modeling</td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="03_gpt2/">GPT-2</a></td>
+<td>2019</td>
+<td>Decoder-only LM with zero-shot task transfer</td>
+</tr>
+<tr>
+<td>5</td>
+<td><a href="05_t5/">T5</a></td>
+<td>2019</td>
+<td>Unified text-to-text framework with span corruption</td>
+</tr>
+<tr>
+<td>6</td>
+<td><a href="06_xlnet/">XLNet</a></td>
+<td>2019</td>
+<td>Permutation language modeling for bidirectional AR</td>
+</tr>
+<tr>
+<td>34</td>
+<td><a href="34_rope_roformer/">RoPE/RoFormer</a></td>
+<td>2021</td>
+<td>Rotary Position Embedding — relative position via rotation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="training-recipes-scaling">Training Recipes &amp; Scaling<a class="headerlink" href="#training-recipes-scaling" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4</td>
+<td><a href="04_gpt3/">GPT-3</a></td>
+<td>2020</td>
+<td>175B params, in-context learning, scaling laws</td>
+</tr>
+<tr>
+<td>7</td>
+<td><a href="07_roberta/">RoBERTa</a></td>
+<td>2019</td>
+<td>Recipe matters — dynamic masking, no NSP, more data</td>
+</tr>
+<tr>
+<td>8</td>
+<td><a href="08_electra/">ELECTRA</a></td>
+<td>2020</td>
+<td>Replaced-token detection — 100% token utilization</td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="10_palm/">PaLM</a></td>
+<td>2022</td>
+<td>540B dense model, Pathways infrastructure, emergence</td>
+</tr>
+<tr>
+<td>11</td>
+<td><a href="11_chinchilla/">Chinchilla</a></td>
+<td>2022</td>
+<td>Compute-optimal training — balance params and data</td>
+</tr>
+<tr>
+<td>12</td>
+<td><a href="12_llama/">LLaMA</a></td>
+<td>2023</td>
+<td>Open weights, RMSNorm + SwiGLU + RoPE standard</td>
+</tr>
+</tbody>
+</table>
+<h3 id="alignment-instruction-following">Alignment &amp; Instruction Following<a class="headerlink" href="#alignment-instruction-following" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9</td>
+<td><a href="09_instructgpt/">InstructGPT</a></td>
+<td>2022</td>
+<td>RLHF pipeline — SFT → Reward Model → PPO</td>
+</tr>
+<tr>
+<td>17</td>
+<td><a href="17_flan/">FLAN</a></td>
+<td>2022</td>
+<td>Instruction tuning on 1,800+ tasks</td>
+</tr>
+<tr>
+<td>21</td>
+<td><a href="21_constitutional_ai/">Constitutional AI</a></td>
+<td>2022</td>
+<td>RLAIF — AI feedback guided by principles</td>
+</tr>
+</tbody>
+</table>
+<h3 id="efficient-architecture-serving">Efficient Architecture &amp; Serving<a class="headerlink" href="#efficient-architecture-serving" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>13</td>
+<td><a href="13_lora/">LoRA</a></td>
+<td>2021</td>
+<td>Low-rank adaptation — freeze base, train tiny updates</td>
+</tr>
+<tr>
+<td>14</td>
+<td><a href="14_flash_attention/">FlashAttention</a></td>
+<td>2022</td>
+<td>IO-aware exact attention — tiling in SRAM</td>
+</tr>
+<tr>
+<td>15</td>
+<td><a href="15_mistral/">Mistral 7B</a></td>
+<td>2023</td>
+<td>GQA + sliding window attention for efficient 7B</td>
+</tr>
+<tr>
+<td>16</td>
+<td><a href="16_mixtral/">Mixtral</a></td>
+<td>2024</td>
+<td>Sparse MoE — 8 experts, top-2 routing</td>
+</tr>
+<tr>
+<td>24</td>
+<td><a href="24_mamba/">Mamba</a></td>
+<td>2023</td>
+<td>Linear-time SSM with selective state spaces</td>
+</tr>
+<tr>
+<td>35</td>
+<td><a href="35_attention_residuals/">Attention Residuals</a></td>
+<td>2026</td>
+<td>Replace fixed residuals with attention over layers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reasoning-tools-agents">Reasoning, Tools &amp; Agents<a class="headerlink" href="#reasoning-tools-agents" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>18</td>
+<td><a href="18_chain_of_thought/">Chain-of-Thought</a></td>
+<td>2022</td>
+<td>Reasoning via intermediate steps in prompts</td>
+</tr>
+<tr>
+<td>19</td>
+<td><a href="19_react/">ReAct</a></td>
+<td>2023</td>
+<td>Thought → Action → Observation agent loop</td>
+</tr>
+<tr>
+<td>20</td>
+<td><a href="20_toolformer/">Toolformer</a></td>
+<td>2023</td>
+<td>Self-supervised API calling via loss comparison</td>
+</tr>
+</tbody>
+</table>
+<h3 id="multimodal-code">Multimodal &amp; Code<a class="headerlink" href="#multimodal-code" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>22</td>
+<td><a href="22_clip/">CLIP</a></td>
+<td>2021</td>
+<td>Contrastive image-text learning, zero-shot classification</td>
+</tr>
+<tr>
+<td>23</td>
+<td><a href="23_codex/">Codex</a></td>
+<td>2021</td>
+<td>Code generation, HumanEval benchmark, pass@k metric</td>
+</tr>
+<tr>
+<td>25</td>
+<td><a href="25_gemini/">Gemini</a></td>
+<td>2023</td>
+<td>Native multimodal — text, images, audio, video</td>
+</tr>
+</tbody>
+</table>
+<h3 id="chinese-lab-contributions-20242026">Chinese Lab Contributions (2024–2026)<a class="headerlink" href="#chinese-lab-contributions-20242026" title="Permanent link">&para;</a></h3>
+<p>The Chinese research ecosystem produced several landmark papers in 2024–2026 that fundamentally changed how the field thinks about reasoning, KV cache efficiency, MoE training, agentic systems, and multi-agent coordination. These are essential reading for any LLM interview in 2025–2026.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Lab</th>
+<th>Year</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>26</td>
+<td><a href="26_deepseek_v2/">DeepSeek-V2</a></td>
+<td>DeepSeek</td>
+<td>2024</td>
+<td>Multi-Head Latent Attention (MLA) — 93% KV cache reduction</td>
+</tr>
+<tr>
+<td>27</td>
+<td><a href="27_deepseek_v3/">DeepSeek-V3</a></td>
+<td>DeepSeek</td>
+<td>2024</td>
+<td>671B MoE, auxiliary-loss-free load balancing, FP8 training, MTP</td>
+</tr>
+<tr>
+<td>28</td>
+<td><a href="28_deepseek_r1/">DeepSeek-R1</a></td>
+<td>DeepSeek</td>
+<td>2025</td>
+<td>RL-only reasoning (R1-Zero), GRPO, cold-start distillation</td>
+</tr>
+<tr>
+<td>29</td>
+<td><a href="29_glm4/">ChatGLM / GLM-4</a></td>
+<td>Zhipu AI / THU</td>
+<td>2024</td>
+<td>GLM pretraining unifies MLM+CLM; bilingual at scale</td>
+</tr>
+<tr>
+<td>30</td>
+<td><a href="30_kimi_k1_5/">Kimi k1.5</a></td>
+<td>Moonshot AI</td>
+<td>2025</td>
+<td>Long-context RL scaling; partial rollouts; online mirror descent</td>
+</tr>
+<tr>
+<td>31</td>
+<td><a href="31_qwen2_5/">Qwen2.5</a></td>
+<td>Alibaba</td>
+<td>2024</td>
+<td>18T tokens, 72B matches 405B Llama; Qwen2.5-Math/Coder family</td>
+</tr>
+<tr>
+<td>32</td>
+<td><a href="32_glm5/">GLM-5</a></td>
+<td>Zhipu AI / THU</td>
+<td>2026</td>
+<td>744B MoE, Slime async RL, SotA open-weight agentic coding</td>
+</tr>
+<tr>
+<td>33</td>
+<td><a href="33_kimi_k2_5/">Kimi K2.5</a></td>
+<td>Moonshot AI</td>
+<td>2026</td>
+<td>1T MoE, Agent Swarm (PARL), native multimodality with MoonViT</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="paper-summaries-context-motivation-and-key-ideas">Paper Summaries — Context, Motivation, and Key Ideas<a class="headerlink" href="#paper-summaries-context-motivation-and-key-ideas" title="Permanent link">&para;</a></h2>
+<h3 id="architecture-foundations_1">Architecture Foundations<a class="headerlink" href="#architecture-foundations_1" title="Permanent link">&para;</a></h3>
+<p><strong><a href="01_attention_is_all_you_need/">Attention Is All You Need</a> (Vaswani et al., 2017)</strong> — Before this paper, sequence models relied on recurrence (RNNs, LSTMs), which processed tokens sequentially and created a fundamental bottleneck: training could not be parallelized across time steps, and long-range dependencies faded through the chain. The Transformer replaced recurrence entirely with self-attention — every token attends to every other token in a single operation, enabling full parallelization on GPUs. Multi-head attention lets the model capture different relationship types (syntax, coreference, semantics) simultaneously. This architecture became the backbone of every modern LLM.</p>
+<p><strong><a href="02_bert/">BERT</a> (Devlin et al., 2018)</strong> — GPT-1 showed that Transformers could be pre-trained, but its left-to-right autoregressive objective meant each token could only attend to previous tokens — missing context from the right. Google's BERT introduced masked language modeling (MLM): randomly mask 15% of tokens and predict them using bidirectional context. This enabled pre-training deep bidirectional representations, then fine-tuning on downstream tasks (classification, NER, QA) with minimal task-specific architecture. BERT demonstrated that pre-training + fine-tuning was the dominant paradigm, achieving state-of-the-art on 11 NLP benchmarks simultaneously.</p>
+<p><strong><a href="03_gpt2/">GPT-2</a> (Radford et al., 2019)</strong> — OpenAI scaled the GPT architecture to 1.5B parameters and trained on 40GB of web text (WebText). The key finding was zero-shot task transfer: without any fine-tuning, GPT-2 could perform summarization, translation, and question answering by simply framing tasks as text completion. This challenged the prevailing "pre-train then fine-tune" paradigm and suggested that language models might be implicit multi-task learners. The controversial decision to initially withhold the full model due to misuse concerns also sparked the first AI safety debate around open-weight releases.</p>
+<p><strong><a href="05_t5/">T5</a> (Raffel et al., 2019)</strong> — Google's Text-to-Text Transfer Transformer reframed every NLP task as text generation: classification becomes "sentiment positive" or "sentiment negative" as output text, translation becomes "translate English to German: [text]", etc. This unified framework enabled systematic comparison of pre-training objectives, model sizes, and data strategies. T5 introduced span corruption (masking contiguous spans rather than individual tokens) and demonstrated that the same architecture, objective, and fine-tuning procedure works for any text task — simplifying the ML pipeline from many task-specific models to one.</p>
+<p><strong><a href="06_xlnet/">XLNet</a> (Yang et al., 2019)</strong> — XLNet identified a fundamental conflict: BERT's masked LM objective sees all context but introduces artificial [MASK] tokens that never appear in real text (pretrain-finetune discrepancy), while autoregressive models see no [MASK] but can only attend left-to-right. XLNet resolved this with permutation language modeling — train an autoregressive model on all possible orderings of the input, so it learns bidirectional context without masking. This required a novel two-stream attention mechanism. XLNet outperformed BERT on 18 benchmarks, though its complexity limited widespread adoption.</p>
+<p><strong><a href="34_rope_roformer/">RoPE/RoFormer</a> (Su et al., 2021)</strong> — RoPE (Rotary Position Embedding) replaced additive positional encodings with multiplicative rotations of query and key vectors. By rotating Q and K in 2D subspaces using position-dependent angles, RoPE naturally encodes relative position in the dot product without any learned parameters. The geometric frequency progression (<span class="arithmatex">\(\theta_i = 10000^{-2i/d}\)</span>) creates a natural locality bias and excellent length extrapolation. RoPE became the <strong>industry standard</strong> for positional encoding, adopted by LLaMA, Mistral, Qwen, PaLM, and virtually every modern open-weight LLM. Extensions like NTK-aware scaling and YaRN enable 4-32× length extrapolation beyond training context.</p>
+<h3 id="training-recipes-scaling_1">Training Recipes &amp; Scaling<a class="headerlink" href="#training-recipes-scaling_1" title="Permanent link">&para;</a></h3>
+<p><strong><a href="04_gpt3/">GPT-3</a> (Brown et al., 2020)</strong> — OpenAI scaled to 175B parameters and discovered that sufficiently large language models can perform tasks through in-context learning: provide a few input-output examples in the prompt, and the model generalizes to new inputs without any gradient updates. This was a paradigm shift — no fine-tuning, no task-specific heads, just prompt engineering. GPT-3 also established the scaling laws suggesting that performance improves predictably with model size, data, and compute, motivating the race to ever-larger models.</p>
+<p><strong><a href="07_roberta/">RoBERTa</a> (Liu et al., 2019)</strong> — Facebook showed that BERT was significantly undertrained. By removing the Next Sentence Prediction objective (which hurt performance), using dynamic masking (different masks each epoch instead of static), training on 10× more data with larger batches, and training for longer, RoBERTa matched or exceeded XLNet without any architectural changes. The lesson: training recipes matter as much as architecture. This paper influenced how every subsequent model was trained.</p>
+<p><strong><a href="08_electra/">ELECTRA</a> (Clark et al., 2020)</strong> — BERT's MLM only learns from the 15% of tokens that are masked — 85% of tokens provide no training signal. ELECTRA replaced MLM with "replaced token detection": a small generator model corrupts tokens, and the main model predicts which tokens are original vs. replaced. This uses 100% of tokens for training, making ELECTRA 4× more compute-efficient than BERT. The approach demonstrated that the pre-training objective design can dramatically affect efficiency without changing the Transformer architecture itself.</p>
+<p><strong><a href="10_palm/">PaLM</a> (Chowdhery et al., 2022)</strong> — Google trained a 540B-parameter dense Transformer on 6,144 TPU v4 chips using the Pathways infrastructure, which enabled training across multiple TPU pods. PaLM demonstrated "emergence": capabilities that appear suddenly at scale rather than gradually. At 540B, PaLM could solve multi-step reasoning problems, explain jokes, and generate code — tasks that smaller models failed at completely. The paper also introduced the concept of "discontinuous" scaling improvements that challenged smooth power-law predictions.</p>
+<p><strong><a href="11_chinchilla/">Chinchilla</a> (Hoffmann et al., 2022)</strong> — DeepMind proved that most large models were undertrained. The Chinchilla scaling law showed that for a fixed compute budget, model parameters and training tokens should be scaled equally. GPT-3 (175B params, 300B tokens) was over-parameterized and under-trained; Chinchilla (70B params, 1.4T tokens) matched GPT-3's performance at 4× lower inference cost. This paper redirected the field from "bigger models" to "more data" and directly influenced LLaMA, Mistral, and every subsequent training budget decision.</p>
+<p><strong><a href="12_llama/">LLaMA</a> (Touvron et al., 2023)</strong> — Meta trained a family of models (7B to 65B) using only publicly available data and open-sourced the weights. LLaMA-13B outperformed GPT-3 (175B) by applying Chinchilla-optimal training (1.4T tokens for 13B params). It also standardized the modern architectural recipe: RMSNorm (simpler than LayerNorm), SwiGLU activations (better than ReLU), and RoPE positional encoding (better extrapolation than sinusoidal). LLaMA democratized LLM research — every open-weight model since (Mistral, Qwen, Llama 2/3) builds on this foundation.</p>
+<h3 id="alignment-instruction-following_1">Alignment &amp; Instruction Following<a class="headerlink" href="#alignment-instruction-following_1" title="Permanent link">&para;</a></h3>
+<p><strong><a href="09_instructgpt/">InstructGPT</a> (Ouyang et al., 2022)</strong> — OpenAI's InstructGPT addressed the fundamental misalignment problem: language models trained on internet text learn to predict the next token, not to follow human instructions or be helpful. The paper introduced the three-stage RLHF pipeline — (1) supervised fine-tuning on human demonstrations, (2) training a reward model on human preference comparisons, (3) optimizing the policy via PPO against the reward model. A 1.3B InstructGPT was preferred over the 175B GPT-3 by human evaluators, proving that alignment is more important than raw scale.</p>
+<p><strong><a href="17_flan/">FLAN</a> (Wei et al., 2022)</strong> — Google showed that instruction tuning — fine-tuning on a diverse mixture of 1,800+ tasks with natural language instructions — dramatically improves zero-shot performance on unseen tasks. Unlike InstructGPT's RLHF approach, FLAN uses only supervised fine-tuning, making it simpler and cheaper. The paper demonstrated that the diversity and formatting of instruction data matters more than its volume, and that scaling the number of tasks improves generalization to held-out tasks.</p>
+<p><strong><a href="21_constitutional_ai/">Constitutional AI</a> (Bai et al., 2022)</strong> — Anthropic addressed the scalability bottleneck of RLHF: collecting human preference labels is expensive and slow. Constitutional AI replaces human annotators with a written set of principles (a "constitution") that the model uses to critique and revise its own outputs. This RLAIF (RL from AI Feedback) approach enables explicit, auditable safety rules that can be updated without retraining, while maintaining output quality comparable to RLHF-trained models.</p>
+<h3 id="efficient-architecture-serving_1">Efficient Architecture &amp; Serving<a class="headerlink" href="#efficient-architecture-serving_1" title="Permanent link">&para;</a></h3>
+<p><strong><a href="13_lora/">LoRA</a> (Hu et al., 2021)</strong> — Full fine-tuning of a 175B model requires storing and updating all parameters — impractical for most organizations. Hu et al. showed that the weight updates during fine-tuning have low intrinsic rank: instead of updating the full weight matrix W, decompose the update into two small matrices (A and B) where ΔW = BA. For a 175B model, LoRA reduces trainable parameters from 175B to ~4M (0.002%) while matching full fine-tuning performance. This made fine-tuning accessible on consumer GPUs and enabled serving multiple LoRA adapters on a single base model.</p>
+<p><strong><a href="14_flash_attention/">FlashAttention</a> (Dao et al., 2022)</strong> — Standard attention computes the full N×N attention matrix in GPU HBM (slow memory), creating both a memory bottleneck (O(N²) space) and an IO bottleneck (moving data between HBM and SRAM). FlashAttention uses tiling to compute attention block by block in fast SRAM without ever materializing the full attention matrix. The result: exact attention (not approximate) that is 2-4× faster and uses O(N) memory instead of O(N²). This made training with longer sequences (4K → 64K → 128K) practically feasible.</p>
+<p><strong><a href="15_mistral/">Mistral 7B</a> (Jiang et al., 2023)</strong> — Mistral demonstrated that a 7B model with the right architecture can outperform the 13B LLaMA 2. The key innovations were Grouped-Query Attention (GQA, sharing KV heads to reduce cache size), Sliding Window Attention (limiting attention to a fixed window for efficient long sequences), and aggressive training on high-quality data. Mistral proved that model efficiency — not just scale — determines practical deployment viability for edge and cost-sensitive applications.</p>
+<p><strong><a href="16_mixtral/">Mixtral</a> (Jiang et al., 2024)</strong> — Mixtral is a Sparse Mixture of Experts model with 8 expert FFN modules per layer, routing each token to the top-2 experts. Total parameters: 47B, but active parameters per token: ~13B. This means Mixtral has the knowledge capacity of a 47B model with the inference cost of a 13B model. The paper demonstrated that sparse MoE with simple top-k routing can match dense models 6× their active size, making MoE the dominant architecture for cost-effective large-scale deployment.</p>
+<p><strong><a href="24_mamba/">Mamba</a> (Gu &amp; Dao, 2023)</strong> — Transformers have O(N²) attention complexity, making long sequences expensive. Mamba introduced Selective State Space Models that process sequences in O(N) time by making the state transition parameters input-dependent (selective). Unlike fixed-parameter linear RNNs, Mamba can decide what information to remember or forget at each step. It matched Transformer quality on language modeling while enabling much longer effective context windows. Mamba opened the exploration of non-attention architectures for LLMs.</p>
+<p><strong><a href="35_attention_residuals/">Attention Residuals</a> (Kimi Team, 2026)</strong> — For nearly a decade, Transformer residual connections used fixed unit-weight addition: <span class="arithmatex">\(x_{\ell+1} = x_\ell + f_\ell(x_\ell)\)</span>. Attention Residuals replaced this with learned, input-dependent attention over all preceding layer outputs: <span class="arithmatex">\(x_L = \sum_{\ell=0}^{L-1} \alpha_\ell h_\ell\)</span>. This addresses PreNorm's uncontrolled hidden-state growth and signal dilution in deep networks. Block AttnRes partitions layers into blocks for efficiency: <span class="arithmatex">\(O(B^2 + L^2/B)\)</span> vs <span class="arithmatex">\(O(L^2)\)</span>. Integrated into Kimi Linear (48B MoE) with 1.4T token pretraining, demonstrating consistent scaling gains and more uniform gradient distributions.</p>
+<h3 id="reasoning-tools-agents_1">Reasoning, Tools &amp; Agents<a class="headerlink" href="#reasoning-tools-agents_1" title="Permanent link">&para;</a></h3>
+<p><strong><a href="18_chain_of_thought/">Chain-of-Thought</a> (Wei et al., 2022)</strong> — Large language models failed at multi-step reasoning when asked to produce answers directly. Wei et al. showed that simply adding "Let's think step by step" or providing few-shot examples with intermediate reasoning steps dramatically improved performance on math, logic, and commonsense tasks. Chain-of-Thought prompting requires no fine-tuning — it works by giving the model "thinking space" to decompose problems. This technique is now a standard component of every LLM system and inspired the entire reasoning model paradigm (o1, R1).</p>
+<p><strong><a href="19_react/">ReAct</a> (Yao et al., 2023)</strong> — Before ReAct, LLMs either reasoned without grounding (chain-of-thought, prone to hallucination) or used tools without reasoning (no ability to plan or recover from errors). ReAct interleaves reasoning traces ("I need to search for X because...") with grounded actions (search, lookup, calculate), then observes the results before deciding the next step. This Thought → Action → Observation loop became the foundational architecture for LLM agents because it combines the planning ability of CoT with the factual grounding of tool use.</p>
+<p><strong><a href="20_toolformer/">Toolformer</a> (Schick et al., 2023)</strong> — Previous tool-use approaches required either fine-tuning on human-annotated tool calls or complex prompting. Toolformer taught a model to use tools through self-supervision: the model generates candidate API calls, inserts them into training text, and keeps only those calls that reduce the language modeling loss (i.e., calls that actually help prediction). This created a model that naturally interleaves text generation with calculator, search, and translation API calls without any human annotation of tool usage.</p>
+<h3 id="multimodal-code_1">Multimodal &amp; Code<a class="headerlink" href="#multimodal-code_1" title="Permanent link">&para;</a></h3>
+<p><strong><a href="22_clip/">CLIP</a> (Radford et al., 2021)</strong> — Before CLIP, vision models were trained on fixed label sets (ImageNet's 1,000 classes), making them brittle and narrow. CLIP trained a vision encoder and text encoder jointly on 400M image-text pairs from the internet using contrastive learning — matching images with their captions. This produced a model that understands visual concepts through natural language, enabling zero-shot classification on any category ("a photo of a dog", "a photo of a cat") without any labeled training data. CLIP's visual encoder became the foundation for multimodal models (LLaVA, Gemini, GPT-4V).</p>
+<p><strong><a href="23_codex/">Codex</a> (Chen et al., 2021)</strong> — OpenAI fine-tuned GPT-3 on publicly available code from GitHub, creating a model that translates natural language specifications into working programs. Codex introduced the HumanEval benchmark (164 hand-written programming problems) and the pass@k metric (probability that at least one of k samples passes all test cases). Codex powered GitHub Copilot and demonstrated that code generation is a natural extension of language modeling — code has precise semantics that can be validated automatically, making it the ideal domain for LLM evaluation.</p>
+<p><strong><a href="25_gemini/">Gemini</a> (Google DeepMind, 2023)</strong> — Unlike models that bolt vision encoders onto language models (LLaVA-style), Gemini was pre-trained natively on interleaved text, images, audio, and video from the start. This native multimodal training means the model doesn't have an "adapter gap" between modalities — it reasons across them fluently. Gemini demonstrated state-of-the-art performance across 30+ benchmarks spanning language, code, math, vision, and audio, establishing that a single foundation model can excel across all modalities when they are trained jointly.</p>
+<hr />
+<h2 id="timeline">Timeline<a class="headerlink" href="#timeline" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Papers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2017</td>
+<td>Transformer</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>BERT</td>
+</tr>
+<tr>
+<td>2019</td>
+<td>GPT-2, XLNet, RoBERTa, T5</td>
+</tr>
+<tr>
+<td>2020</td>
+<td>GPT-3, ELECTRA</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>CLIP, Codex, LoRA, RoPE</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>InstructGPT, PaLM, Chinchilla, FlashAttention, FLAN, Chain-of-Thought, Constitutional AI</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>LLaMA, Mistral 7B, ReAct, Toolformer, Mamba, Gemini</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Mixtral, DeepSeek-V2, DeepSeek-V3, ChatGLM/GLM-4, Qwen2.5</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>DeepSeek-R1, Kimi k1.5</td>
+</tr>
+<tr>
+<td>2026</td>
+<td>GLM-5, Kimi K2.5, Attention Residuals</td>
+</tr>
+</tbody>
+</table>
+<h2 id="paper-interconnections">Paper Interconnections<a class="headerlink" href="#paper-interconnections" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    T[Transformer] --&gt; BERT &amp; GPT2 &amp; T5
+    GPT2 --&gt; GPT3
+    GPT3 --&gt; Inst[InstructGPT] &amp; PaLM &amp; CoT &amp; Codex
+    Inst --&gt; CAI
+    PaLM --&gt; Chinchilla --&gt; LLaMA --&gt; Mistral --&gt; Mixtral
+    T5 --&gt; FLAN
+    CoT --&gt; ReAct --&gt; Toolformer
+    CLIP --&gt; Gemini
+    PaLM --&gt; Gemini
+    T --&gt; FlashAttention &amp; Mamba
+    LLaMA --&gt; DSV2[DeepSeek-V2] --&gt; DSV3[DeepSeek-V3] --&gt; DSR1[DeepSeek-R1]
+    Mixtral --&gt; DSV3
+    DSR1 --&gt; KimiK15[Kimi k1.5]
+    KimiK15 --&gt; KimiK25[Kimi K2.5]
+    BERT --&gt; GLM4[GLM-4]
+    GLM4 --&gt; GLM5[GLM-5]
+    DSR1 --&gt; GLM5
+    GPT3 --&gt; Qwen25[Qwen2.5]
+    Inst --&gt; DSR1
+    CoT --&gt; DSR1
+    RoPE[RoPE] --&gt; LLaMA
+    RoPE --&gt; Mistral &amp; Qwen25 &amp; PaLM
+    T --&gt; RoPE
+    DSV3 --&gt; AttnRes[Attention Residuals]
+    KimiK25 --&gt; AttnRes</code></pre>
+<p><strong>Threads:</strong></p>
+<ul>
+<li><strong>Architecture:</strong> Transformer → BERT/GPT/T5 → FlashAttention / Mistral / Mamba</li>
+<li><strong>Positional Encoding:</strong> Transformer → RoPE → LLaMA/Mistral/Qwen (modern standard)</li>
+<li><strong>Scaling:</strong> GPT-3 → PaLM → Chinchilla → LLaMA</li>
+<li><strong>Alignment:</strong> InstructGPT → Constitutional AI / FLAN</li>
+<li><strong>Tools &amp; Agents:</strong> Chain-of-Thought → ReAct → Toolformer</li>
+<li><strong>Multimodal:</strong> CLIP → Gemini</li>
+<li><strong>Chinese lab thread:</strong> LLaMA → DeepSeek-V2 (MLA) → DeepSeek-V3 (MoE+FP8) → DeepSeek-R1 (GRPO) → Kimi k1.5 (long-context RL) → Kimi K2.5 (Agent Swarm)</li>
+<li><strong>Bilingual/GLM thread:</strong> BERT → GLM-4 → GLM-5 (async RL, agentic coding)</li>
+<li><strong>Residual connections:</strong> Transformer → Attention Residuals (adaptive depth aggregation)</li>
+</ul>
+<h2 id="interview-priority-guide">Interview Priority Guide<a class="headerlink" href="#interview-priority-guide" title="Permanent link">&para;</a></h2>
+<p>If you have limited time, focus on these papers first (highest interview frequency):</p>
+<ol>
+<li><strong>Transformer</strong> — asked in every LLM interview</li>
+<li><strong>InstructGPT/RLHF</strong> — mandatory for alignment questions</li>
+<li><strong>LoRA</strong> — essential for fine-tuning and serving questions</li>
+<li><strong>FlashAttention</strong> — key for systems/infrastructure roles</li>
+<li><strong>LLaMA</strong> — modern architecture standard (RMSNorm, SwiGLU, RoPE)</li>
+<li><strong>RoPE</strong> — essential architecture knowledge; positional encoding standard</li>
+<li><strong>Chinchilla</strong> — scaling and training budget decisions</li>
+<li><strong>Chain-of-Thought</strong> — reasoning and prompt engineering</li>
+<li><strong>BERT</strong> — encoder vs. decoder understanding</li>
+<li><strong>GPT-3</strong> — in-context learning and scaling laws</li>
+<li><strong>ReAct</strong> — agent and tool-use systems</li>
+<li><strong>DeepSeek-R1</strong> — now essential; GRPO, RL-only reasoning, distillation</li>
+<li><strong>DeepSeek-V2/V3</strong> — MLA for KV cache, MoE load balancing</li>
+<li><strong>Kimi k1.5</strong> — long-context RL as an alternative to MCTS</li>
+<li><strong>GLM-5</strong> — async RL for agentic coding, MoE serving</li>
+<li><strong>Kimi K2.5</strong> — multi-agent RL (PARL), native multimodality</li>
+<li><strong>Attention Residuals</strong> — emerging 2026 topic; transformer depth redesign</li>
+</ol>
+<hr />
+<h2 id="cross-paper-interview-scenarios">Cross-Paper Interview Scenarios<a class="headerlink" href="#cross-paper-interview-scenarios" title="Permanent link">&para;</a></h2>
+<p>These scenarios draw on multiple papers and test your ability to connect ideas across the field. Each links to the relevant deep dives.</p>
+<h3 id="scenario-1-moe-serving-under-load">Scenario 1: MoE Serving Under Load<a class="headerlink" href="#scenario-1-moe-serving-under-load" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"You're serving a 671B MoE model. Walk me through memory vs. compute trade-offs and when expert parallelism breaks down."</p>
+</blockquote>
+<p>Draws on: <a href="16_mixtral/">Mixtral</a> (top-2 routing basics), <a href="27_deepseek_v3/">DeepSeek-V3</a> (auxiliary-loss-free balancing, FP8), <a href="32_glm5/">GLM-5</a> (744B MoE serving), <a href="33_kimi_k2_5/">Kimi K2.5</a> (384 experts, 8 active).</p>
+<p>Key points: total vs. active parameters determine memory vs. compute; expert parallelism requires all-to-all communication; load imbalance wastes GPU cycles; bias-based routing (V3) vs. auxiliary loss (Mixtral) have different stability profiles.</p>
+<h3 id="scenario-2-async-rl-for-tool-heavy-tasks">Scenario 2: Async RL for Tool-Heavy Tasks<a class="headerlink" href="#scenario-2-async-rl-for-tool-heavy-tasks" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"Your RL training loop is bottlenecked by slow compiler/test-runner calls. How do you keep GPUs utilized?"</p>
+</blockquote>
+<p>Draws on: <a href="28_deepseek_r1/">DeepSeek-R1</a> (synchronous GRPO), <a href="32_glm5/">GLM-5</a> (Slime async RL, V-trace correction).</p>
+<p>Key points: synchronous RL idles GPUs waiting for slowest rollout; Slime decouples rollout workers from policy updates; V-trace importance weighting corrects for stale policies; trade-off is bias from staleness vs. throughput gain.</p>
+<h3 id="scenario-3-kv-cache-efficiency-stack">Scenario 3: KV Cache Efficiency Stack<a class="headerlink" href="#scenario-3-kv-cache-efficiency-stack" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"Design the inference stack for a 128K-context model. Which optimizations compose and which conflict?"</p>
+</blockquote>
+<p>Draws on: <a href="26_deepseek_v2/">DeepSeek-V2</a> (MLA, 93% cache reduction), <a href="14_flash_attention/">FlashAttention</a> (IO-aware tiling), <a href="../04_inference/kv_cache/">Inference: KV Cache</a>, <a href="../04_inference/continuous_batching/">Inference: Continuous Batching</a>.</p>
+<p>Key points: MLA compresses KV into low-rank latent; FlashAttention tiles computation in SRAM; continuous batching maximizes throughput; PagedAttention manages fragmented memory; all three compose — MLA reduces what's cached, FlashAttention speeds the compute, batching fills GPU utilization.</p>
+<h3 id="scenario-4-single-agent-vs-multi-agent-systems">Scenario 4: Single Agent vs. Multi-Agent Systems<a class="headerlink" href="#scenario-4-single-agent-vs-multi-agent-systems" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"When should you use a single powerful agent with tools vs. a multi-agent swarm?"</p>
+</blockquote>
+<p>Draws on: <a href="32_glm5/">GLM-5</a> (single agent, SWE-bench), <a href="33_kimi_k2_5/">Kimi K2.5</a> (Agent Swarm, PARL), <a href="19_react/">ReAct</a> (thought-action loop), <a href="20_toolformer/">Toolformer</a> (self-supervised tool use).</p>
+<p>Key points: single agents are simpler and have full context; multi-agent parallelizes independent subtasks; PARL rewards both quality and speedup; coordination overhead can negate parallelism gains for tightly coupled tasks; DAG dependency analysis determines decomposability.</p>
+<h3 id="scenario-5-distillation-vs-on-student-rl">Scenario 5: Distillation vs. On-Student RL<a class="headerlink" href="#scenario-5-distillation-vs-on-student-rl" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"You have a strong reasoning teacher. When do you distill vs. run RL directly on the student?"</p>
+</blockquote>
+<p>Draws on: <a href="28_deepseek_r1/">DeepSeek-R1</a> (R1-Distill vs. GRPO), <a href="32_glm5/">GLM-5</a> (distillation for coding agents), <a href="11_chinchilla/">Chinchilla</a> (compute-optimal trade-offs).</p>
+<p>Key points: distillation (SFT on teacher traces) is cheaper and transfers style; RL on student handles distribution shift and new domains; distillation may not transfer robustness without diverse/hard-negative data; compute budget determines which is feasible.</p>
+<h3 id="scenario-6-data-quality-as-a-scaling-multiplier">Scenario 6: Data Quality as a Scaling Multiplier<a class="headerlink" href="#scenario-6-data-quality-as-a-scaling-multiplier" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"Qwen2.5-72B matches a 405B model. What does this say about compute-optimal training?"</p>
+</blockquote>
+<p>Draws on: <a href="31_qwen2_5/">Qwen2.5</a> (18T tokens, data quality), <a href="11_chinchilla/">Chinchilla</a> (compute-optimal formula), <a href="12_llama/">LLaMA</a> (open training recipe).</p>
+<p>Key points: Chinchilla formula assumes fixed data quality; effective data <span class="arithmatex">\(D_{\text{eff}} = \text{quality}(D) \cdot |D|\)</span>; curated 18T tokens &gt; raw 100T tokens; specialized post-training (Math, Coder) further leverages the base investment.</p>
+<h3 id="scenario-7-evaluation-hygiene-and-benchmark-leakage">Scenario 7: Evaluation Hygiene and Benchmark Leakage<a class="headerlink" href="#scenario-7-evaluation-hygiene-and-benchmark-leakage" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>"How do you ensure your model's benchmark scores are trustworthy?"</p>
+</blockquote>
+<p>Draws on: <a href="31_qwen2_5/">Qwen2.5</a> (evaluation methodology), <a href="32_glm5/">GLM-5</a> (SWE-bench Verified), <a href="33_kimi_k2_5/">Kimi K2.5</a> (multi-benchmark evaluation).</p>
+<p>Key points: API vs. open-weight reproducibility; version-pinned benchmarks; contamination detection; held-out private test sets; human evaluation as ground truth calibration; SWE-bench Verified uses real GitHub PRs with test suites.</p>
+<hr />
+<h2 id="deep-dive-chinese-lab-papers">Deep Dive: Chinese Lab Papers<a class="headerlink" href="#deep-dive-chinese-lab-papers" title="Permanent link">&para;</a></h2>
+<h3 id="deepseek-v2-2024-multi-head-latent-attention">DeepSeek-V2 (2024) — Multi-Head Latent Attention<a class="headerlink" href="#deepseek-v2-2024-multi-head-latent-attention" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: DeepSeek-V2's MLA mechanism reduced KV cache by 93% compared to standard MHA — enabling 128K context windows at practical inference cost. This is now a standard technique interviewers probe for in systems roles.</p>
+<p><strong>Core idea</strong>: instead of caching full K and V matrices (which grow as <span class="arithmatex">\(O(T \cdot d_{\text{model}})\)</span>), compress them into a low-rank latent vector <span class="arithmatex">\(c_t\)</span>:</p>
+<div class="arithmatex">\[
+c_t = W^{DKV} h_t \in \mathbb{R}^{d_c}, \quad d_c \ll d_{\text{model}} \cdot n_h
+\]</div>
+<p>At attention time, decompress:</p>
+<div class="arithmatex">\[
+K_t = W^{UK} c_t, \quad V_t = W^{UV} c_t
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Instead of storing a 1024-dimensional K and V for each of 64 heads at every token position, store a single ~512-dimensional compressed vector <span class="arithmatex">\(c_t\)</span>. At inference, project it back to K and V on the fly. You trade a small amount of compute for a huge reduction in memory bandwidth.</p>
+</div>
+<p><strong>Key results</strong>: 236B total / 21B active MoE model; 93.3% KV cache reduction; 5.76× higher generation throughput vs. DeepSeek 67B.</p>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>How does MLA differ from MQA (Multi-Query Attention) and GQA (Grouped-Query Attention)? Which provides the largest KV cache savings?</li>
+<li>Why does the KV cache size matter for <strong>serving throughput</strong> — what is the memory bandwidth bottleneck during decode?</li>
+<li>MLA stores a compressed <span class="arithmatex">\(c_t\)</span> instead of full K/V — what is the quality trade-off, and how is it mitigated?</li>
+</ol>
+<hr />
+<h3 id="deepseek-v3-2024-moe-at-671b-scale">DeepSeek-V3 (2024) — MoE at 671B Scale<a class="headerlink" href="#deepseek-v3-2024-moe-at-671b-scale" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: DeepSeek-V3 trained a 671B-parameter MoE model (37B active) in 2.788M GPU-hours on H800s — remarkably efficient at this scale. Three innovations drove this: <strong>auxiliary-loss-free load balancing</strong>, <strong>FP8 mixed-precision training</strong>, and <strong>multi-token prediction (MTP)</strong> for denser training signals.</p>
+<p><strong>Auxiliary-loss-free load balancing</strong>: traditional MoE uses an auxiliary loss to prevent expert collapse (all tokens routing to one expert). DeepSeek-V3 instead adjusts per-expert <strong>bias terms</strong> dynamically during training:</p>
+<div class="arithmatex">\[
+g_{i,t} = \text{Softmax}\bigl(e_{i,t} + b_i\bigr)
+\]</div>
+<p>where <span class="arithmatex">\(b_i\)</span> is updated by <span class="arithmatex">\(\pm\gamma\)</span> depending on whether expert <span class="arithmatex">\(i\)</span> is over- or under-utilized. No auxiliary loss term pollutes the primary objective.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Instead of penalizing imbalanced routing through a separate loss (which fights the primary task loss), add a learnable bias to each expert's routing score. Over-utilized experts get a lower bias (making them less likely to be chosen), under-utilized ones get a higher bias. The primary loss stays clean.</p>
+</div>
+<p><strong>Multi-Token Prediction (MTP)</strong>: alongside the standard next-token head, auxiliary heads predict tokens <span class="arithmatex">\(t+2, t+3, \ldots, t+k\)</span> during training. These heads are <strong>discarded at inference</strong> but provide denser gradient signal during training.</p>
+<p><strong>FP8 training</strong>: weights, activations, and gradients computed in FP8 with block-wise scaling. Enables ~2× FLOP throughput and halved memory bandwidth vs. BF16.</p>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>What is <strong>expert collapse</strong> in MoE training, and how do traditional auxiliary losses address it? What is the disadvantage of auxiliary losses?</li>
+<li>How does <strong>bias-adjustment load balancing</strong> avoid the auxiliary loss problem while still achieving balanced routing?</li>
+<li>What does <strong>multi-token prediction</strong> during training provide that standard next-token prediction does not?</li>
+<li>Why is <strong>FP8 training</strong> harder than BF16 training, and what calibration strategies make it stable?</li>
+</ol>
+<hr />
+<h3 id="deepseek-r1-2025-rl-only-reasoning">DeepSeek-R1 (2025) — RL-Only Reasoning<a class="headerlink" href="#deepseek-r1-2025-rl-only-reasoning" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: R1-Zero proved that reasoning capability is <strong>latent in pre-trained weights</strong> and can be elicited purely through RL — no labeled CoT data required. This changed how the field thinks about the relationship between pretraining, SFT, and alignment.</p>
+<p>See the <a href="28_deepseek_r1/">DeepSeek-R1 deep dive</a> for the full GRPO derivation and worked example, or the <a href="../07_recent_advances/01_deepseek_r1/">Recent Advances entry</a> for a frontier summary.</p>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>R1-Zero trains with RL but no SFT. What does this imply about what is "in" a pretrained model before alignment?</li>
+<li>Compare the GRPO group-relative advantage to the PPO critic — when would you prefer each?</li>
+<li>Why is distillation from R1 (SFT on R1 traces) often more compute-efficient than running GRPO on the student directly?</li>
+</ol>
+<hr />
+<h3 id="chatglm-glm-4-zhipu-ai-tsinghua-20222024">ChatGLM / GLM-4 (Zhipu AI / Tsinghua, 2022–2024)<a class="headerlink" href="#chatglm-glm-4-zhipu-ai-tsinghua-20222024" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: the GLM series demonstrated a third pretraining paradigm alongside MLM (BERT) and CLM (GPT): <strong>autoregressive blank infilling</strong>. GLM-4 and GLM-4.6 became competitive frontier models with particularly strong Chinese-English bilingual quality and long-context generation.</p>
+<p><strong>GLM pretraining objective</strong>: randomly sample text spans, replace them with mask tokens, then autoregressively predict each span given the masked context. Unlike BERT, spans are generated left-to-right. Unlike GPT, the context is bidirectional:</p>
+<div class="arithmatex">\[
+\mathcal{L}_{\text{GLM}} = -\mathbb{E}\left[\sum_{s \in \mathcal{S}} \sum_{i=1}^{|s|} \log P_\theta(s_i \mid \mathbf{x}_{\text{corrupt}},\, s_1,\ldots,s_{i-1})\right]
+\]</div>
+<p>where <span class="arithmatex">\(\mathcal{S}\)</span> is a set of sampled spans and <span class="arithmatex">\(\mathbf{x}_{\text{corrupt}}\)</span> has those spans masked.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>The model sees the whole document (with some spans blanked out), and must generate each blanked span token by token. This trains bidirectional understanding (it sees future context around the blank) AND autoregressive generation (it must generate the blank causally). One objective, both capabilities.</p>
+</div>
+<p><strong>Key results</strong> (GLM-4.6): 357B total / 32B active; 200K input context; 128K output tokens; MIT license.</p>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>How does the GLM blank-infilling objective differ from BERT's MLM — specifically in what attention mask pattern each uses?</li>
+<li>What downstream tasks is the GLM objective better suited for compared to pure CLM, and why?</li>
+<li>Why is a <strong>200K output token limit</strong> practically significant for agentic and long-form generation tasks?</li>
+</ol>
+<hr />
+<h3 id="kimi-k15-moonshot-ai-2025-long-context-rl-scaling">Kimi k1.5 (Moonshot AI, 2025) — Long-Context RL Scaling<a class="headerlink" href="#kimi-k15-moonshot-ai-2025-long-context-rl-scaling" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: Kimi k1.5 matched o1 on AIME and MATH 500 <strong>without MCTS, value functions, or process reward models</strong> — a simpler RL recipe than most expected to reach frontier reasoning quality. The key insight: a 128K-token context window lets the model reason, reflect, and self-correct within a single trajectory.</p>
+<p>See the <a href="30_kimi_k1_5/">Kimi k1.5 deep dive</a> for the mirror descent formulation, or the <a href="../07_recent_advances/02_kimi_k1_5/">Recent Advances entry</a> for a frontier summary.</p>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>How does <strong>partial rollout reuse</strong> reduce the compute cost of training with 128K-token sequences?</li>
+<li>Why does long context itself improve reasoning quality in RL training, even without a process reward model?</li>
+<li>Kimi k1.5 outperforms GPT-4o on short-CoT tasks. What does this suggest about the relationship between reasoning training and general capability?</li>
+</ol>
+<hr />
+<h3 id="qwen25-alibaba-2024">Qwen2.5 (Alibaba, 2024)<a class="headerlink" href="#qwen25-alibaba-2024" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: Qwen2.5-72B matches Llama-3-405B-Instruct — 5× larger — on many benchmarks, making it a landmark data-efficiency result. The key: scaling pre-training data from 7T to <strong>18T high-quality tokens</strong> and investing in post-training alignment via 1M+ SFT examples and multi-stage RL.</p>
+<p><strong>Chinchilla revisited</strong>: Qwen2.5 demonstrates that the compute-optimal frontier has shifted — with sufficiently curated data, smaller models trained on more tokens substantially outperform larger models trained on less. The Chinchilla formula applies, but data quality is a multiplier on the token count:</p>
+<div class="arithmatex">\[
+L \approx A N^{-\alpha} + B D_{\text{eff}}^{-\beta}
+\]</div>
+<p>where <span class="arithmatex">\(D_{\text{eff}} = \text{quality}(D) \cdot |D|\)</span> — effective data depends on quality, not just volume.</p>
+<p><strong>Specialized variants</strong>: Qwen2.5-Math, Qwen2.5-Coder, QwQ (reasoning), and multimodal Qwen-VL demonstrate that a single pre-trained base can be efficiently specialized via targeted post-training.</p>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>Qwen2.5-72B matches a 405B model. What does this say about the Chinchilla compute-optimal hypothesis, and how does data quality modify it?</li>
+<li>How does the strategy of training specialized variants (Math, Coder) from a single base compare to training separate models from scratch?</li>
+<li>What does Alibaba's model portfolio (open-weight base + API MoE variants + specialized) tell you about the economics of LLM deployment?</li>
+</ol>
+<hr />
+<h3 id="glm-5-zhipu-ai-tsinghua-2026-agentic-engineering-with-async-rl">GLM-5 (Zhipu AI / Tsinghua, 2026) — Agentic Engineering with Async RL<a class="headerlink" href="#glm-5-zhipu-ai-tsinghua-2026-agentic-engineering-with-async-rl" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: GLM-5 (744B MoE, 40B active) achieves <strong>77.8 on SWE-bench Verified</strong> — the strongest open-weight result for autonomous code repair, approaching Claude Opus 4.5. The key innovation is <strong>Slime</strong>, an asynchronous RL framework that decouples rollout generation from policy updates, keeping GPUs utilized even when agentic rollouts involve slow tool execution (compilers, test runners).</p>
+<p><strong>Slime async RL</strong>: synchronous RL wastes GPU cycles waiting for the slowest tool-interaction rollout. Slime uses rollout workers with slightly stale policy copies, buffering completed episodes. V-trace importance weighting corrects for the staleness gap:</p>
+<div class="arithmatex">\[
+\rho_t = \min\left(\bar{\rho},\, \frac{\pi_\theta(a_t \mid s_t)}{\mu(a_t \mid s_t)}\right)
+\]</div>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>Slime is like a kitchen where chefs work independently instead of waiting for the slowest dish. A quality controller (importance weights) ensures slightly stale preparations are still usable for the next course.</p>
+</div>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>How does <strong>Slime's asynchronous RL</strong> differ from synchronous PPO/GRPO, and when is async preferable?</li>
+<li>With 744B total but only 40B active parameters, what determines <strong>serving cost</strong> — total or active parameters?</li>
+<li>Compare the <strong>GLM pretraining objective</strong> (blank infilling) with standard CLM for agentic code repair tasks — why might bidirectional context help?</li>
+</ol>
+<hr />
+<h3 id="kimi-k25-moonshot-ai-2026-multi-agent-coordination-with-parl">Kimi K2.5 (Moonshot AI, 2026) — Multi-Agent Coordination with PARL<a class="headerlink" href="#kimi-k25-moonshot-ai-2026-multi-agent-coordination-with-parl" title="Permanent link">&para;</a></h3>
+<p><strong>Why it matters</strong>: Kimi K2.5 (1T MoE, 32B active, 384 experts) introduces <strong>Agent Swarm</strong> — a system that orchestrates up to 100 parallel sub-agents with 1,500 tool calls per workflow. The coordinator is trained with <strong>Parallel-Agent Reinforcement Learning (PARL)</strong>, which rewards both task-completion quality and parallelism speedup. Native multimodality via <strong>MoonViT 400M</strong> enables visual-to-code generation from UI screenshots.</p>
+<p><strong>PARL reward</strong>:</p>
+<div class="arithmatex">\[
+R(D, y) = R_{\text{quality}}(y, q) + \beta \cdot \frac{T_{\text{sequential}}}{T_{\text{parallel}}(D)}
+\]</div>
+<p>The speedup ratio rewards decompositions that achieve genuine parallelism — the coordinator learns which tasks can be parallelized vs which have sequential dependencies.</p>
+<div class="admonition math-intuition">
+<p class="admonition-title">In Plain English</p>
+<p>PARL is MapReduce for LLM tasks — the coordinator learns to map work to parallel sub-agents and reduce results into a final output. The RL reward incentivizes both getting the right answer AND doing it faster via parallelism.</p>
+</div>
+<p><strong>Interview questions</strong>:</p>
+<ol>
+<li>How does PARL differ from prompt-based multi-agent frameworks (AutoGen, CrewAI)?</li>
+<li>What are the trade-offs between <strong>native multimodal pretraining</strong> (K2.5) vs <strong>bolt-on</strong> vision encoders (LLaVA)?</li>
+<li>With 384 experts and 8 active per token, what is the memory footprint and what are the load balancing challenges?</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../05_advanced/hallucination_safety/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Hallucination and Safety">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Hallucination and Safety
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="01_attention_is_all_you_need/" class="md-footer__link md-footer__link--next" aria-label="Next: Attention Is All You Need (Transformer)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Attention Is All You Need (Transformer)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 LLMBase contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/spawn08/llmbase" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.path", "navigation.footer", "toc.follow", "toc.integrate", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3966 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Ground-Up Guide to Large Language Models for Engineers">
+      
+      
+        <meta name="author" content="Amarsingh Thakur">
+      
+      
+        <link rel="canonical" href="https://spawn08.github.io/llmbase/interview_questions/">
+      
+      
+        <link rel="prev" href="../07_recent_advances/09_gpt5_4/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
+    
+    
+      
+        <title>Interview Question Bank - LLMBase</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.bcfcd587.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+3:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Source Sans 3";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#interview-question-bank" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+<style>
+  .md-banner {
+    background: linear-gradient(135deg, #3D5A6E 0%, #5E7A8C 50%, #6FA3B8 100%) !important;
+    color: #E4E8EE;
+  }
+  .md-banner__inner {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+</style>
+LLMBase &mdash; A ground-up guide to Large Language Models &bull; Math &bull; Code &bull; Interview Q&amp;A &bull; 33 landmark papers
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="LLMBase" class="md-header__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LLMBase
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Interview Question Bank
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="LLMBase" class="md-nav__button md-logo" aria-label="LLMBase" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.105 4.105 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.592 2.592 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.968.968 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4-.15-.26-.28-.53-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25.33-.11m-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92Z"/></svg>
+
+    </a>
+    LLMBase
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spawn08/llmbase" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spawn08/llmbase
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../00_prerequisites/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Deep Learning Fundamentals
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Deep Learning Fundamentals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/00_math_prerequisites/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math Prerequisites
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/01_perceptron_and_ffn/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Perceptron and Feedforward Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/02_activation_functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Activation Functions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/03_backpropagation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backpropagation and Gradient Descent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/04_loss_and_regularization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Loss Functions and Regularization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/05_convolutional_neural_networks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Convolutional Neural Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/06_sequence_modeling_and_rnns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence Modeling and RNNs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_prerequisites/07_encoder_decoder_paradigm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Encoder-Decoder Paradigm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../01_foundations/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Foundations of Language Modeling
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Foundations of Language Modeling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/language_modeling_basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/word_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Word Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/neural_language_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural Language Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/sequence_to_sequence/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence-to-Sequence
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/information_theory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_foundations/attention_math/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Mathematics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Hands-On Notebooks
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Hands-On Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/01_math_and_neural_network_basics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Math & Neural Network Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/02_training_mechanics.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Training Mechanics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/03_cnns_and_sequences.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CNNs, Sequences & Encoder-Decoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/04_language_modeling_and_embeddings.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Language Modeling & Embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/05_neural_lm_and_seq2seq.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neural LM & Seq2Seq
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/06_information_theory_and_attention.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Information Theory & Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../02_core_architectures/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Core Architectures
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Core Architectures
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/transformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Transformer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/self_attention_mha/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Self-Attention and MHA
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/positional_encoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Positional Encoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/gpt_decoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT Decoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/bert_encoder_only/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT Encoder-Only
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/t5_encoder_decoder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5 Encoder-Decoder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/mixture_of_experts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_core_architectures/state_space_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    State Space Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../03_training/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Training and Alignment
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Training and Alignment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/pretraining/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pre-training at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/distributed_training/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Distributed Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/mixed_precision/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixed Precision and Quantization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/instruction_tuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Instruction Tuning and SFT
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/rlhf/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RLHF and DPO
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_training/peft/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameter-Efficient Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../04_inference/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Inference and Serving
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Inference and Serving
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/decoding_strategies/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoding Strategies
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/kv_cache/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    KV Cache
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/speculative_decoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Speculative Decoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/continuous_batching/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Batching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/quantization_inference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantization for Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_inference/serving_systems/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLM Serving Systems
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../05_advanced/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/rag/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RAG
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agents and Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/long_context/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Long-Context Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/multimodal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multimodal LLMs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/emergent_capabilities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Emergent Capabilities
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/evaluation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Evaluation and Benchmarking
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_advanced/hallucination_safety/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hallucination and Safety
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../06_research_papers/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Landmark Research Papers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Landmark Research Papers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/01_attention_is_all_you_need/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Is All You Need (Transformer)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/02_bert/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BERT: Bidirectional Encoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/03_gpt2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-2: Unsupervised Multitask Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/04_gpt3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-3: In-Context Learning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/05_t5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    T5: Text-to-Text Transfer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/06_xlnet/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    XLNet: Permutation Language Modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/07_roberta/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoBERTa: Robust BERT Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/08_electra/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ELECTRA: Efficient Pretraining
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/09_instructgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    InstructGPT: RLHF Pipeline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/10_palm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PaLM: Pathways at 540B
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/11_chinchilla/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chinchilla: Compute-Optimal Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/12_llama/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LLaMA: Open Foundation Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/13_lora/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LoRA: Low-Rank Adaptation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/14_flash_attention/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FlashAttention: IO-Aware Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/15_mistral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mistral 7B: Efficient Small Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/16_mixtral/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mixtral: Sparse Mixture of Experts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/17_flan/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FLAN: Instruction Tuning at Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/18_chain_of_thought/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chain-of-Thought Prompting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/19_react/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ReAct: Reasoning and Acting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/20_toolformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Toolformer: Self-Supervised Tool Use
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/21_constitutional_ai/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Constitutional AI: Principled Alignment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/22_clip/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLIP: Contrastive Vision-Language
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/23_codex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Codex: Code Generation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/24_mamba/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mamba: Linear-Time State Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/25_gemini/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini: Native Multimodal
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/26_deepseek_v2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V2: Multi-Head Latent Attention
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/27_deepseek_v3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-V3: MoE at 671B Scale
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/28_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1: RL-Only Reasoning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/29_glm4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4: Bilingual Foundation Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/30_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5: Long-Context RL Scaling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/31_qwen2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen2.5: Data-Efficient Training
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/32_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5: Agentic Async RL
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/33_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5: Multi-Agent Coordination
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/34_rope_roformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RoPE: Rotary Position Embedding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_research_papers/35_attention_residuals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attention Residuals: Rethinking Depth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../07_recent_advances/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Recent Advances
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Recent Advances
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/01_deepseek_r1/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DeepSeek-R1 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/02_kimi_k1_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi k1.5 (Jan 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/03_gpt4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-4.5 (Feb 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/04_gemini_2_5_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 2.5 Pro (Mar 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/05_llama_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Llama 4 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/13_qwen3/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qwen 3 (Apr 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/06_gpt5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5 (Aug 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/10_glm4_6/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-4.6 (Sep 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/07_claude_opus_4_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Claude Opus 4.5 (Nov 2025)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/12_kimi_k2_5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kimi K2.5 (Jan 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/08_gemini_3_1_pro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gemini 3.1 Pro (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/11_glm5/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GLM-5 (Feb 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_recent_advances/09_gpt5_4/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GPT-5.4 Family (Mar 2026)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Interview Question Bank
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Interview Question Bank
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-use-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to use this page
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#foundations-30-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Foundations (30 Questions)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Foundations (30 Questions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language-modeling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Language Modeling
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#word-embeddings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Word Embeddings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neural-language-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Neural Language Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sequence-to-sequence-and-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sequence-to-Sequence and Attention
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#information-theory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Information Theory
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-30-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Architecture (30 Questions)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture (30 Questions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-transformer" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Transformer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attention-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attention Variants
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#positional-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Positional Encoding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gpt-and-decoder-only-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      GPT and Decoder-Only Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bert-and-encoder-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      BERT and Encoder Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#t5-and-encoder-decoder" class="md-nav__link">
+    <span class="md-ellipsis">
+      T5 and Encoder-Decoder
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mixture-of-experts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mixture of Experts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-space-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      State Space Models
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-design-15-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      System Design (15 Questions)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#research-awareness-10-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Research Awareness (10 Questions)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference-concepts-to-know-cold" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Reference: Concepts to Know Cold
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-paper-interview-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cross-Paper Interview Scenarios
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="interview-question-bank">Interview Question Bank<a class="headerlink" href="#interview-question-bank" title="Permanent link">&para;</a></h1>
+<p>A comprehensive collection of 85+ questions organized by topic and difficulty. These are the questions asked at Google, Meta, OpenAI, Anthropic, Amazon, Microsoft, Apple, and top AI startups for roles involving LLMs.</p>
+<p>Each question includes the <strong>expected answer depth</strong>, <strong>common follow-ups</strong>, and <strong>red-flag answers</strong> that suggest shallow understanding.</p>
+<hr />
+<h2 id="how-to-use-this-page">How to use this page<a class="headerlink" href="#how-to-use-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Questions marked <strong>(Core)</strong> test fundamental understanding — you must nail these.</li>
+<li>Questions marked <strong>(Advanced)</strong> test depth — strong answers here set you apart.</li>
+<li>Questions marked <strong>(System Design)</strong> test practical engineering judgment.</li>
+<li>Questions marked <strong>(Research)</strong> test awareness of the frontier.</li>
+</ul>
+<hr />
+<h2 id="foundations-30-questions">Foundations (30 Questions)<a class="headerlink" href="#foundations-30-questions" title="Permanent link">&para;</a></h2>
+<h3 id="language-modeling">Language Modeling<a class="headerlink" href="#language-modeling" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">1. (Core) Explain the chain rule decomposition for language models.</p>
+<p><strong>Expected depth:</strong> Write the joint probability <span class="arithmatex">\(P(w_1, \ldots, w_T) = \prod_{t=1}^{T} P(w_t \mid w_{1:t-1})\)</span>. Explain that every autoregressive LM — from bigrams to GPT-4 — is an instantiation of this factorization. The only difference is how they parameterize the conditional.</p>
+<p><strong>Follow-up:</strong> "What assumption does an n-gram model make about this factorization?"</p>
+<p><strong>Red flag:</strong> Cannot write the formula or confuses it with Bayes' rule.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">2. (Core) What is perplexity and why do we use it?</p>
+<p><strong>Expected depth:</strong> Perplexity = <span class="arithmatex">\(\exp(H)\)</span> where <span class="arithmatex">\(H\)</span> is the average cross-entropy per token. Intuitively, it measures the effective vocabulary size the model is choosing from at each step. Lower is better. A perplexity of 1 means perfect prediction. Mention that perplexity is only comparable between models using the same tokenizer on the same test set.</p>
+<p><strong>Follow-up:</strong> "If model A has perplexity 15 and model B has perplexity 30 on the same test set, what does that mean concretely?"</p>
+<p><strong>Red flag:</strong> Says "it measures how confused the model is" without explaining the exponential relationship to cross-entropy.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">3. (Core) Why do n-gram models fail at scale?</p>
+<p><strong>Expected depth:</strong> The number of possible n-grams grows as <span class="arithmatex">\(V^n\)</span>. For a vocabulary of 50,000 and <span class="arithmatex">\(n=5\)</span>, that is <span class="arithmatex">\(50000^5 \approx 3 \times 10^{23}\)</span> possible 5-grams — most never appear in training data. This is the curse of dimensionality. Smoothing helps but cannot generalize to unseen contexts. Neural models solve this by mapping words to continuous vectors where similar words share parameters.</p>
+<p><strong>Follow-up:</strong> "How does smoothing address the zero-probability problem?"</p>
+<p><strong>Red flag:</strong> Only mentions "sparsity" without quantifying the combinatorial explosion.</p>
+</div>
+<h3 id="word-embeddings">Word Embeddings<a class="headerlink" href="#word-embeddings" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">4. (Core) Explain how Word2Vec learns word representations.</p>
+<p><strong>Expected depth:</strong> Describe both Skip-gram (predict context from center word) and CBOW (predict center word from context). The key insight is that the hidden-to-output weight matrix learns vectors where words appearing in similar contexts get similar vectors. Mention the training objective — maximize <span class="arithmatex">\(\log P(\text{context} \mid \text{center})\)</span> — and why negative sampling is needed (full softmax over 50K+ words is prohibitive). Negative sampling turns the problem into binary classification: distinguish real context words from random noise words.</p>
+<p><strong>Follow-up:</strong> "What is the complexity difference between full softmax and negative sampling?"</p>
+<p><strong>Red flag:</strong> Cannot explain the training objective or confuses Skip-gram and CBOW.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">5. (Core) Why does cosine similarity work for word embeddings?</p>
+<p><strong>Expected depth:</strong> Cosine similarity measures the angle between vectors regardless of magnitude. Embeddings trained with co-occurrence objectives push words into regions of the vector space where direction encodes semantic similarity. Cosine handles the fact that some words have larger magnitude (higher frequency) without that affecting similarity judgments. Contrast with Euclidean distance which is magnitude-sensitive.</p>
+<p><strong>Follow-up:</strong> "When would Euclidean distance be more appropriate?"</p>
+<p><strong>Red flag:</strong> Cannot explain why direction matters more than magnitude.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">6. (Advanced) Explain the king - man + woman = queen analogy and when it fails.</p>
+<p><strong>Expected depth:</strong> The embedding space captures relational structure as vector offsets. The gender direction (man → woman) is roughly parallel to (king → queen). This works because Word2Vec implicitly factorizes a PMI matrix. It fails for: infrequent words (poor embedding quality), multi-sense words (one vector per word), abstract relationships, and relationships not well-represented in the training corpus.</p>
+<p><strong>Follow-up:</strong> "How do contextual embeddings handle polysemy?"</p>
+<p><strong>Red flag:</strong> Treats it as magic without explaining why linear structure exists.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">7. (Advanced) Compare static embeddings (Word2Vec) with contextual embeddings (BERT).</p>
+<p><strong>Expected depth:</strong> Static embeddings assign one fixed vector per word regardless of context — "bank" in "river bank" and "bank account" gets the same vector. Contextual embeddings produce different vectors for the same token depending on surrounding words. BERT's embeddings come from running the full Transformer and reading the final hidden state for each token position. ELMo was the first contextual model (bidirectional LSTM). Trade-offs: static embeddings are fast and small (lookup table), contextual embeddings require a forward pass but handle polysemy and syntax.</p>
+<p><strong>Follow-up:</strong> "Can you get contextual embeddings from GPT? How do they differ from BERT's?"</p>
+<p><strong>Red flag:</strong> Cannot articulate the polysemy problem that contextual embeddings solve.</p>
+</div>
+<h3 id="neural-language-models">Neural Language Models<a class="headerlink" href="#neural-language-models" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">8. (Core) Explain the vanishing gradient problem in RNNs.</p>
+<p><strong>Expected depth:</strong> During backpropagation through time, gradients are multiplied by the recurrent weight matrix at each step. If the largest singular value of this matrix is less than 1, gradients shrink exponentially: <span class="arithmatex">\(0.9^{50} \approx 0.005\)</span>. This means the network cannot learn dependencies beyond roughly 10-20 steps. The exploding gradient problem (singular value &gt; 1) is solved by gradient clipping, but vanishing gradients require architectural solutions like LSTM/GRU.</p>
+<p><strong>Follow-up:</strong> "How exactly does LSTM's constant error carousel solve this?"</p>
+<p><strong>Red flag:</strong> Cannot give the mathematical intuition (repeated multiplication by values &lt; 1).</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">9. (Core) Walk through the LSTM gate equations and explain what each gate does.</p>
+<p><strong>Expected depth:</strong> Four components: forget gate <span class="arithmatex">\(f_t = \sigma(W_f[h_{t-1}, x_t])\)</span> decides what to discard from cell state; input gate <span class="arithmatex">\(i_t = \sigma(W_i[h_{t-1}, x_t])\)</span> decides what new information to store; candidate <span class="arithmatex">\(\tilde{c}_t = \tanh(W_c[h_{t-1}, x_t])\)</span> creates candidate new values; cell update <span class="arithmatex">\(c_t = f_t \odot c_{t-1} + i_t \odot \tilde{c}_t\)</span> applies forget and add; output gate <span class="arithmatex">\(o_t = \sigma(W_o[h_{t-1}, x_t])\)</span> decides what to output; hidden state <span class="arithmatex">\(h_t = o_t \odot \tanh(c_t)\)</span>. The cell state acts as a conveyor belt — gradients can flow through multiplication by the forget gate without repeated matrix multiplication.</p>
+<p><strong>Follow-up:</strong> "Why does GRU merge the forget and input gates? What are the trade-offs?"</p>
+<p><strong>Red flag:</strong> Cannot name all four gates or explain the cell state's role in gradient flow.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">10. (Advanced) Why were LSTMs replaced by Transformers?</p>
+<p><strong>Expected depth:</strong> LSTMs process sequences sequentially — token <span class="arithmatex">\(t\)</span> requires the output of token <span class="arithmatex">\(t-1\)</span>. This prevents parallelism during training. Transformers compute attention over all positions simultaneously, enabling GPU parallelism and much faster training. Transformers also handle long-range dependencies better because every position directly attends to every other position (O(1) path length vs O(T) for RNNs). The cost is O(T^2) memory for attention, which SSMs now address.</p>
+<p><strong>Follow-up:</strong> "Are there any tasks where LSTMs still outperform Transformers?"</p>
+<p><strong>Red flag:</strong> Only says "Transformers are better" without explaining the parallelism advantage.</p>
+</div>
+<h3 id="sequence-to-sequence-and-attention">Sequence-to-Sequence and Attention<a class="headerlink" href="#sequence-to-sequence-and-attention" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">11. (Core) Explain the bottleneck problem in encoder-decoder models and how attention solves it.</p>
+<p><strong>Expected depth:</strong> In vanilla seq2seq, the entire input sequence is compressed into a single fixed-size vector (the encoder's final hidden state). For long sequences, this vector cannot represent all the information — it is a lossy compression. Attention solves this by letting the decoder look at all encoder hidden states at every decoding step. It computes a weighted sum of encoder states where the weights (attention scores) indicate which source positions are relevant for the current decoding step.</p>
+<p><strong>Follow-up:</strong> "What is the difference between Bahdanau and Luong attention?"</p>
+<p><strong>Red flag:</strong> Cannot explain why a fixed-size vector is a bottleneck.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">12. (Core) Explain scaled dot-product attention step by step.</p>
+<p><strong>Expected depth:</strong> Given queries Q, keys K, values V: (1) compute scores <span class="arithmatex">\(S = QK^T\)</span>, (2) scale by <span class="arithmatex">\(\sqrt{d_k}\)</span> to prevent softmax saturation, (3) optionally apply mask, (4) apply softmax row-wise to get weights, (5) multiply weights by V. The scaling is necessary because for large <span class="arithmatex">\(d_k\)</span>, dot products have variance proportional to <span class="arithmatex">\(d_k\)</span>, pushing softmax into regions with near-zero gradients.</p>
+<p><strong>Follow-up:</strong> "What happens if you remove the scaling factor?"</p>
+<p><strong>Red flag:</strong> Cannot explain why we divide by <span class="arithmatex">\(\sqrt{d_k}\)</span>.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">13. (Advanced) What is teacher forcing and what is its downside?</p>
+<p><strong>Expected depth:</strong> During training, the decoder receives the ground-truth previous token as input instead of its own prediction. This stabilizes training and speeds convergence. The downside is exposure bias: at inference time, the model feeds its own (potentially wrong) predictions, a distribution it never saw during training. Errors compound. Scheduled sampling mitigates this by gradually mixing in model predictions during training.</p>
+<p><strong>Follow-up:</strong> "How does beam search interact with exposure bias?"</p>
+<p><strong>Red flag:</strong> Cannot name exposure bias.</p>
+</div>
+<h3 id="information-theory">Information Theory<a class="headerlink" href="#information-theory" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">14. (Core) Why is cross-entropy the standard training loss for language models?</p>
+<p><strong>Expected depth:</strong> The training objective is to minimize the KL divergence between the true data distribution and the model's distribution. Since <span class="arithmatex">\(D_{KL}(p \| q) = H(p, q) - H(p)\)</span> and the entropy of the data <span class="arithmatex">\(H(p)\)</span> is constant, minimizing KL divergence is equivalent to minimizing cross-entropy <span class="arithmatex">\(H(p, q) = -\sum p(x) \log q(x)\)</span>. For language models with one-hot targets, this simplifies to <span class="arithmatex">\(-\log q(w_{\text{true}})\)</span> — the negative log probability of the correct token. Maximum likelihood estimation and cross-entropy minimization are mathematically identical.</p>
+<p><strong>Follow-up:</strong> "What is the relationship between cross-entropy and perplexity?"</p>
+<p><strong>Red flag:</strong> Cannot connect cross-entropy to KL divergence or maximum likelihood.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">15. (Core) Explain KL divergence. Is it symmetric?</p>
+<p><strong>Expected depth:</strong> <span class="arithmatex">\(D_{KL}(p \| q) = \sum p(x) \log \frac{p(x)}{q(x)}\)</span>. It measures how much information is lost when using <span class="arithmatex">\(q\)</span> to approximate <span class="arithmatex">\(p\)</span>. It is NOT symmetric — <span class="arithmatex">\(D_{KL}(p \| q) \neq D_{KL}(q \| p)\)</span>. Forward KL (<span class="arithmatex">\(D_{KL}(p \| q)\)</span>) is mode-covering: it forces <span class="arithmatex">\(q\)</span> to cover all modes of <span class="arithmatex">\(p\)</span>, potentially spreading probability mass. Reverse KL (<span class="arithmatex">\(D_{KL}(q \| p)\)</span>) is mode-seeking: it allows <span class="arithmatex">\(q\)</span> to collapse onto a single mode of <span class="arithmatex">\(p\)</span>. This matters for RLHF where the KL penalty uses <span class="arithmatex">\(D_{KL}(\pi \| \pi_{\text{ref}})\)</span> to keep the policy close to the reference model.</p>
+<p><strong>Follow-up:</strong> "In RLHF, why do we use KL divergence as a penalty?"</p>
+<p><strong>Red flag:</strong> Says KL divergence is a "distance metric" (it is not — it violates symmetry and triangle inequality).</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">16. (Advanced) Explain forward vs reverse KL divergence with a concrete example.</p>
+<p><strong>Expected depth:</strong> Suppose the true distribution <span class="arithmatex">\(p\)</span> is bimodal (two peaks) and we approximate it with a unimodal <span class="arithmatex">\(q\)</span>. Forward KL forces <span class="arithmatex">\(q\)</span> to spread across both modes (because wherever <span class="arithmatex">\(p &gt; 0\)</span>, <span class="arithmatex">\(q\)</span> must also be &gt; 0 to avoid infinite divergence). Reverse KL allows <span class="arithmatex">\(q\)</span> to lock onto one mode (because wherever <span class="arithmatex">\(q &gt; 0\)</span>, <span class="arithmatex">\(p\)</span> must also be &gt; 0 — but <span class="arithmatex">\(q\)</span> can be zero where <span class="arithmatex">\(p\)</span> is positive). This is why forward KL is used for variational autoencoders (mode-covering) and reverse KL appears in policy optimization (mode-seeking behavior).</p>
+<p><strong>Follow-up:</strong> "Which direction of KL is used in DPO vs PPO?"</p>
+<p><strong>Red flag:</strong> Cannot articulate mode-covering vs mode-seeking.</p>
+</div>
+<hr />
+<h2 id="architecture-30-questions">Architecture (30 Questions)<a class="headerlink" href="#architecture-30-questions" title="Permanent link">&para;</a></h2>
+<h3 id="the-transformer">The Transformer<a class="headerlink" href="#the-transformer" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">17. (Core) Walk through a Transformer block step by step.</p>
+<p><strong>Expected depth:</strong> Input <span class="arithmatex">\(x\)</span> (shape <span class="arithmatex">\(B \times T \times d\)</span>) → LayerNorm (Pre-Norm) → Multi-Head Self-Attention → Add residual (<span class="arithmatex">\(x + \text{MHA}(\text{LN}(x))\)</span>) → LayerNorm → Feed-Forward Network (two linear layers with activation, typically SwiGLU in modern models) → Add residual. The output has the same shape as the input. In the Pre-Norm variant (used by GPT-2+), normalization happens before each sublayer. In Post-Norm (original Transformer), normalization happens after.</p>
+<p><strong>Follow-up:</strong> "Why did modern LLMs switch from Post-Norm to Pre-Norm?"</p>
+<p><strong>Red flag:</strong> Cannot describe the residual connections or confuses Pre/Post-Norm.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">18. (Core) Explain the Feed-Forward Network in a Transformer and SwiGLU.</p>
+<p><strong>Expected depth:</strong> The FFN applies two linear transformations with a nonlinearity: <span class="arithmatex">\(\text{FFN}(x) = W_2 \cdot \sigma(W_1 x + b_1) + b_2\)</span>. It operates independently on each position. The inner dimension is typically 4x the model dimension. SwiGLU replaces ReLU with a gated variant: <span class="arithmatex">\(\text{SwiGLU}(x) = (\text{Swish}(W_1 x) \odot (W_3 x)) W_2\)</span>, adding a third weight matrix. Despite more parameters per layer, SwiGLU yields better performance per FLOP. The FFN is often interpreted as a key-value memory where <span class="arithmatex">\(W_1\)</span> rows are keys and <span class="arithmatex">\(W_2\)</span> columns are values.</p>
+<p><strong>Follow-up:</strong> "How does the FFN's parameter count compare to attention's? Which dominates in large models?"</p>
+<p><strong>Red flag:</strong> Cannot state the dimensions or explain why there is an inner expansion.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">19. (Advanced) Explain the residual stream interpretation of Transformers.</p>
+<p><strong>Expected depth:</strong> Instead of viewing a Transformer as a sequential pipeline, think of a shared residual stream that every layer reads from and writes to. Each attention head and FFN adds a small vector to the stream. The final output is the sum of the original input embedding plus all the contributions from every head and FFN across all layers. This view explains superposition (multiple features encoded in the same dimensions), skip connections' importance, and why shallow layers' representations persist to the output.</p>
+<p><strong>Follow-up:</strong> "What is superposition and why does it matter for interpretability?"</p>
+<p><strong>Red flag:</strong> Only mentions "skip connections prevent vanishing gradients" without the stream interpretation.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">20. (Core) What is RMSNorm and why is it preferred over LayerNorm?</p>
+<p><strong>Expected depth:</strong> LayerNorm normalizes by subtracting the mean and dividing by the standard deviation, then applies learned scale and shift parameters. RMSNorm skips the mean centering — it only divides by the root mean square: <span class="arithmatex">\(\text{RMS}(x) = \sqrt{\frac{1}{d}\sum x_i^2}\)</span>. This is faster (no mean computation) and empirically works just as well. LLaMA, PaLM, and most modern LLMs use RMSNorm.</p>
+<p><strong>Follow-up:</strong> "Where does normalization happen in the block — before or after the sublayer?"</p>
+<p><strong>Red flag:</strong> Cannot explain the mathematical difference between LayerNorm and RMSNorm.</p>
+</div>
+<h3 id="attention-variants">Attention Variants<a class="headerlink" href="#attention-variants" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">21. (Core) Why do we use multiple attention heads instead of one big head?</p>
+<p><strong>Expected depth:</strong> Multiple heads allow the model to attend to different aspects of the input simultaneously. Head 1 might learn positional relationships, head 2 might learn syntactic dependencies, head 3 might learn semantic similarity. Each head operates on a <span class="arithmatex">\(d_k = d_{\text{model}} / h\)</span>-dimensional subspace. The outputs are concatenated and projected. Having <span class="arithmatex">\(h\)</span> heads with dimension <span class="arithmatex">\(d_k\)</span> costs the same as one head with dimension <span class="arithmatex">\(d_{\text{model}}\)</span>, but the factored structure acts as an inductive bias for learning diverse attention patterns.</p>
+<p><strong>Follow-up:</strong> "What happens if you prune some attention heads? How much can you prune?"</p>
+<p><strong>Red flag:</strong> Says "more heads = more parameters" (false — parameter count is the same).</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">22. (Core) Explain Grouped-Query Attention and why it matters.</p>
+<p><strong>Expected depth:</strong> Standard MHA has <span class="arithmatex">\(h\)</span> query, key, and value heads. GQA groups query heads so multiple query heads share the same K and V heads. For example, 32 query heads with 8 KV heads (GQA-4): each KV head serves 4 query heads. This reduces the KV cache by 4x during inference (critical for serving). Multi-Query Attention (MQA) is the extreme case with 1 KV head. GQA was introduced by LLaMA-2 and strikes a balance between MQA's memory savings and MHA's quality.</p>
+<p><strong>Follow-up:</strong> "Compute the KV cache size for a 70B parameter model with GQA-8 serving a 4096-token context."</p>
+<p><strong>Red flag:</strong> Cannot explain the memory savings or confuses GQA with MQA.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">23. (Advanced) Explain causal masking and why it is necessary for autoregressive models.</p>
+<p><strong>Expected depth:</strong> Causal masking sets the upper triangle of the attention score matrix to <span class="arithmatex">\(-\infty\)</span> before softmax, so each position can only attend to itself and earlier positions. Without this, the model could see future tokens during training, making it trivial to predict the next word (just copy the answer). This enforces the autoregressive property: <span class="arithmatex">\(P(w_t \mid w_{1:t-1})\)</span>. During inference, causal masking is implicit because we only have tokens up to position <span class="arithmatex">\(t\)</span>.</p>
+<p><strong>Follow-up:</strong> "What is prefix masking and when is it used?"</p>
+<p><strong>Red flag:</strong> Cannot explain why masking is needed for training (not just inference).</p>
+</div>
+<h3 id="positional-encoding">Positional Encoding<a class="headerlink" href="#positional-encoding" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">24. (Core) Compare RoPE and ALiBi for positional encoding.</p>
+<p><strong>Expected depth:</strong> RoPE rotates query and key vectors by an angle proportional to their position. Relative position information emerges from the dot product of rotated vectors: <span class="arithmatex">\(q_m^T k_n\)</span> depends on <span class="arithmatex">\(m - n\)</span>. ALiBi adds a linear bias to attention scores: <span class="arithmatex">\(-m|i - j|\)</span> where <span class="arithmatex">\(m\)</span> is head-specific and <span class="arithmatex">\(|i-j|\)</span> is the distance. RoPE modifies the vectors; ALiBi modifies the scores. ALiBi extrapolates better to longer contexts out of the box. RoPE needs scaling tricks (NTK-aware, YaRN) for extrapolation but retains more positional expressiveness. Most open-source LLMs (LLaMA, Mistral) use RoPE.</p>
+<p><strong>Follow-up:</strong> "What is NTK-aware RoPE scaling and why does it help with long contexts?"</p>
+<p><strong>Red flag:</strong> Cannot explain the difference between modifying vectors vs modifying scores.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">25. (Advanced) Why is attention permutation-equivariant without positional encoding?</p>
+<p><strong>Expected depth:</strong> Attention computes <span class="arithmatex">\(\text{softmax}(QK^T / \sqrt{d_k})V\)</span>. If you permute the input sequence, Q, K, V are permuted in the same way, and the output is permuted identically. The function does not inherently know which token is at which position. This means "dog bites man" and "man bites dog" would produce the same attention pattern (up to permutation). Positional encoding breaks this symmetry by injecting position information.</p>
+<p><strong>Follow-up:</strong> "How would you test whether a model has learned positional information?"</p>
+<p><strong>Red flag:</strong> Does not understand what permutation equivariance means.</p>
+</div>
+<h3 id="gpt-and-decoder-only-models">GPT and Decoder-Only Models<a class="headerlink" href="#gpt-and-decoder-only-models" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">26. (Core) Explain in-context learning. Why is it surprising?</p>
+<p><strong>Expected depth:</strong> In-context learning is the ability to learn new tasks from examples provided in the prompt — without any gradient updates. You give GPT a few input-output pairs and it generalizes to new inputs. This is surprising because the model weights are frozen; learning happens purely through the forward pass. One theory is that Transformer layers implement implicit gradient descent — the attention pattern at deeper layers mimics what fine-tuning would do. The quality improves with model scale (a hallmark of emergent abilities).</p>
+<p><strong>Follow-up:</strong> "What is the relationship between in-context learning and meta-learning?"</p>
+<p><strong>Red flag:</strong> Thinks in-context learning involves updating the model weights.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">27. (Core) Explain the KV cache. How does it speed up autoregressive generation?</p>
+<p><strong>Expected depth:</strong> During autoregressive generation, at step <span class="arithmatex">\(t\)</span> we only need to compute Q, K, V for the new token. The K and V vectors for all previous tokens are unchanged (because of causal masking — they don't attend to the new token). So we cache them and only compute the new K, V row. This reduces the per-step computation from <span class="arithmatex">\(O(T \cdot d)\)</span> to <span class="arithmatex">\(O(d)\)</span> for the K, V projection. The cache grows linearly with sequence length and is the dominant memory cost during inference.</p>
+<p><strong>Follow-up:</strong> "How does GQA reduce KV cache size? Compute the size for a specific model configuration."</p>
+<p><strong>Red flag:</strong> Cannot explain why K and V (but not Q) can be cached.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">28. (Advanced) Explain weight tying in GPT models.</p>
+<p><strong>Expected depth:</strong> Weight tying means the input token embedding matrix and the output projection matrix (which maps hidden states to vocabulary logits) share the same weights. If the embedding matrix is <span class="arithmatex">\(E \in \mathbb{R}^{V \times d}\)</span>, the output logits are <span class="arithmatex">\(h \cdot E^T\)</span>. This reduces parameter count by <span class="arithmatex">\(V \times d\)</span> (significant for large vocabularies), acts as a regularizer, and makes intuitive sense: a token's output representation should be close to its input embedding in the same space.</p>
+<p><strong>Follow-up:</strong> "Does LLaMA-2 use weight tying? Why or why not?"</p>
+<p><strong>Red flag:</strong> Cannot explain why sharing these specific matrices makes sense.</p>
+</div>
+<h3 id="bert-and-encoder-models">BERT and Encoder Models<a class="headerlink" href="#bert-and-encoder-models" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">29. (Core) Why can't BERT generate text like GPT?</p>
+<p><strong>Expected depth:</strong> BERT uses bidirectional attention — every token can attend to every other token including future ones. During pre-training with MLM, BERT sees the entire sequence (with some tokens masked) and predicts the masked tokens. It was never trained to predict the <em>next</em> token given only <em>previous</em> tokens. Autoregressive generation requires causal masking, which BERT does not have. You could technically do iterative masked prediction, but BERT wasn't trained for this and it violates the independence assumptions of MLM.</p>
+<p><strong>Follow-up:</strong> "Could you modify BERT to do generation? What would you lose?"</p>
+<p><strong>Red flag:</strong> Says "BERT is too small to generate" or does not mention bidirectional attention.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">30. (Core) Compare BERT fine-tuning with GPT prompting for a classification task.</p>
+<p><strong>Expected depth:</strong> BERT fine-tuning: add a classification head on top of the [CLS] token, train on labeled data with supervised cross-entropy, update all parameters. Typically needs 1K-10K labeled examples. The model learns task-specific representations. GPT prompting: craft a text prompt with task description and few examples, generate a classification label as text. No gradient updates. Works with very few examples (zero/few-shot) but less reliable. Fine-tuning gives higher accuracy; prompting gives more flexibility and no training cost. Modern approach: use GPT for prototyping and few-shot, switch to fine-tuned smaller models for production.</p>
+<p><strong>Follow-up:</strong> "When would you choose a fine-tuned BERT over prompting GPT-4?"</p>
+<p><strong>Red flag:</strong> Does not mention the [CLS] token or the parameter update difference.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">31. (Advanced) Explain the key differences between RoBERTa, ALBERT, and DeBERTa.</p>
+<p><strong>Expected depth:</strong> RoBERTa: removes NSP, uses dynamic masking, trains longer on more data — shows BERT was undertrained. ALBERT: factorizes the embedding matrix (<span class="arithmatex">\(V \times d \to V \times e + e \times d\)</span>, <span class="arithmatex">\(e \ll d\)</span>), shares parameters across layers — dramatic parameter reduction. DeBERTa: disentangles content and position embeddings, uses relative position encoding, applies absolute position only at the decoding layer — consistently outperforms BERT-base/large. Know that DeBERTa's disentangled attention computes separate content-to-content, content-to-position, and position-to-content attention.</p>
+<p><strong>Follow-up:</strong> "Why is DeBERTa's disentangled attention better than adding position to the input?"</p>
+<p><strong>Red flag:</strong> Cannot name at least one specific change each model makes.</p>
+</div>
+<h3 id="t5-and-encoder-decoder">T5 and Encoder-Decoder<a class="headerlink" href="#t5-and-encoder-decoder" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">32. (Core) What is text-to-text framing and why does T5 use it?</p>
+<p><strong>Expected depth:</strong> Every NLP task is cast as mapping an input text string to an output text string. Classification: "sentiment: I love this → positive". Translation: "translate English to German: Hello → Hallo". Summarization: "summarize: <long text> → <summary>". This unifies all tasks under a single seq2seq architecture and training objective (teacher-forced cross-entropy). The benefit is simplicity: one model, one objective, one architecture, applied to everything. Task prefixes act as implicit task embeddings.</p>
+<p><strong>Follow-up:</strong> "What are the downsides of text-to-text for classification tasks?"</p>
+<p><strong>Red flag:</strong> Cannot give a concrete example of how a classification task becomes text-to-text.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">33. (Advanced) Explain span corruption pre-training and how it differs from MLM.</p>
+<p><strong>Expected depth:</strong> BERT's MLM masks individual tokens (15% of tokens, with 80/10/10 mask/random/keep split). T5's span corruption masks contiguous spans of tokens and replaces each span with a single sentinel token (\&lt;extra_id_0&gt;, \&lt;extra_id_1&gt;, ...). The target is the concatenation of sentinels + the original tokens in the masked spans. This is more efficient: the target sequence is shorter (only the masked spans, not the full sequence), and the model learns to predict spans of varying length, which is closer to generation.</p>
+<p><strong>Follow-up:</strong> "What span length did the T5 paper find optimal?"</p>
+<p><strong>Red flag:</strong> Confuses span corruption with MLM or cannot explain the sentinel tokens.</p>
+</div>
+<h3 id="mixture-of-experts">Mixture of Experts<a class="headerlink" href="#mixture-of-experts" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">34. (Core) Explain how the router in a Mixture of Experts layer works.</p>
+<p><strong>Expected depth:</strong> Each token's hidden state <span class="arithmatex">\(x\)</span> is passed through a linear layer (the router/gate) to produce logits over <span class="arithmatex">\(N\)</span> experts: <span class="arithmatex">\(g = W_g x\)</span>. Top-k experts are selected (typically k=2). The token is processed by each selected expert, and the outputs are combined using the softmax-normalized gate values as weights: <span class="arithmatex">\(\text{output} = \sum_{i \in \text{top-k}} \text{softmax}(g)_i \cdot E_i(x)\)</span>. Most of the model's parameters sit in the experts, but only k/N fraction activates per token.</p>
+<p><strong>Follow-up:</strong> "What is expert collapse and how do you prevent it?"</p>
+<p><strong>Red flag:</strong> Cannot explain the top-k selection or how outputs are weighted.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">35. (Core) Explain load balancing in MoE models.</p>
+<p><strong>Expected depth:</strong> Without intervention, the router often sends most tokens to a few popular experts (the rich-get-richer problem). Load balancing uses an auxiliary loss that penalizes uneven distributions: <span class="arithmatex">\(\mathcal{L}_{\text{aux}} = N \sum_{i=1}^{N} f_i \cdot P_i\)</span> where <span class="arithmatex">\(f_i\)</span> is the fraction of tokens routed to expert <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(P_i\)</span> is the mean router probability for expert <span class="arithmatex">\(i\)</span>. This loss is minimized when all experts receive equal traffic. The coefficient <span class="arithmatex">\(\alpha\)</span> (typically 0.01) controls the trade-off between routing quality and balance.</p>
+<p><strong>Follow-up:</strong> "Mixtral uses 8 experts with top-2. How many parameters activate per token compared to a dense model of the same size?"</p>
+<p><strong>Red flag:</strong> Cannot explain what happens without load balancing (expert collapse).</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">36. (Advanced) Compare expert-choice routing with token-choice routing.</p>
+<p><strong>Expected depth:</strong> In standard token-choice routing, each token picks its top-k experts. This can lead to some experts being overloaded and others idle. In expert-choice routing, each expert independently selects its top-k tokens from the batch. This guarantees perfect load balance (each expert processes exactly the same number of tokens) and removes the need for auxiliary loss, capacity factors, and dropped tokens. The trade-off: variable compute per token (some tokens may be processed by zero experts, some by many).</p>
+<p><strong>Follow-up:</strong> "What happens to tokens that no expert selects?"</p>
+<p><strong>Red flag:</strong> Cannot articulate the inversion of selection direction.</p>
+</div>
+<h3 id="state-space-models">State Space Models<a class="headerlink" href="#state-space-models" title="Permanent link">&para;</a></h3>
+<div class="admonition interview">
+<p class="admonition-title">37. (Core) What problem do SSMs solve that Transformers have?</p>
+<p><strong>Expected depth:</strong> Self-attention has <span class="arithmatex">\(O(T^2)\)</span> time and memory complexity in sequence length <span class="arithmatex">\(T\)</span>. For a 100K-token context, that is <span class="arithmatex">\(10^{10}\)</span> operations per layer — prohibitive. SSMs process sequences in <span class="arithmatex">\(O(T)\)</span> by maintaining a fixed-size hidden state that gets updated at each step (like an RNN, but designed to be parallelizable during training via convolution). Mamba showed that SSMs with input-dependent state transitions can match Transformer quality while being much faster for long sequences.</p>
+<p><strong>Follow-up:</strong> "If SSMs are O(T), why don't all models use them?"</p>
+<p><strong>Red flag:</strong> Cannot quantify the attention complexity bottleneck.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">38. (Advanced) Explain Mamba's selective state space mechanism.</p>
+<p><strong>Expected depth:</strong> Classic SSMs (like S4) have fixed state transition matrices A, B, C — the same dynamics apply to every token regardless of content. Mamba makes B, C, and the discretization step Δ input-dependent: they are computed from the current token's hidden state via linear projections. This lets the model decide, for each token, how much to update the state (large Δ = big update, small Δ = ignore). This selectivity is critical for language tasks where some tokens carry information and others don't.</p>
+<p><strong>Follow-up:</strong> "How does Mamba achieve parallelism during training despite the recurrent structure?"</p>
+<p><strong>Red flag:</strong> Cannot explain what "selective" means or why fixed SSMs are limited.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">39. (Advanced) What are hybrid architectures like Jamba?</p>
+<p><strong>Expected depth:</strong> Jamba interleaves Transformer attention layers with Mamba SSM layers. The idea is that attention excels at precise, content-based retrieval (looking up specific tokens), while SSMs excel at compressing sequential patterns efficiently. By alternating them, you get Transformer-quality reasoning with SSM-efficiency for long contexts. Jamba-1.5 also incorporates MoE. The ratio of attention to SSM layers is a key design choice — more attention gives better quality, more SSM gives better throughput.</p>
+<p><strong>Follow-up:</strong> "Where in the model (early vs late layers) should attention be placed vs SSMs?"</p>
+<p><strong>Red flag:</strong> Cannot explain the complementary strengths of attention and SSMs.</p>
+</div>
+<hr />
+<h2 id="system-design-15-questions">System Design (15 Questions)<a class="headerlink" href="#system-design-15-questions" title="Permanent link">&para;</a></h2>
+<div class="admonition interview">
+<p class="admonition-title">40. (System Design) Design an LLM serving system for a product with 10,000 concurrent users.</p>
+<p><strong>Expected depth:</strong> Key components: (1) Model hosting — GPU cluster with enough VRAM for model weights + KV cache. (2) Batching — continuous batching (not static) to maximize GPU utilization. (3) Load balancing — distribute requests across replicas. (4) KV cache management — PagedAttention (vLLM) to avoid memory fragmentation. (5) Quantization — INT8 or INT4 to fit larger models on fewer GPUs. (6) Streaming — server-sent events for token-by-token delivery. (7) Monitoring — TTFT (time to first token), TPS (tokens per second), p99 latency. Mention specific tools: vLLM, TGI, or TensorRT-LLM.</p>
+<p><strong>Follow-up:</strong> "How would you handle a traffic spike that doubles concurrent users?"</p>
+<p><strong>Red flag:</strong> Only mentions "put the model on a GPU" without discussing batching, caching, or quantization.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">41. (System Design) Design a RAG pipeline for an enterprise knowledge base.</p>
+<p><strong>Expected depth:</strong> (1) Ingestion: chunk documents (512-1024 tokens), generate embeddings with a bi-encoder (e.g., BGE, E5). (2) Vector store: Pinecone, Weaviate, or pgvector. (3) Retrieval: embed the user query, ANN search for top-k chunks, optionally re-rank with a cross-encoder. (4) Augmentation: inject retrieved chunks into the LLM prompt with clear formatting. (5) Generation: LLM generates answer grounded in retrieved context. (6) Evaluation: faithfulness (does the answer match the sources?), relevance (are the right chunks retrieved?), answer correctness. Address: chunk overlap, metadata filtering, hybrid search (BM25 + dense), citation extraction.</p>
+<p><strong>Follow-up:</strong> "How do you handle documents that update frequently?"</p>
+<p><strong>Red flag:</strong> Cannot describe the retrieval step or confuses RAG with fine-tuning.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">42. (System Design) How would you reduce the inference cost of a 70B parameter model by 4x?</p>
+<p><strong>Expected depth:</strong> Multiple strategies, ordered by ease: (1) INT4 quantization (GPTQ, AWQ) — 4x memory reduction, ~5% quality loss. (2) GQA — if the model doesn't have it, distill into a GQA variant. (3) Speculative decoding — use a small draft model to propose tokens, large model verifies in parallel. (4) Continuous batching — amortize the cost of attention across many concurrent requests. (5) Prompt caching — for repeated system prompts. (6) Model distillation — train a 7B model to mimic the 70B. Mention that strategies stack: INT4 + speculative decoding + continuous batching can achieve &gt;4x reduction.</p>
+<p><strong>Follow-up:</strong> "What quality benchmarks would you use to verify the quantized model is acceptable?"</p>
+<p><strong>Red flag:</strong> Only mentions quantization without discussing batching, speculative decoding, or distillation.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">43. (System Design) Design a system to detect and prevent LLM hallucinations in a customer-facing product.</p>
+<p><strong>Expected depth:</strong> (1) Output grounding: RAG to provide source material, instruct the model to cite sources. (2) Self-consistency: generate N answers, check for agreement. (3) Fact-checking pipeline: extract claims from the output, verify against a knowledge base or search engine. (4) Confidence estimation: token-level log probabilities — low-confidence spans are flagged. (5) Guardrails: Regex/LLM-based checks for factual consistency. (6) Human-in-the-loop: route low-confidence answers to human reviewers. (7) Fine-tuning: train the model to say "I don't know" when appropriate (calibration). Mention that no single technique eliminates hallucination entirely — defense in depth is required.</p>
+<p><strong>Follow-up:</strong> "How do you measure hallucination rate in production?"</p>
+<p><strong>Red flag:</strong> Only says "use RAG" without addressing verification or confidence estimation.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">44. (System Design) Design the training infrastructure for a 7B parameter model from scratch.</p>
+<p><strong>Expected depth:</strong> (1) Hardware: minimum 8-16 A100 80GB GPUs (or H100s). (2) Data: 1-2T tokens of cleaned, deduplicated web text + high-quality curated sources. (3) Distributed training: FSDP or DeepSpeed ZeRO-3 for sharding model/optimizer/gradient states across GPUs. (4) Training pipeline: tokenization → data loading with shuffling → forward/backward pass → gradient accumulation → optimizer step. (5) Hyperparameters: learning rate warmup + cosine decay, batch size ramp, BF16 mixed precision. (6) Checkpointing: save every N steps to handle preemption. (7) Monitoring: loss curves, gradient norms, learning rate schedule. (8) Estimated cost: ~$100K-500K depending on hardware and training length.</p>
+<p><strong>Follow-up:</strong> "How do you decide between FSDP and DeepSpeed?"</p>
+<p><strong>Red flag:</strong> Cannot estimate the number of GPUs needed or mention a sharding strategy.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">45. (System Design) Design an evaluation pipeline for an LLM-based product.</p>
+<p><strong>Expected depth:</strong> (1) Automated benchmarks: standard tasks (MMLU, HumanEval, GSM8K) for regression detection. (2) Task-specific metrics: BLEU/ROUGE for summarization, pass@k for code generation, F1 for extraction. (3) LLM-as-judge: use a stronger model to rate outputs on dimensions like helpfulness, accuracy, safety. (4) Human evaluation: Elo-style pairwise comparison (like Chatbot Arena). (5) Safety testing: red-teaming prompts, toxicity classifiers, refusal detection. (6) A/B testing: deploy to a subset of users, measure task completion rate. (7) Regression testing: maintain a golden dataset of prompt-response pairs.</p>
+<p><strong>Follow-up:</strong> "How do you handle evaluation when there is no single correct answer?"</p>
+<p><strong>Red flag:</strong> Only mentions perplexity as an evaluation metric.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">46. (System Design) How would you implement a multi-turn conversation system with memory?</p>
+<p><strong>Expected depth:</strong> (1) Short-term memory: include recent conversation turns in the prompt (sliding window). (2) Context management: when the window fills up, summarize earlier turns using the LLM itself. (3) Long-term memory: store key facts in a database (user preferences, prior decisions), retrieve via RAG at each turn. (4) Session management: each conversation has a unique ID, turns are stored persistently. (5) System prompt: persistent instructions and user profile injected at the start. (6) Token budget: allocate tokens between system prompt, retrieved context, conversation history, and generation. Mention attention over long histories is expensive — summarization is essential.</p>
+<p><strong>Follow-up:</strong> "How do you handle contradictions between early conversation context and recent messages?"</p>
+<p><strong>Red flag:</strong> Only suggests "put the full conversation in the prompt" without addressing token limits.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">47. (System Design) Design a code generation system using LLMs.</p>
+<p><strong>Expected depth:</strong> (1) Model selection: code-specific model (CodeLlama, StarCoder, DeepSeek-Coder) or general model (GPT-4, Claude). (2) Context: provide relevant files, function signatures, docstrings, and test cases in the prompt. (3) Retrieval: use code search to find relevant snippets from the codebase (embedding-based or keyword). (4) Generation: generate code with explicit instruction about language, style, and constraints. (5) Validation: run syntax check, type check, unit tests automatically. (6) Iterative refinement: if tests fail, feed error messages back to the model for correction. (7) Security: sandbox execution, scan for vulnerabilities, never execute untrusted code outside sandbox.</p>
+<p><strong>Follow-up:</strong> "How would you handle a monorepo with 10M lines of code?"</p>
+<p><strong>Red flag:</strong> Does not mention execution-based validation (just returns generated code as-is).</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">48. (System Design) Design a system for fine-tuning LLMs on private enterprise data.</p>
+<p><strong>Expected depth:</strong> (1) Data pipeline: clean, deduplicate, format into instruction-response pairs. (2) Privacy: data never leaves the VPC, use differential privacy if needed, audit logs. (3) Method selection: full fine-tuning (expensive, best quality), LoRA/QLoRA (parameter-efficient, 10x cheaper), or prompt tuning (cheapest). (4) Infrastructure: managed service (Azure OpenAI, Vertex AI) or self-hosted (Axolotl, TRL). (5) Evaluation: hold-out test set, domain-specific metrics, A/B test against base model. (6) Versioning: track model versions, dataset versions, hyperparameters (MLflow, W&amp;B). (7) Deployment: swap models with zero downtime using blue-green deployment.</p>
+<p><strong>Follow-up:</strong> "How do you prevent catastrophic forgetting when fine-tuning on domain-specific data?"</p>
+<p><strong>Red flag:</strong> Cannot distinguish between full fine-tuning, LoRA, and prompt tuning.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">49. (System Design) Design a real-time content moderation system using LLMs.</p>
+<p><strong>Expected depth:</strong> (1) Fast classifier: small model (DistilBERT) or ML classifier as first filter — reject obvious violations in &lt;50ms. (2) LLM review: ambiguous content goes to an LLM for nuanced judgment (with policy guidelines in the prompt). (3) Categories: hate speech, violence, self-harm, sexual content, misinformation, PII exposure. (4) Latency: the fast path (classifier) handles 95% of traffic; the LLM path handles edge cases asynchronously. (5) Feedback loop: human reviewers correct errors, retraining the classifier periodically. (6) Multi-language: embeddings-based approach for language-agnostic moderation. (7) Metrics: precision (don't over-flag), recall (don't miss harmful content), latency p99.</p>
+<p><strong>Follow-up:</strong> "How do you handle context-dependent content (sarcasm, medical discussions)?"</p>
+<p><strong>Red flag:</strong> Proposes only regex or keyword matching as the moderation approach.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">50. (System Design) Design an LLM-based agent that can use tools.</p>
+<p><strong>Expected depth:</strong> (1) Architecture: ReAct loop — the LLM generates a thought, selects a tool (from a defined set), provides arguments, receives the tool output, then continues reasoning. (2) Tool definitions: each tool has a name, description, parameter schema (JSON schema). (3) Tool selection: the LLM outputs a structured function call; parse and validate against the schema. (4) Execution: sandbox tool execution, timeout, retry logic. (5) Memory: maintain a scratchpad of observations and intermediate results. (6) Safety: whitelist allowed tools, validate arguments, rate-limit API calls. (7) Evaluation: task completion rate, tool selection accuracy, number of tool calls (efficiency).</p>
+<p><strong>Follow-up:</strong> "How do you handle tool calls that return errors?"</p>
+<p><strong>Red flag:</strong> Cannot explain the observe-think-act loop.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">51. (System Design) How would you implement streaming inference for an LLM API?</p>
+<p><strong>Expected depth:</strong> (1) Server-Sent Events (SSE) or WebSocket connection. (2) The model generates tokens one at a time; each token is immediately sent to the client. (3) Buffering: optionally buffer until a complete word or sentence for better UX. (4) Backpressure: if the client is slow, buffer server-side with a limit, then drop or pause. (5) Cancellation: client can close the connection, server detects and stops generation (saves compute). (6) Load balancing: sticky sessions or request routing to ensure the same GPU handles the full generation. (7) Metrics: time to first token (TTFT), inter-token latency (ITL), total generation time.</p>
+<p><strong>Follow-up:</strong> "What are the networking implications of thousands of concurrent SSE connections?"</p>
+<p><strong>Red flag:</strong> Describes a simple request-response API without understanding why streaming exists.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">52. (System Design) Design a prompt management and versioning system.</p>
+<p><strong>Expected depth:</strong> (1) Prompt registry: central store of all prompts with versioning (like a model registry). (2) Templating: prompts use variables that are filled at runtime (Jinja-style). (3) A/B testing: route traffic between prompt versions, measure output quality metrics. (4) Evaluation: each prompt version is tested against a golden dataset before production rollout. (5) Rollback: one-click revert to a previous prompt version. (6) Audit trail: who changed what, when, and why. (7) Environment promotion: dev → staging → production with gates. Tools: LangSmith, Promptflow, or custom.</p>
+<p><strong>Follow-up:</strong> "How do you version prompts that include few-shot examples?"</p>
+<p><strong>Red flag:</strong> Treats prompts as hardcoded strings without versioning or testing.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">53. (System Design) Design a multi-model routing system that selects the best LLM for each query.</p>
+<p><strong>Expected depth:</strong> (1) Router: a small classifier that categorizes the query (simple factual, complex reasoning, code, creative writing). (2) Model pool: GPT-4 for complex reasoning, Claude for long context, Mixtral for cost-sensitive queries, CodeLlama for code. (3) Routing logic: confidence-based — if the small model is confident, use it; otherwise escalate. (4) Cost optimization: route 80% of queries to cheap models, 20% to expensive ones. (5) Fallback chain: if the primary model fails (timeout, error), route to a backup. (6) Quality monitoring: track output quality per route, adjust routing rules dynamically. (7) Latency SLA: route to the fastest model that meets quality requirements.</p>
+<p><strong>Follow-up:</strong> "How do you train the router without labeled data?"</p>
+<p><strong>Red flag:</strong> Proposes using only one model or cannot articulate cost-quality trade-offs.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">54. (System Design) How would you build a document Q&amp;A system that handles 10,000 PDFs?</p>
+<p><strong>Expected depth:</strong> (1) Ingestion: extract text from PDFs (PyMuPDF, Unstructured), handle tables/images with OCR or multimodal models. (2) Chunking: recursive character splitting at 512-token chunks with 50-token overlap, preserve section boundaries. (3) Embeddings: batch-embed all chunks with a bi-encoder (BGE, E5), store in a vector database with metadata (filename, page number, section). (4) Retrieval: embed query, ANN top-20, re-rank with cross-encoder to top-5. (5) Generation: inject top-5 chunks with citations into LLM prompt. (6) Scaling: partition vector index by document collection, use approximate search (HNSW). (7) Updates: incremental indexing for new documents, deletion propagation.</p>
+<p><strong>Follow-up:</strong> "How do you handle queries that span information across multiple documents?"</p>
+<p><strong>Red flag:</strong> Suggests putting all PDFs in the context window.</p>
+</div>
+<hr />
+<h2 id="research-awareness-10-questions">Research Awareness (10 Questions)<a class="headerlink" href="#research-awareness-10-questions" title="Permanent link">&para;</a></h2>
+<div class="admonition interview">
+<p class="admonition-title">55. (Research) Explain the Chinchilla scaling laws and their impact.</p>
+<p><strong>Expected depth:</strong> Chinchilla (Hoffmann et al., 2022) found that most LLMs were undertrained — for a given compute budget, optimal performance comes from scaling data and model size roughly equally. The compute-optimal ratio is approximately 20 tokens per parameter. GPT-3 (175B params, 300B tokens) was over-parameterized; the compute-optimal model at the same budget would be ~70B params trained on 1.4T tokens. This finding shifted the field toward training smaller models on more data (LLaMA-1 trained 7B on 1T tokens).</p>
+<p><strong>Follow-up:</strong> "How do the Chinchilla laws change when you account for inference cost?"</p>
+<p><strong>Red flag:</strong> Cannot state the approximate tokens-per-parameter ratio.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">56. (Research) Explain RLHF and how it aligns LLMs with human preferences.</p>
+<p><strong>Expected depth:</strong> Three stages: (1) Supervised fine-tuning (SFT): train on human-written examples of good behavior. (2) Reward model training: collect pairwise preferences (human ranks two model outputs), train a reward model to predict which output a human prefers. (3) RL optimization: use PPO to update the LM policy to maximize the reward model's score, with a KL penalty to prevent the policy from diverging too far from the SFT model. The KL penalty is critical — without it, the model exploits reward model weaknesses (reward hacking).</p>
+<p><strong>Follow-up:</strong> "What is DPO and why is it simpler than RLHF?"</p>
+<p><strong>Red flag:</strong> Cannot name the three stages or explain the reward model.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">57. (Research) What is DPO and how does it differ from PPO-based RLHF?</p>
+<p><strong>Expected depth:</strong> Direct Preference Optimization (Rafailov et al., 2023) eliminates the reward model entirely. It reparameterizes the RLHF objective to derive a closed-form loss that directly optimizes the policy on preference data: the preferred response should have higher log-probability (relative to a reference policy) than the dispreferred response. DPO is simpler (no RL loop, no reward model, no sampling during training), more stable, and computationally cheaper. The trade-off: DPO is less flexible than PPO for complex reward signals and can be sensitive to the reference policy.</p>
+<p><strong>Follow-up:</strong> "When would you choose PPO over DPO?"</p>
+<p><strong>Red flag:</strong> Cannot explain how DPO avoids the reward model.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">58. (Research) Explain LoRA and why it works.</p>
+<p><strong>Expected depth:</strong> Low-Rank Adaptation freezes the pre-trained weights and injects trainable low-rank decomposition matrices into each layer: instead of updating <span class="arithmatex">\(W\)</span>, learn <span class="arithmatex">\(\Delta W = BA\)</span> where <span class="arithmatex">\(B \in \mathbb{R}^{d \times r}\)</span> and <span class="arithmatex">\(A \in \mathbb{R}^{r \times d}\)</span> with rank <span class="arithmatex">\(r \ll d\)</span>. The intuition is that weight updates during fine-tuning are low-rank — most of the model's knowledge is preserved, and task-specific adaptation can be captured by a small subspace. Benefits: 10-100x fewer trainable parameters, multiple LoRA adapters can be swapped at inference time, merged back into the base weights with zero inference overhead.</p>
+<p><strong>Follow-up:</strong> "What rank do you typically use? How do you choose?"</p>
+<p><strong>Red flag:</strong> Cannot explain the low-rank decomposition or why it works.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">59. (Research) What are reasoning models (o1, DeepSeek-R1) and how do they work?</p>
+<p><strong>Expected depth:</strong> Reasoning models use chain-of-thought (CoT) prompting or training to decompose complex problems into intermediate steps. OpenAI's o1 uses test-time compute scaling — it generates multiple reasoning chains and selects the best one (or uses verification). DeepSeek-R1 trains on process-level reward models that evaluate each reasoning step, not just the final answer. The key insight is that more compute at inference time (longer thinking, more attempts) can substitute for more compute at training time. These models excel at math, coding, and multi-step logical reasoning.</p>
+<p><strong>Follow-up:</strong> "What is the trade-off between training-time and test-time compute?"</p>
+<p><strong>Red flag:</strong> Thinks chain-of-thought is just a prompt trick, not a fundamental capability enhancement.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">60. (Research) Explain speculative decoding.</p>
+<p><strong>Expected depth:</strong> Speculative decoding uses a small, fast draft model to propose <span class="arithmatex">\(k\)</span> tokens, then the large target model verifies all <span class="arithmatex">\(k\)</span> tokens in a single forward pass (which is almost as fast as verifying 1 token due to parallelism). If the draft model's tokens match what the target model would have generated (using rejection sampling), they are accepted. If they diverge, the target model's token is used and the draft restarts. The speedup comes from the draft model running much faster (7B draft for a 70B target). Acceptance rate depends on how well the draft model matches the target.</p>
+<p><strong>Follow-up:</strong> "What is the expected speedup for a draft model with 70% acceptance rate?"</p>
+<p><strong>Red flag:</strong> Cannot explain the verify-then-accept mechanism.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">61. (Research) What is Mixture of Experts and how does Mixtral use it?</p>
+<p><strong>Expected depth:</strong> Mixtral 8x7B has 8 expert FFN modules per layer with a router that selects the top-2 for each token. Total parameters: ~47B. Active parameters per token: ~13B. This gives near-70B quality at 13B inference cost. The router is a learned linear layer. Load balancing uses an auxiliary loss. The architecture is otherwise a standard Transformer with GQA. Training challenges include expert collapse and communication overhead for distributed training across GPUs.</p>
+<p><strong>Follow-up:</strong> "How do you shard MoE models across GPUs?"</p>
+<p><strong>Red flag:</strong> Cannot explain the total vs active parameter distinction.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">62. (Research) Explain the attention mechanism in the original 'Attention Is All You Need' paper.</p>
+<p><strong>Expected depth:</strong> The paper introduced scaled dot-product attention with multi-head structure. Key innovations: (1) Self-attention replaces recurrence entirely. (2) Multi-head attention runs <span class="arithmatex">\(h\)</span> parallel attention functions on different <span class="arithmatex">\(d_k\)</span>-dimensional projections. (3) Scaling by <span class="arithmatex">\(\sqrt{d_k}\)</span> prevents softmax saturation. (4) Positional encoding (sinusoidal) provides sequence order. (5) The encoder-decoder architecture with cross-attention. (6) The training used label smoothing, learning rate warmup, and dropout. Know the original hyperparameters: <span class="arithmatex">\(d_{\text{model}}=512\)</span>, <span class="arithmatex">\(h=8\)</span>, <span class="arithmatex">\(d_k=64\)</span>, <span class="arithmatex">\(d_{ff}=2048\)</span>, 6 layers.</p>
+<p><strong>Follow-up:</strong> "What were the specific training tricks that made this work?"</p>
+<p><strong>Red flag:</strong> Cannot describe multi-head attention or the scaling factor.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">63. (Research) What are the key ideas in the LLaMA family of models?</p>
+<p><strong>Expected depth:</strong> LLaMA-1 (Meta, 2023): showed that smaller models trained on more data (Chinchilla-optimal) outperform larger undertrained models. Used RoPE, RMSNorm, SwiGLU, Pre-Norm. LLaMA-2: added GQA for efficient inference, extended context to 4096, and released chat models fine-tuned with RLHF. LLaMA-3: scaled to 405B parameters, 128K context, 15T training tokens, multilingual. Key architectural choices: no bias terms, RMSNorm instead of LayerNorm, SwiGLU instead of ReLU, RoPE instead of learned PE. The LLaMA family established the open-weight foundation model standard.</p>
+<p><strong>Follow-up:</strong> "How does LLaMA's tokenizer differ from GPT's?"</p>
+<p><strong>Red flag:</strong> Cannot name at least 3 specific architectural choices.</p>
+</div>
+<div class="admonition interview">
+<p class="admonition-title">64. (Research) What is test-time compute scaling?</p>
+<p><strong>Expected depth:</strong> The idea that model performance can be improved by spending more compute at inference time rather than training time. Methods: (1) Best-of-N sampling — generate N answers, select the best using a verifier or reward model. (2) Chain-of-thought — let the model reason step by step, using more tokens for harder problems. (3) Tree search — explore multiple reasoning paths (like Monte Carlo tree search). (4) Self-consistency — generate diverse reasoning chains and majority-vote. OpenAI's o1 and o3 demonstrated dramatic improvements from test-time compute, especially on math and coding benchmarks. The trade-off: latency and cost increase linearly with compute spent.</p>
+<p><strong>Follow-up:</strong> "When is it more efficient to scale test-time compute vs training compute?"</p>
+<p><strong>Red flag:</strong> Only mentions "generate longer outputs" without the verification/selection component.</p>
+</div>
+<hr />
+<h2 id="quick-reference-concepts-to-know-cold">Quick Reference: Concepts to Know Cold<a class="headerlink" href="#quick-reference-concepts-to-know-cold" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>One-Sentence Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chain rule decomposition</td>
+<td>Joint probability factors into conditional probabilities: <span class="arithmatex">\(P(w_1 \ldots w_T) = \prod P(w_t \mid w_{&lt;t})\)</span></td>
+</tr>
+<tr>
+<td>Perplexity</td>
+<td>Exponential of average cross-entropy — the effective vocabulary size the model chooses from</td>
+</tr>
+<tr>
+<td>Attention</td>
+<td>Weighted sum of values where weights come from query-key similarity</td>
+</tr>
+<tr>
+<td>Causal masking</td>
+<td>Upper-triangle mask preventing tokens from attending to future positions</td>
+</tr>
+<tr>
+<td>KV cache</td>
+<td>Reuse of previously computed key-value pairs during autoregressive generation</td>
+</tr>
+<tr>
+<td>RoPE</td>
+<td>Rotary positional encoding — encodes position by rotating Q and K vectors</td>
+</tr>
+<tr>
+<td>GQA</td>
+<td>Grouped-query attention — multiple query heads share K/V heads to reduce cache size</td>
+</tr>
+<tr>
+<td>SwiGLU</td>
+<td>Gated activation function in FFN — better than ReLU per FLOP</td>
+</tr>
+<tr>
+<td>RMSNorm</td>
+<td>Normalization by root mean square — faster than LayerNorm, no mean subtraction</td>
+</tr>
+<tr>
+<td>MoE</td>
+<td>Mixture of Experts — sparse activation, only k of N experts process each token</td>
+</tr>
+<tr>
+<td>LoRA</td>
+<td>Low-rank adaptation — freeze weights, train small rank-r matrices</td>
+</tr>
+<tr>
+<td>RLHF</td>
+<td>Reinforcement learning from human feedback — SFT → reward model → PPO</td>
+</tr>
+<tr>
+<td>DPO</td>
+<td>Direct preference optimization — eliminates reward model, directly optimizes on preferences</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>Retrieval-augmented generation — retrieve relevant documents and inject into prompt</td>
+</tr>
+<tr>
+<td>Speculative decoding</td>
+<td>Draft model proposes tokens, target model verifies in parallel</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<hr />
+<h2 id="cross-paper-interview-scenarios">Cross-Paper Interview Scenarios<a class="headerlink" href="#cross-paper-interview-scenarios" title="Permanent link">&para;</a></h2>
+<p>For advanced interview preparation, see the <a href="../06_research_papers/#cross-paper-interview-scenarios">Cross-Paper Interview Scenarios</a> section in the Research Papers guide. These scenarios test your ability to connect ideas across multiple papers — a hallmark of strong candidates.</p>
+<p>Topics covered:</p>
+<ol>
+<li><strong>MoE Serving Under Load</strong> — memory vs. compute trade-offs at scale (<a href="../06_research_papers/16_mixtral/">Mixtral</a>, <a href="../06_research_papers/27_deepseek_v3/">DeepSeek-V3</a>, <a href="../06_research_papers/32_glm5/">GLM-5</a>)</li>
+<li><strong>Async RL for Tool-Heavy Tasks</strong> — keeping GPUs utilized during slow rollouts (<a href="../06_research_papers/28_deepseek_r1/">DeepSeek-R1</a>, <a href="../06_research_papers/32_glm5/">GLM-5</a>)</li>
+<li><strong>KV Cache Efficiency Stack</strong> — composing MLA + FlashAttention + continuous batching (<a href="../06_research_papers/26_deepseek_v2/">DeepSeek-V2</a>, <a href="../06_research_papers/14_flash_attention/">FlashAttention</a>)</li>
+<li><strong>Single Agent vs. Multi-Agent</strong> — when to use a swarm vs. a single powerful agent (<a href="../06_research_papers/32_glm5/">GLM-5</a>, <a href="../06_research_papers/33_kimi_k2_5/">Kimi K2.5</a>, <a href="../06_research_papers/19_react/">ReAct</a>)</li>
+<li><strong>Distillation vs. On-Student RL</strong> — when to copy teacher traces vs. train from scratch (<a href="../06_research_papers/28_deepseek_r1/">DeepSeek-R1</a>, <a href="../06_research_papers/11_chinchilla/">Chinchilla</a>)</li>
+<li><strong>Data Quality as a Scaling Multiplier</strong> — why 72B can match 405B (<a href="../06_research_papers/31_qwen2_5/">Qwen2.5</a>, <a href="../06_research_papers/11_chinchilla/">Chinchilla</a>)</li>
+<li><strong>Evaluation Hygiene</strong> — ensuring trustworthy benchmark scores (<a href="../06_research_papers/31_qwen2_5/">Qwen2.5</a>, <a href="../06_research_papers/32_glm5/">GLM-5</a>)</li>
+</ol>
+<hr />
+<p><em>This question bank is updated as new topics are covered in LLMBase. See individual topic pages for in-depth explanations and worked examples.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../07_recent_advances/09_gpt5_4/" class="md-footer__link md-footer__link--prev" aria-label="Previous: GPT-5.4 Family (Mar 2026)">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                GPT-5.4 Family (Mar 2026)
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 LLMBase contributors
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/spawn08/llmbase" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.path", "navigation.footer", "toc.follow", "toc.integrate", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e8ae164.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
